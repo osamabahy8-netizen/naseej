@@ -994,9 +994,37 @@
     });
     faces.sort((a,b)=>a.depth-b.depth);
     faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
+    const selected=modelObjects.find(o=>o.id===selectedModelObjectId);
+    const dimensions=svgEl("g");
+    if(selected){
+      const c={
+        x1:transformModelVertex([selected.x-selected.w/2,selected.y,selected.z-selected.d/2],selected),
+        x2:transformModelVertex([selected.x+selected.w/2,selected.y,selected.z-selected.d/2],selected),
+        y1:transformModelVertex([selected.x+selected.w/2,selected.y,selected.z-selected.d/2],selected),
+        y2:transformModelVertex([selected.x+selected.w/2,selected.y+selected.h,selected.z-selected.d/2],selected),
+        z1:transformModelVertex([selected.x+selected.w/2,selected.y,selected.z-selected.d/2],selected),
+        z2:transformModelVertex([selected.x+selected.w/2,selected.y,selected.z+selected.d/2],selected)
+      };
+      const dimensionLine=(a,b,label,dx=0,dy=0)=>{
+        const p=project(...a),q=project(...b);
+        dimensions.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:"#ffd166","stroke-width":"2.2","stroke-dasharray":"5 3","pointer-events":"none"}));
+        [p,q].forEach(v=>dimensions.appendChild(svgEl("circle",{cx:v[0],cy:v[1],r:"3",fill:"#ffd166","pointer-events":"none"})));
+        const t=svgEl("text",{x:(p[0]+q[0])/2+dx,y:(p[1]+q[1])/2+dy,fill:"#ffe39a","font-size":"15","font-weight":"700","text-anchor":"middle","paint-order":"stroke","stroke":"#101b2b","stroke-width":"4","pointer-events":"none"});
+        t.textContent=label;dimensions.appendChild(t);
+      };
+      dimensionLine(c.x1,c.x2,"العرض "+Math.round(selected.w)+" مم",0,17);
+      dimensionLine(c.y1,c.y2,"الارتفاع "+Math.round(selected.h)+" مم",32,0);
+      dimensionLine(c.z1,c.z2,"العمق "+Math.round(selected.d)+" مم",0,-12);
+    }
+    root.appendChild(dimensions);
     const labels=svgEl("g");
     modelObjects.forEach(o=>{const p=project(o.x,o.y+o.h+35,o.z),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"11","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});
     root.appendChild(labels);
+    const summary=$("modelDimensionSummary");
+    if(summary){
+      const bounds=axis=>{const vals=[];modelObjects.forEach(o=>{const c=axis==="x"?[o.x-o.w/2,o.x+o.w/2]:axis==="y"?[o.y,o.y+o.h]:[o.z-o.d/2,o.z+o.d/2];vals.push(...c);});return vals.length?Math.round(Math.max(...vals)-Math.min(...vals)):0;};
+      summary.textContent="إجمالي التصميم: عرض "+bounds("x")+" مم × ارتفاع "+bounds("y")+" مم × عمق "+bounds("z")+" مم  |  عدد القطع: "+modelObjects.length;
+    }
     const list=$("modelObjectList");list.innerHTML="";
     modelObjects.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="model-object-choice"+(o.id===selectedModelObjectId?" active":"");b.textContent=o.label;b.addEventListener("click",()=>{selectedModelObjectId=o.id;renderModelDrawing();renderModelObjectEditor();});list.appendChild(b);});
     $("modelPreviewName").textContent=modelProjectName;
