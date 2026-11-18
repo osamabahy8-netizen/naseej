@@ -213,7 +213,7 @@
     $("nodeTitle").value = node ? node.title : "";
     $("nodeType").value = node ? node.type : "idea";
     $("nodeDescription").value = node ? node.description : "";
-    renderGroupOptions(node ? node.groupId : "");
+    renderGroupOptions(node ? node.groupId : (activeGroupFilter === "all" ? "" : activeGroupFilter));
     $("dialogTitle").textContent = node ? "تعديل العنصر" : "إضافة فكرة";
     $("nodeDialog").showModal();
     $("nodeTitle").focus();
