@@ -240,6 +240,12 @@
     $("partDimThickness").value=Math.round(dims.thickness||dims.depth||0);
     $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
     $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
+    const joint=spec.joint||{};
+    $("partJointType").value=joint.type||"bolt";
+    $("partJointQty").value=joint.quantity??2;
+    $("partJointDiameter").value=joint.diameter??6;
+    $("partJointLength").value=joint.length??20;
+    $("partJointPosition").value=joint.position||"عند طرفي القطعة";
   }
   function saveSelectedPart(){
     const part=standPartDefinitions(standValues()).find(p=>p.id===selectedPartId);
@@ -248,6 +254,13 @@
       name:$("partCustomName").value.trim()||part.name,
       material:$("partCustomMaterial").value.trim(),
       notes:$("partCustomNotes").value.trim(),
+      joint:{
+        type:$("partJointType").value,
+        quantity:Math.max(0,Math.min(100,Number($("partJointQty").value)||0)),
+        diameter:Math.max(0,Math.min(30,Number($("partJointDiameter").value)||0)),
+        length:Math.max(0,Math.min(200,Number($("partJointLength").value)||0)),
+        position:$("partJointPosition").value.trim().slice(0,120)
+      },
       dimensions:{
         length:Math.max(1,Math.min(3000,Number($("partDimLength").value)||partDimensionDefaults(part.id,standValues()).length)),
         width:Math.max(1,Math.min(3000,Number($("partDimWidth").value)||partDimensionDefaults(part.id,standValues()).width)),
@@ -361,10 +374,11 @@
     const svgSource=new XMLSerializer().serializeToString($("standPreview"));
     const parts=standPartDefinitions(v).map(part=>{
       const spec=partSpecs[part.id]||{},dimensions=getPartDimensions(part.id,v);
-      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes,dimensions};
+      const joint=spec.joint||{type:"bolt",quantity:2,diameter:6,length:20,position:"عند طرفي القطعة"};
+      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes,dimensions,joint};
     });
     const esc=value=>String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
+    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.joint.type+" — عدد "+p.joint.quantity+" — قطر "+p.joint.diameter+" مم — طول "+p.joint.length+" مم — "+p.joint.position)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
     const cutRows=(latestCutRows||[]).map(row=>"<tr><td>"+esc(row.name)+"</td><td>"+esc(row.qty)+"</td><td>"+esc(row.length)+"</td><td>"+esc(row.total)+"</td><td>"+esc(row.material)+"</td></tr>").join("");
     const image=v.image?'<section><h2>الصورة المرجعية</h2><img class="reference" src="'+v.image+'" alt="الصورة المرجعية"></section>':"";
     const page=[
@@ -373,7 +387,7 @@
       "<header class=\"hero\"><h1>"+esc(v.name)+"</h1><div>ملف عرض مستقل صادر من نسيج</div><div class=\"note\">يمكن فتح هذا الملف مباشرة في متصفح الكمبيوتر أو الهاتف دون فتح موقع نسيج.</div></header>",
       "<div class=\"meta\"><div><b>العرض</b><br>"+esc(v.width)+" سم</div><div><b>الارتفاع</b><br>"+esc(v.height)+" سم</div><div><b>العمق</b><br>"+esc(v.depth)+" سم</div><div><b>عدد الرفوف</b><br>"+esc(v.shelves)+"</div><div><b>الخامة الرئيسية</b><br>"+esc(v.material)+"</div></div>",
       "<section><h2>المعاينة المجسمة</h2><div class=\"model\">"+svgSource+"</div></section>",
-      "<section><h2>بيانات القطع وأبعادها المستقلة</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الأبعاد (مم)</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
+      "<section><h2>بيانات القطع وأبعادها المستقلة</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الأبعاد (مم)</th><th>طريقة التثبيت</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
       "<section><h2>جدول القص المبدئي</h2><table><thead><tr><th>القطعة</th><th>العدد</th><th>طول القطعة مم</th><th>الإجمالي مم</th><th>الخامة</th></tr></thead><tbody>"+cutRows+"</tbody></table></section>",
       "<section><h2>ملاحظات التصميم</h2><p>"+esc(v.notes||"لا توجد ملاحظات إضافية.")+"</p><p class=\"note\">هذا ملف عرض وحصر مبدئي، وليس اعتمادًا إنشائيًا أو أمر تصنيع نهائيًا. يجب مراجعة المقاسات والوصلات والسماكات والأحمال قبل التصنيع.</p></section>",
       image,
