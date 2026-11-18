@@ -990,24 +990,68 @@
       ["رف أوسط",420,25,150,0,250,-55,"رف عرض","خشب",1],
       ["رف علوي",420,25,120,0,400,-80,"رف عرض","خشب",1]
     ]}
+
+    ,{id:"bag-display",name:"استاند شنط متعدد الأذرع",category:"شنط",description:"قاعدة وعمود مركزي وأذرع تعليق للشنط",parts:[
+      ["قاعدة ثقيلة",500,45,500,0,0,0,"صاج قاعدة","حديد",1],["عمود مركزي",40,1500,40,0,45,0,"ماسورة 4×4","حديد",1],
+      ["ذراع تعليق علوي",650,30,30,0,1350,0,"ماسورة مستديرة","حديد",1],["ذراع جانبي يمين",30,30,450,260,1050,0,"ماسورة","حديد",1],["ذراع جانبي يسار",30,30,450,-260,1050,0,"ماسورة","حديد",1]
+    ]},
+    {id:"accessory-grid",name:"لوحة إكسسوارات بخطافات",category:"إكسسوارات",description:"لوحة مثقبة مع إطار وخطافات عرض",parts:[
+      ["لوحة خلفية مثقبة",800,1100,20,0,550,0,"صاج مثقب","حديد",1],["قائم يمين",30,1150,30,415,0,0,"ماسورة مربعة","حديد",1],["قائم يسار",30,1150,30,-415,0,0,"ماسورة مربعة","حديد",1],["قاعدة",850,35,350,0,0,0,"صاج","حديد",1],
+      ["خطاف عرض 1",180,12,12,-240,800,30,"سيخ دائري","حديد",1],["خطاف عرض 2",180,12,12,0,800,30,"سيخ دائري","حديد",1],["خطاف عرض 3",180,12,12,240,800,30,"سيخ دائري","حديد",1]
+    ]},
+    {id:"jewelry-display",name:"استاند مجوهرات وقلائد",category:"مجوهرات",description:"قاعدة وعمودان وحوامل عرض متدرجة",parts:[
+      ["قاعدة",420,30,260,0,0,0,"قاعدة خشب","خشب",1],["عمود خلفي",25,500,25,0,30,-80,"قائم معدني","حديد",1],["عارضة تعليق",380,20,20,0,480,-80,"قضيب تعليق","حديد",1],["حامل حلقان",300,180,15,0,180,80,"لوح مثقب","أكريليك",1],["رف خواتم",350,25,100,0,80,40,"رف مبطن","خشب",1]
+    ]},
+    {id:"eyewear-display",name:"استاند نظارات متعدد المستويات",category:"نظارات",description:"قاعدة رأسية مع حوامل أفقية للنظارات",parts:[
+      ["قاعدة",350,30,250,0,0,0,"قاعدة","خشب",1],["لوح خلفي",25,650,220,0,325,-80,"لوح حامل","أكريليك",1],["حامل نظارات سفلي",300,18,45,0,160,60,"حامل مبطن","أكريليك",1],["حامل نظارات أوسط",300,18,45,0,330,60,"حامل مبطن","أكريليك",1],["حامل نظارات علوي",300,18,45,0,500,60,"حامل مبطن","أكريليك",1]
+    ]},
+    {id:"cosmetics-display",name:"استاند مستحضرات تجميل",category:"تجميل",description:"وحدة عرض متدرجة بقاعدة ورفوف أمامية",parts:[
+      ["قاعدة",600,35,350,0,0,0,"قاعدة","أكريليك",1],["ظهر الوحدة",600,700,25,0,350,-150,"لوح خلفي","أكريليك",1],["رف سفلي",560,25,130,0,120,-30,"رف شفاف","أكريليك",1],["رف أوسط",560,25,110,0,300,-60,"رف شفاف","أكريليك",1],["رف علوي",560,25,90,0,480,-90,"رف شفاف","أكريليك",1]
+    ]},
+    {id:"book-rack",name:"استاند كتب متعدد الأرفف",category:"كتب",description:"وحدة أرضية بأرفف مائلة وحاجز أمامي",parts:[
+      ["قائم يمين",35,1400,35,380,0,0,"ماسورة مربعة","حديد",1],["قائم يسار",35,1400,35,-380,0,0,"ماسورة مربعة","حديد",1],["رف سفلي",760,30,280,0,180,0,"صاج مثني أو خشب","خشب",1],["رف أوسط",760,30,280,0,550,0,"صاج مثني أو خشب","خشب",1],["رف علوي",760,30,280,0,920,0,"صاج مثني أو خشب","خشب",1]
+    ]},
+    {id:"magazine-rack",name:"استاند مجلات جيوب أمامية",category:"مجلات",description:"لوح خلفي وجيوب عرض مائلة",parts:[
+      ["لوح خلفي",650,1200,25,0,600,0,"لوح","خشب",1],["قائم يمين",25,1250,25,310,0,0,"قطاع","حديد",1],["قائم يسار",25,1250,25,-310,0,0,"قطاع","حديد",1],["جيب سفلي",600,180,90,0,150,70,"جيب صاج أو أكريليك","أكريليك",1],["جيب أوسط",600,180,90,0,420,70,"جيب صاج أو أكريليك","أكريليك",1],["جيب علوي",600,180,90,0,690,70,"جيب صاج أو أكريليك","أكريليك",1]
+    ]},
+    {id:"promo-sign",name:"استاند دعاية وبوستر",category:"دعاية",description:"قاعدة ثابتة وحامل لوحة إعلانية",parts:[
+      ["قاعدة عريضة",450,35,350,0,0,0,"صاج قاعدة","حديد",1],["عمود حامل",30,1500,30,0,35,0,"ماسورة مربعة","حديد",1],["إطار اللوحة",600,850,25,0,1100,0,"إطار ألمنيوم","ألومنيوم",1],["لوح الإعلان",560,810,8,0,1100,18,"لوح طباعة","بلاستيك",1]
+    ]},
+    {id:"cafe-menu",name:"استاند منيو كافيه",category:"كافيهات",description:"حامل منيو مائل فوق قاعدة طاولة",parts:[
+      ["قاعدة",300,25,240,0,0,0,"قاعدة","حديد",1],["عمود",25,420,25,0,25,0,"قضيب","حديد",1],["حامل المنيو",260,320,18,0,350,-35,"إطار منيو","خشب",1],["حاجز سفلي",260,18,25,0,210,0,"حاجز تثبيت","خشب",1]
+    ]},
+    {id:"restaurant-tray",name:"استاند صواني ومستلزمات مطعم",category:"مطاعم",description:"عربة صغيرة بأرفف وحواجز جانبية",parts:[
+      ["قاعدة سفلية",650,35,450,0,0,0,"إطار","ستانلس ستيل",1],["قائم يمين",30,900,30,300,35,200,"ماسورة","ستانلس ستيل",1],["قائم يسار",30,900,30,-300,35,200,"ماسورة","ستانلس ستيل",1],["رف سفلي",600,25,400,0,180,0,"صاج","ستانلس ستيل",1],["رف علوي",600,25,400,0,620,0,"صاج","ستانلس ستيل",1],["مقبض دفع",500,25,25,0,850,200,"ماسورة","ستانلس ستيل",1]
+    ]}
   ];
   function addStandModelTemplate() {
-    const select=$("standModelTemplate");
-    const template=standModelLibrary.find(item=>item.id===select.value);
+    const select=$("standModelTemplate"),template=standModelLibrary.find(item=>item.id===select.value);
     if(!template){toast("اختار موديل من المكتبة الأول");return;}
-    const baseX=modelObjects.length?Math.max(...modelObjects.map(o=>o.x+o.w/2))+900:0;
-    const color=template.category==="عرض"?"#b98b52":"#c49a55";
-    const added=template.parts.map((part,index)=>{
+    const size=$("standModelSize").value,scale=size==="compact"?.82:size==="large"?1.18:1;
+    const finish=$("standModelFinish").value;
+    const materialOverride=$("standModelMaterial").value;
+    const finishColors={black:"#252a31",white:"#e8e8e4",chrome:"#aeb8c2",gold:"#c49a55",wood:"#9b7047",clear:"#a9d5df"};
+    const baseX=modelObjects.length?Math.max(...modelObjects.map(o=>o.x+o.w/2))+1000:0;
+    const added=template.parts.map(part=>{
       const [label,w,h,d,x,y,z,profile,material,quantity]=part;
-      return {id:uid(),type:"box",label,w,h,d,x:baseX+x,y,z,warn:false,color,rx:0,ry:0,rz:0,material,profile,thickness:material==="خشب"?18:1.5,quantity,cutLength:Math.max(w,h,d),holeSpec:"غير محدد — يلزم تحديده حسب التصميم",weldSpec:"يحدد بعد مراجعة طريقة التصنيع",jointSpec:"وصلة مقترحة للمراجعة قبل التنفيذ"};
+      const chosenMaterial=materialOverride==="original"?material:materialOverride;
+      return {id:uid(),type:"box",label,w:Math.max(8,Math.round(w*scale)),h:Math.max(8,Math.round(h*scale)),d:Math.max(8,Math.round(d*scale)),x:baseX+x*scale,y:y*scale,z:z*scale,color:finishColors[finish]||"#c49a55",rx:0,ry:0,rz:0,material:chosenMaterial,profile,thickness:chosenMaterial==="خشب"?18:chosenMaterial==="أكريليك"?5:1.5,quantity,cutLength:Math.max(w,h,d)*scale,holeSpec:"غير محدد — يراجع حسب التصميم",weldSpec:"يحدد بعد مراجعة طريقة التصنيع",jointSpec:"وصلة مقترحة للمراجعة قبل التنفيذ",finish};
     });
+    const addAccessory=(label,w,h,d,x,y,z,profile,material,color=finishColors[finish])=>added.push({id:uid(),type:"box",label,w,h,d,x:baseX+x*scale,y:y*scale,z:z*scale,color,rx:0,ry:0,rz:0,material:materialOverride==="original"?material:materialOverride,profile,thickness:2,quantity:1,cutLength:Math.max(w,h,d)*scale,holeSpec:"يحدد بعد اختيار نظام التثبيت",weldSpec:"حسب طريقة الربط المختارة",jointSpec:"ملحق اختياري — يلزم مراجعة موضعه",finish}); 
+    if($("standAddWheels").checked){
+      const w=Math.max(55,Math.round(75*scale));
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz],n)=>{const o={id:uid(),type:"cylinder",label:"عجلة دوارة "+(n+1),w,h:35,d:w,x:baseX+sx*260*scale,y:0,z:sz*180*scale,color:"#343a40",rx:90,ry:0,rz:0,material:"مطاط ومعدن",profile:"عجلة كاستر — مقاس مبدئي",thickness:0,quantity:1,cutLength:75*scale,holeSpec:"قطر محور التثبيت يحدد حسب العجلة الفعلية",weldSpec:"لا تلحم جسم العجلة",jointSpec:"تثبيت بقاعدة مسامير مناسبة"};added.push(o);});
+    }
+    if($("standAddHooks").checked){
+      for(let n=0;n<4;n++)addAccessory("خطاف إضافي "+(n+1),150,12,12,-220+n*145,850,45,"سيخ دائري مثني","حديد");
+    }
+    if($("standAddHolder").checked)addAccessory("حامل أكريليك أمامي",260,160,8,0,300,150,"جيب/حامل شفاف","أكريليك","#a9d5df");
     modelObjects.push(...added);
-    modelProjectName=template.name;
-    $("modelName").value=template.name;
-    selectedModelObjectId=added[0].id;
+    modelProjectName=template.name+" — "+(size==="compact"?"صغير":size==="large"?"كبير":"قياسي");
+    $("modelName").value=modelProjectName;selectedModelObjectId=added[0].id;
     modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
     renderModelDrawing();renderModelObjectEditor();renderModelProjectOptions();renderModelCutList();renderManufacturingDrawings();save();
-    toast("تم إدخال "+template.name+" إلى الرسم ثلاثي الأبعاد — عدّل كل قطعة حسب المقاس المطلوب");
+    toast("تم إدخال "+template.name+" مع خيارات المقاس والخامة والتشطيب والملحقات");
   }
   function duplicateModelObject() {
     const source=modelObjects.find(o=>o.id===selectedModelObjectId);if(!source)return;
