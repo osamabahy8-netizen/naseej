@@ -13,7 +13,7 @@
   function loadData() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"nodes":[],"edges":[]}');
-      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [] };
+      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [] };
     } catch { return { nodes: [], edges: [] }; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -87,6 +87,177 @@
   svg.addEventListener("pointerup", finishDrag);
   svg.addEventListener("pointercancel", finishDrag);
   svg.addEventListener("lostpointercapture", finishDrag);
+
+
+  // Stand design studio: parametric isometric model and local design library.
+  let currentDesignId = null;
+  let pendingReferenceImage = "";
+  let standRotation = {x:0,y:0};
+  function standValues() {
+    const number = (id, fallback, min, max) => {
+      const value = Number($(id).value);
+      return Math.max(min, Math.min(max, Number.isFinite(value) ? value : fallback));
+    };
+    return {
+      id: currentDesignId || uid(),
+      name: $("designName").value.trim() || "تصميم بدون اسم",
+      width: number("standWidth",90,20,200),
+      height: number("standHeight",180,40,250),
+      depth: number("standDepth",45,20,120),
+      shelves: Math.round(number("shelfCount",3,1,6)),
+      material: $("standMaterial").value,
+      color: /^#[0-9a-fA-F]{6}$/.test($("standColor").value) ? $("standColor").value : "#c49a55",
+      notes: $("standNotes").value.trim(),
+      image: pendingReferenceImage
+    };
+  }
+  function shadeColor(hex, amount) {
+    const n = parseInt(hex.slice(1),16);
+    const r = Math.max(0,Math.min(255,(n>>16)+amount));
+    const g = Math.max(0,Math.min(255,((n>>8)&255)+amount));
+    const b = Math.max(0,Math.min(255,(n&255)+amount));
+    return "#" + [r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+  }
+  function project3D(x,y,z,scale,baseY) {
+    return [320 + (x-y)*scale*.78, baseY + (x+y)*scale*.34 - z*scale];
+  }
+  function renderStandModel() {
+    const v = standValues();
+    $("previewName").textContent = v.name;
+    const svg = $("standPreview");
+    const s = Math.min(1.65, 300 / Math.max(v.width,v.depth,v.height*.72));
+    const baseY = 445;
+    const points = (x,y,z) => project3D(x,y,z,s,baseY).join(",");
+    const faces = [];
+    const poly = (pts,fill,stroke="#172638") => faces.push('<polygon points="'+pts.map(p=>points(...p)).join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5" stroke-linejoin="round"/>');
+    const box = (x,y,z,w,d,h,color) => {
+      const c1=[x,y,z],c2=[x+w,y,z],c3=[x+w,y+d,z],c4=[x,y+d,z];
+      const t1=[x,y,z+h],t2=[x+w,y,z+h],t3=[x+w,y+d,z+h],t4=[x,y+d,z+h];
+      poly([t1,t2,t3,t4],shadeColor(color,25));
+      poly([c1,c2,t2,t1],shadeColor(color,-22));
+      poly([c2,c3,t3,t2],shadeColor(color,-42));
+      poly([c4,c3,t3,t4],shadeColor(color,-8));
+    };
+    const metal = v.color;
+    const dark = v.material === "wood" ? "#9a7047" : v.material === "aluminum" ? "#aeb9c5" : metal;
+    // Separate bottom base, uprights and upper crossbar.
+    box(0,0,0,v.width,v.depth,3,shadeColor(metal,-12));
+    const post = Math.max(2.2, Math.min(4,v.width*.035));
+    [[0,0],[v.width-post,0],[0,v.depth-post],[v.width-post,v.depth-post]].forEach(([x,y])=>box(x,y,3,post,post,v.height-3,dark));
+    box(0,0,v.height-5,v.width,v.depth,5,metal);
+    // Three-dimensional shelves, evenly distributed above the base.
+    for(let i=0;i<v.shelves;i++){
+      const z = 12 + (v.height-28)*(i+1)/(v.shelves+1);
+      box(post,post,z,v.width-2*post,v.depth-2*post,2.5,v.material==="wood"?"#a8794b":shadeColor(metal,-8));
+      // front support lip
+      box(post,post, z+2.5, v.width-2*post, 1.4, 1.8, shadeColor(metal,18));
+    }
+    // Hanging rail and side holders beneath the top frame.
+    box(post,v.depth*.48,v.height-20,v.width-2*post,2.4,2.4,shadeColor(metal,35));
+    const label = '<text x="320" y="492" fill="#9aa9bd" font-size="13" text-anchor="middle" direction="rtl">العرض '+v.width+' سم  •  الارتفاع '+v.height+' سم  •  العمق '+v.depth+' سم</text>';
+    svg.innerHTML = '<defs><linearGradient id="stageGlow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17283c"/><stop offset="1" stop-color="#0b1422"/></linearGradient></defs><rect width="640" height="520" rx="18" fill="url(#stageGlow)"/><ellipse cx="320" cy="448" rx="210" ry="34" fill="#020711" opacity=".45"/>'+faces.join("")+label;
+    svg.style.transform = "perspective(1000px) rotateX("+standRotation.x+"deg) rotateY("+standRotation.y+"deg)";
+  }
+  function refreshSavedDesigns() {
+    const select = $("savedDesigns"), chosen = select.value;
+    select.replaceChildren();
+    const first = document.createElement("option"); first.value=""; first.textContent="اختر تصميمًا محفوظًا"; select.append(first);
+    data.designs.forEach(d=>{
+      const o=document.createElement("option"); o.value=d.id; o.textContent=d.name+" — "+d.width+"×"+d.depth+" سم"; select.append(o);
+    });
+    if(data.designs.some(d=>d.id===chosen)) select.value=chosen;
+  }
+  function saveStandDesign() {
+    const design=standValues();
+    if(!design.name.trim()){toast("اكتب اسم التصميم أولًا");return;}
+    const index=data.designs.findIndex(d=>d.id===design.id);
+    if(index>=0)data.designs[index]=design; else data.designs.push(design);
+    currentDesignId=design.id;
+    try { save(); refreshSavedDesigns(); $("savedDesigns").value=design.id; toast("تم حفظ التصميم على هذا الجهاز"); }
+    catch(error){toast("مساحة التخزين ممتلئة؛ جرّب صورة مرجعية أصغر");}
+  }
+  function loadStandDesign() {
+    const d=data.designs.find(item=>item.id===$("savedDesigns").value);
+    if(!d){toast("اختار تصميمًا محفوظًا الأول");return;}
+    currentDesignId=d.id;
+    $("designName").value=d.name; $("standWidth").value=d.width; $("standHeight").value=d.height;
+    $("standDepth").value=d.depth; $("shelfCount").value=d.shelves;
+    $("standMaterial").value=d.material||"steel"; $("standColor").value=d.color||"#c49a55";
+    $("standNotes").value=d.notes||""; pendingReferenceImage=d.image||"";
+    $("referencePreview").hidden=!pendingReferenceImage;
+    if(pendingReferenceImage)$("referencePreview").src=pendingReferenceImage;
+    $("referenceImageBox").hidden=!pendingReferenceImage;
+    if(pendingReferenceImage)$("savedReferenceImage").src=pendingReferenceImage;
+    renderStandModel(); toast("تم فتح التصميم");
+  }
+  function resetStandDesign() {
+    currentDesignId=null; pendingReferenceImage="";
+    $("designName").value="استاند عرض ملابس"; $("standWidth").value=90;
+    $("standHeight").value=180; $("standDepth").value=45; $("shelfCount").value=3;
+    $("standMaterial").value="steel"; $("standColor").value="#c49a55"; $("standNotes").value="";
+    $("standImage").value=""; $("referencePreview").hidden=true; $("referenceImageBox").hidden=true;
+    $("savedDesigns").value=""; renderStandModel();
+  }
+  function downloadStandImage() {
+    const svg=$("standPreview");
+    const source=new XMLSerializer().serializeToString(svg);
+    const blob=new Blob([source],{type:"image/svg+xml;charset=utf-8"});
+    const url=URL.createObjectURL(blob), img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement("canvas"); canvas.width=1280; canvas.height=1040;
+      const ctx=canvas.getContext("2d"); ctx.drawImage(img,0,0,1280,1040);
+      URL.revokeObjectURL(url);
+      const a=document.createElement("a"); a.download=(standValues().name||"naseej-stand")+".png";
+      a.href=canvas.toDataURL("image/png"); a.click(); toast("تم تجهيز صورة التصميم");
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);toast("تعذر تجهيز الصورة");};
+    img.src=url;
+  }
+  function setupDesignStudio() {
+    document.querySelectorAll(".main-tab").forEach(tab=>tab.addEventListener("click",()=>{
+      document.querySelectorAll(".main-tab").forEach(t=>t.classList.toggle("active",t===tab));
+      $("ideasView").hidden=tab.dataset.view!=="ideasView";
+      $("designView").hidden=tab.dataset.view!=="designView";
+      if(tab.dataset.view==="designView")renderStandModel();
+    }));
+    ["designName","standWidth","standHeight","standDepth","shelfCount","standMaterial","standColor"].forEach(id=>$(id).addEventListener("input",renderStandModel));
+    $("standNotes").addEventListener("input",()=>{});
+    $("saveDesignBtn").addEventListener("click",saveStandDesign);
+    $("loadDesignBtn").addEventListener("click",loadStandDesign);
+    $("newDesignBtn").addEventListener("click",resetStandDesign);
+    $("downloadStandBtn").addEventListener("click",downloadStandImage);
+    $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
+    $("standImage").addEventListener("change",event=>{
+      const file=event.target.files[0]; if(!file)return;
+      if(!file.type.startsWith("image/")){toast("اختار ملف صورة");return;}
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>{
+          const scale=Math.min(1,700/Math.max(img.width,img.height));
+          const canvas=document.createElement("canvas"); canvas.width=Math.round(img.width*scale); canvas.height=Math.round(img.height*scale);
+          canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+          pendingReferenceImage=canvas.toDataURL("image/jpeg",.68);
+          $("referencePreview").src=pendingReferenceImage; $("referencePreview").hidden=false;
+          $("savedReferenceImage").src=pendingReferenceImage; $("referenceImageBox").hidden=false;
+          toast("تم إرفاق الصورة؛ احفظ التصميم للاحتفاظ بها");
+        };
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    const stage=$("standStage");
+    let drag=null;
+    stage.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,rx:standRotation.x,ry:standRotation.y};stage.setPointerCapture(e.pointerId);});
+    stage.addEventListener("pointermove",e=>{
+      if(!drag)return;
+      standRotation.y=Math.max(-45,Math.min(45,drag.ry+(e.clientX-drag.x)*.35));
+      standRotation.x=Math.max(-20,Math.min(20,drag.rx-(e.clientY-drag.y)*.2));
+      $("standPreview").style.transform="perspective(1000px) rotateX("+standRotation.x+"deg) rotateY("+standRotation.y+"deg)";
+    });
+    const stop=()=>{drag=null;}; stage.addEventListener("pointerup",stop);stage.addEventListener("pointercancel",stop);
+    refreshSavedDesigns(); renderStandModel();
+  }
 
   function render() {
     svg.replaceChildren();
@@ -333,7 +504,7 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error("invalid");
-      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
+      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : [],designs:Array.isArray(parsed.designs) ? parsed.designs : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
     } catch { toast("ملف النسخة الاحتياطية غير صالح"); }
     event.target.value = "";
   });
@@ -345,5 +516,6 @@
       });
     });
   }
+  setupDesignStudio();
   render();
 })();
