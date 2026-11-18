@@ -12,7 +12,7 @@
   function loadData() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"nodes":[],"edges":[]}');
-      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [] };
+      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [] };
     } catch { return { nodes: [], edges: [] }; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -130,6 +130,10 @@
     }
     host.className = "";
     const pill = document.createElement("span"); pill.className = "type-pill " + node.type; pill.textContent = node.type === "project" ? "مشروع" : "فكرة";
+    const group = data.groups.find(g => g.id === node.groupId);
+    const groupBadge = document.createElement("span");
+    groupBadge.className = "group-pill";
+    groupBadge.textContent = group ? "المجموعة: " + group.name : "بدون مجموعة";
     const title = document.createElement("h3"); title.className = "detail-title"; title.textContent = node.title;
     const desc = document.createElement("p"); desc.className = "detail-description"; desc.textContent = node.description || "لا يوجد وصف مضاف حتى الآن.";
     const actions = document.createElement("div"); actions.className = "detail-actions";
@@ -142,10 +146,34 @@
       }),
       actionButton("حذف","button button-quiet",() => removeNode(node.id))
     );
-    host.append(pill,title,desc,actions);
+    host.append(pill,groupBadge,title,desc,actions);
   }
   function actionButton(label, cls, fn) {
     const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = label; b.addEventListener("click",fn); return b;
+  }
+  function renderGroupOptions(selectedId = "") {
+    const select = $("nodeGroup");
+    select.replaceChildren();
+    const none = document.createElement("option"); none.value = ""; none.textContent = "بدون مجموعة";
+    select.appendChild(none);
+    data.groups.forEach(group => {
+      const option = document.createElement("option");
+      option.value = group.id; option.textContent = group.name;
+      select.appendChild(option);
+    });
+    select.value = selectedId || "";
+  }
+  function createGroup() {
+    const name = prompt("اكتب اسم المجموعة الجديدة:");
+    if (name === null) return;
+    const clean = name.trim();
+    if (!clean) { toast("اكتب اسمًا للمجموعة"); return; }
+    if (data.groups.some(g => g.name.toLowerCase() === clean.toLowerCase())) {
+      toast("المجموعة موجودة بالفعل"); return;
+    }
+    const group = {id:uid(),name:clean};
+    data.groups.push(group); save(); renderGroupOptions(group.id);
+    toast("تم إنشاء المجموعة؛ احفظ العنصر لإضافته إليها");
   }
   function openDialog(node = null) {
     $("nodeForm").reset();
@@ -153,6 +181,7 @@
     $("nodeTitle").value = node ? node.title : "";
     $("nodeType").value = node ? node.type : "idea";
     $("nodeDescription").value = node ? node.description : "";
+    renderGroupOptions(node ? node.groupId : "");
     $("dialogTitle").textContent = node ? "تعديل العنصر" : "إضافة فكرة";
     $("nodeDialog").showModal();
     $("nodeTitle").focus();
@@ -175,11 +204,12 @@
     event.preventDefault();
     const id = $("nodeId").value, title = $("nodeTitle").value.trim();
     if (!title) return;
-    const values = {title,type:$("nodeType").value,description:$("nodeDescription").value.trim()};
+    const values = {title,type:$("nodeType").value,description:$("nodeDescription").value.trim(),groupId:$("nodeGroup").value || null};
     if (id) Object.assign(data.nodes.find(n => n.id === id), values);
     else { const node = {id:uid(),...values}; data.nodes.push(node); selectedId = node.id; }
     save(); $("nodeDialog").close(); render(); toast(id ? "تم تحديث العنصر" : "تمت إضافة العنصر");
   });
+  $("addGroupBtn").addEventListener("click", createGroup);
   $("addBtn").addEventListener("click", () => openDialog());
   $("emptyAddBtn").addEventListener("click", () => openDialog());
   $("cancelBtn").addEventListener("click", () => $("nodeDialog").close());
@@ -193,7 +223,7 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error("invalid");
-      data = {nodes:parsed.nodes,edges:parsed.edges}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
+      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
     } catch { toast("ملف النسخة الاحتياطية غير صالح"); }
     event.target.value = "";
   });
