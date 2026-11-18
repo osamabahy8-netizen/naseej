@@ -240,7 +240,8 @@
     $("partDimThickness").value=Math.round(dims.thickness||dims.depth||0);
     $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
     $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
-    const joint=spec.joint||{};\n    renderConnectionLibrary();\n    renderJointPartnerOptions(part.id);
+    const joint=spec.joint||{};
+    renderConnectionLibrary();\n    renderJointPartnerOptions(part.id);
     $("partJointType").value=joint.type||"bolt";
     $("partJointQty").value=joint.quantity??2;
     $("partJointDiameter").value=joint.diameter??6;
@@ -400,7 +401,8 @@
     const design=standValues();
     design.parts=JSON.parse(JSON.stringify(partSpecs));
     design.exportedAt=new Date().toISOString();
-    design.connectionLibrary=JSON.parse(JSON.stringify(data.connectionLibrary||[]));\n    design.format="naseej-design-v1";
+    design.connectionLibrary=JSON.parse(JSON.stringify(data.connectionLibrary||[]));
+    design.format="naseej-design-v1";
     downloadBlobFile(JSON.stringify(design,null,2),"application/json;charset=utf-8",safeFileName(design.name)+".naseej.json");
     toast("تم حفظ ملف التصميم الأصلي");
   }
@@ -598,7 +600,9 @@
     $("exportDesignDataBtn").addEventListener("click",exportDesignDataFile);
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
-    $("savePartBtn").addEventListener("click",saveSelectedPart);\n    $("saveConnectionLibraryBtn").addEventListener("click",saveConnectionToLibrary);\n    $("applyConnectionLibraryBtn").addEventListener("click",applyLibraryConnection);
+    $("savePartBtn").addEventListener("click",saveSelectedPart);
+    $("saveConnectionLibraryBtn").addEventListener("click",saveConnectionToLibrary);
+    $("applyConnectionLibraryBtn").addEventListener("click",applyLibraryConnection);
     ["tubePrice","sheetPrice","wastePercent"].forEach(id=>$(id).addEventListener("input",renderManufacturingSheet));
     $("exportCutListBtn").addEventListener("click",exportCutList);
     $("standImage").addEventListener("change",event=>{
