@@ -937,6 +937,21 @@
     $("modelPosX").value=object.x;$("modelPosY").value=object.y;$("modelPosZ").value=object.z;
     $("modelRotX").value=object.rx||0;$("modelRotY").value=object.ry||0;$("modelRotZ").value=object.rz||0;
     $("modelObjectColor").value=object.color||"#c49a55";
+    $("modelPartMaterial").value=object.material||"حديد";
+    $("modelPartProfile").value=object.profile||"";
+    $("modelPartThickness").value=object.thickness??"";
+    $("modelPartQuantity").value=object.quantity||1;
+    $("modelPartCutLength").value=object.cutLength??Math.round(Math.max(object.w,object.h,object.d));
+  }
+  function renderModelCutList() {
+    const host=$("modelCutList");if(!host)return;
+    if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";return;}
+    const rows=modelObjects.map(o=>{
+      const length=Math.round(o.cutLength??Math.max(o.w,o.h,o.d));
+      const quantity=Math.max(1,Number(o.quantity)||1);
+      return "<tr><td>"+escapeHtml(o.label)+"</td><td>"+escapeHtml(o.material||"حديد")+"</td><td>"+escapeHtml(o.profile||"غير محدد")+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
+    }).join("");
+    host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
   }
   function transformModelVertex(point,o) {
     let [x,y,z]=point;
@@ -1028,6 +1043,7 @@
     const list=$("modelObjectList");list.innerHTML="";
     modelObjects.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="model-object-choice"+(o.id===selectedModelObjectId?" active":"");b.textContent=o.label;b.addEventListener("click",()=>{selectedModelObjectId=o.id;renderModelDrawing();renderModelObjectEditor();});list.appendChild(b);});
     $("modelPreviewName").textContent=modelProjectName;
+    renderModelCutList();
   }
   function saveModelObjectEdits() {
     const o=modelObjects.find(item=>item.id===selectedModelObjectId);if(!o)return;
@@ -1036,8 +1052,11 @@
     if(dims.some(v=>!Number.isFinite(v)||v<=0)||pos.some(v=>!Number.isFinite(v))){toast("راجع الأبعاد والمواقع المدخلة");return;}
     const rotations=["modelRotX","modelRotY","modelRotZ"].map(id=>Number($(id).value));
     if(rotations.some(v=>!Number.isFinite(v)||Math.abs(v)>360)){toast("زاوية الدوران لازم تكون بين -360 و360");return;}
+    const thickness=Number($("modelPartThickness").value||0),quantity=Number($("modelPartQuantity").value||1),cutLength=Number($("modelPartCutLength").value||Math.max(...dims));
+    if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
     o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
-    renderModelDrawing();renderModelObjectEditor();save();
+    o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
+    renderModelDrawing();renderModelObjectEditor();renderModelCutList();save();
   }
   function exportModelObj() {
     if(!modelObjects.length){toast("لوحة الرسم فاضية");return;}
