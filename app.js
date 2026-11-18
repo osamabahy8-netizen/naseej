@@ -745,18 +745,19 @@
     modelObjects.forEach(o=>{
       out+="o "+o.label.replace(/[^\w\u0600-\u06FF-]/g,"_")+"\n";
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      const addVertex=p=>{const transformed=transformModelVertex([x+p[0],y+p[1],z+p[2]],o);out+="v "+transformed.join(" ")+"\n";};
       if(o.type==="cylinder"){
         const sides=16,vertices=[];
-        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);}
-        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
-        vertices.forEach(p=>{out+="v "+p.join(" ")+"\n";});
+        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([Math.cos(a)*w/2,0,Math.sin(a)*d/2]);}
+        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([Math.cos(a)*w/2,h,Math.sin(a)*d/2]);}
+        vertices.forEach(addVertex);
         out+="f "+Array.from({length:sides},(_,i)=>offset+i).reverse().join(" ")+"\n";
         out+="f "+Array.from({length:sides},(_,i)=>offset+sides+i).join(" ")+"\n";
         for(let k=0;k<sides;k++){const n=(k+1)%sides;out+="f "+[offset+k,offset+n,offset+sides+n,offset+sides+k].join(" ")+"\n";}
         offset+=sides*2;
       }else{
-        const v=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
-        v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\n";});
+        const vertices=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
+        vertices.forEach(addVertex);
         [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\n";});
         offset+=8;
       }
