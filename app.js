@@ -608,17 +608,14 @@
       const size=document.createElement("p");size.innerHTML="<strong>مقاسات مرجعية:</strong> ";size.append(document.createTextNode(item.size));
       const material=document.createElement("p");material.innerHTML="<strong>الخامات:</strong> ";material.append(document.createTextNode(item.material));
       const detail=document.createElement("p");detail.textContent=item.detail;
-      if(item.id==="fashion-rail"){
-        const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="افتح في مرسم 3D";
-        modelButton.addEventListener("click",()=>openCatalogItemInModel(item));
-        card.append(top,title,size,material,detail,modelButton);
-      }
+      const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="افتح التصميم في مرسم 3D";
+      modelButton.addEventListener("click",()=>openCatalogItemInModel(item));
+      card.append(top,title,size,material,detail,modelButton);
       const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
       button.addEventListener("click",()=>{
         const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\nالمقاسات المرجعية: "+item.size+"\nالخامات: "+item.material+"\nتفاصيل: "+item.detail+"\n\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
         data.nodes.push(node);selectedId=node.id;activeGroupFilter="all";save();render();toast("اتضافت بطاقة الشغل لخريطة نسيج");
       });
-      if(item.id!=="fashion-rail")card.append(top,title,size,material,detail);
       card.append(button);host.append(card);
     });
   }
