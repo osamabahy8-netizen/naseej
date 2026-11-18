@@ -427,7 +427,7 @@
       const z=12+(v.height-28)*(i+1)/(v.shelves+1);
       addPart("Shelf_"+(i+1),[[mm(30),mm(30),z,mm(dim.length),mm(dim.width),mm(dim.thickness)]]);
     }
-    const blob=new Blob([output.join("\\n")],{type:"model/obj"});
+    const blob=new Blob([output.join("\n")],{type:"model/obj"});
     const url=URL.createObjectURL(blob),a=document.createElement("a");
     a.href=url;a.download=safeFileName(v.name)+".obj";document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1200);
@@ -572,7 +572,7 @@
       const detail=document.createElement("p");detail.textContent=item.detail;
       const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
       button.addEventListener("click",()=>{
-        const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\\nالمقاسات المرجعية: "+item.size+"\\nالخامات: "+item.material+"\\nتفاصيل: "+item.detail+"\\n\\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
+        const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\nالمقاسات المرجعية: "+item.size+"\nالخامات: "+item.material+"\nتفاصيل: "+item.detail+"\n\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
         data.nodes.push(node);selectedId=node.id;activeGroupFilter="all";save();render();toast("اتضافت بطاقة الشغل لخريطة نسيج");
       });
       card.append(top,title,size,material,detail,button);host.append(card);
@@ -731,15 +731,15 @@
         const sides=16,vertices=[];
         for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);}
         for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
-        vertices.forEach(p=>{out+="v "+p.join(" ")+"\\n";});
-        out+="f "+Array.from({length:sides},(_,i)=>offset+i).reverse().join(" ")+"\\n";
-        out+="f "+Array.from({length:sides},(_,i)=>offset+sides+i).join(" ")+"\\n";
-        for(let k=0;k<sides;k++){const n=(k+1)%sides;out+="f "+[offset+k,offset+n,offset+sides+n,offset+sides+k].join(" ")+"\\n";}
+        vertices.forEach(p=>{out+="v "+p.join(" ")+"\n";});
+        out+="f "+Array.from({length:sides},(_,i)=>offset+i).reverse().join(" ")+"\n";
+        out+="f "+Array.from({length:sides},(_,i)=>offset+sides+i).join(" ")+"\n";
+        for(let k=0;k<sides;k++){const n=(k+1)%sides;out+="f "+[offset+k,offset+n,offset+sides+n,offset+sides+k].join(" ")+"\n";}
         offset+=sides*2;
       }else{
         const v=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
-        v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\\n";});
-        [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\\n";});
+        v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\n";});
+        [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\n";});
         offset+=8;
       }
     });
@@ -996,7 +996,7 @@
     const group = data.groups.find(item => item.id === id);
     if (!group) return;
     const count = data.nodes.filter(node => node.groupId === id).length;
-    const message = "هل تريد حذف مجموعة «" + group.name + "»؟\\n" +
+    const message = "هل تريد حذف مجموعة «" + group.name + "»؟\n" +
       "سيتم الاحتفاظ بـ " + count + " عنصر ونقلها إلى «بدون مجموعة».";
     if (!confirm(message)) return;
     data.groups = data.groups.filter(item => item.id !== id);
