@@ -660,8 +660,13 @@
   function modelProjectAddObject() {
     const type=$("modelPrimitive").value;
     const labels={box:"كتلة",plate:"لوح",beam:"عارضة",cylinder:"أسطوانة"};
-    const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55"};
+    const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55",rx:0,ry:0,rz:0};
     modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
+  }
+  function duplicateModelObject() {
+    const source=modelObjects.find(o=>o.id===selectedModelObjectId);if(!source)return;
+    const copy={...source,id:uid(),label:source.label+" - نسخة",x:source.x+Math.max(100,source.w/2),z:source.z+Math.max(100,source.d/2)};
+    modelObjects.push(copy);selectedModelObjectId=copy.id;renderModelDrawing();renderModelObjectEditor();save();toast("تم نسخ القطعة");
   }
   function modelProjectDeleteObject() {
     modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();toast("تم حذف الجسم");
@@ -674,7 +679,17 @@
     $("modelObjectLabel").value=object.label;
     $("modelDimX").value=object.w;$("modelDimY").value=object.h;$("modelDimZ").value=object.d;
     $("modelPosX").value=object.x;$("modelPosY").value=object.y;$("modelPosZ").value=object.z;
+    $("modelRotX").value=object.rx||0;$("modelRotY").value=object.ry||0;$("modelRotZ").value=object.rz||0;
     $("modelObjectColor").value=object.color||"#c49a55";
+  }
+  function transformModelVertex(point,o) {
+    let [x,y,z]=point;
+    x-=o.x;y-=o.y+(o.h/2);z-=o.z;
+    const rx=(o.rx||0)*Math.PI/180,ry=(o.ry||0)*Math.PI/180,rz=(o.rz||0)*Math.PI/180;
+    let ny=y*Math.cos(rx)-z*Math.sin(rx),nz=y*Math.sin(rx)+z*Math.cos(rx);y=ny;z=nz;
+    let nx=x*Math.cos(ry)+z*Math.sin(ry);nz=-x*Math.sin(ry)+z*Math.cos(ry);x=nx;z=nz;
+    nx=x*Math.cos(rz)-y*Math.sin(rz);ny=x*Math.sin(rz)+y*Math.cos(rz);x=nx;y=ny;
+    return [x+o.x,y+o.y+(o.h/2),z+o.z];
   }
   function projectModelPoint(x,y,z,angle,scale,cx,cy) {
     const a=angle*Math.PI/180, rx=x*Math.cos(a)-z*Math.sin(a), rz=x*Math.sin(a)+z*Math.cos(a);
@@ -695,15 +710,16 @@
     const faces=[];
     modelObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      const addVertex=p=>{const v=transformModelVertex([x+p[0],y+p[1],z+p[2]],o);out+="v "+v.join(" ")+"\\n";};
       if(o.type==="cylinder"){
         const sides=16,bottom=[],top=[];
         for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;bottom.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);top.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
-        faces.push({o,projected:top.map(p=>projectModelPoint(...p,modelCameraAngle,.075,450,360)),depth:y+h+x+z,shade:1,face:"top"});
-        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]],projected=quad.map(p=>projectModelPoint(...p,modelCameraAngle,.075,450,360));faces.push({o,projected,depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.72+(k%3)*.08,face:k});}
+        faces.push({o,projected:top.map(p=>projectModelPoint(...transformModelVertex(p,o),modelCameraAngle,.075,450,360)),depth:y+h+x+z,shade:1,face:"top"});
+        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]],projected=quad.map(p=>projectModelPoint(...transformModelVertex(p,o),modelCameraAngle,.075,450,360));faces.push({o,projected,depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.72+(k%3)*.08,face:k});}
       }else{
         const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
         const faceDefs=[{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}];
-        faceDefs.forEach(f=>{const projected=f.ids.map(k=>projectModelPoint(...pts[k],modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:f.ids[0]});});
+        faceDefs.forEach(f=>{const projected=f.ids.map(k=>projectModelPoint(...transformModelVertex(pts[k],o),modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:f.ids[0]});});
       }
     });
     faces.sort((a,b)=>a.depth-b.depth);
@@ -718,7 +734,9 @@
     const num=id=>Number($(id).value);
     const dims=[num("modelDimX"),num("modelDimY"),num("modelDimZ")],pos=[num("modelPosX"),num("modelPosY"),num("modelPosZ")];
     if(dims.some(v=>!Number.isFinite(v)||v<=0)||pos.some(v=>!Number.isFinite(v))){toast("راجع الأبعاد والمواقع المدخلة");return;}
-    o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;o.color=$("modelObjectColor").value;
+    const rotations=["modelRotX","modelRotY","modelRotZ"].map(id=>Number($(id).value));
+    if(rotations.some(v=>!Number.isFinite(v)||Math.abs(v)>360)){toast("زاوية الدوران لازم تكون بين -360 و360");return;}
+    o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
     renderModelDrawing();renderModelObjectEditor();save();
   }
   function exportModelObj() {
@@ -750,6 +768,7 @@
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
+    $("duplicateModelObjectBtn").addEventListener("click",duplicateModelObject);
     $("modelCameraAngle").addEventListener("input",e=>{modelCameraAngle=Number(e.target.value);renderModelDrawing();});
     $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;renderModelDrawing();});
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
