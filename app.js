@@ -1270,7 +1270,7 @@
     $("modelPartThickness").value=object.thickness??"";
     $("modelPartQuantity").value=object.quantity||1;
     $("modelPartCutLength").value=object.cutLength??Math.round(Math.max(object.w,object.h,object.d));
-    $("modelHoleSpec").value=object.holeSpec||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
+    $("modelHoleSpec").value=object.holeSpec||"";$("modelMountSpec").value=object.mountSpec||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
   }
   function renderModelCutList() {
     const host=$("modelCutList");if(!host)return;
@@ -1286,54 +1286,74 @@
   function renderManufacturingDrawings() {
     const root=$("manufacturingDrawing");if(!root)return;
     root.replaceChildren();
-    const addText=(parent,x,y,value,size=14,anchor="middle",weight="400")=>{
-      const t=svgEl("text",{x,y,fill:"#e8edf5","font-size":size,"text-anchor":anchor,"font-weight":weight});t.textContent=value;parent.appendChild(t);
+    const addText=(parent,x,y,value,size=14,anchor="middle",weight="400",fill="#e8edf5")=>{
+      const t=svgEl("text",{x,y,fill,"font-size":size,"text-anchor":anchor,"font-weight":weight});t.textContent=value;parent.appendChild(t);
     };
-    const title=svgEl("text",{x:24,y:28,fill:"#ffd166","font-size":"18","font-weight":"700"});title.textContent="رسومات التصنيع الأولية — جميع الأبعاد بالمليمتر";root.appendChild(title);
+    const line=(parent,x1,y1,x2,y2,stroke="#9bb1c8",width=1,dash="")=>parent.appendChild(svgEl("line",{x1,y1,x2,y2,stroke,"stroke-width":width,...(dash?{"stroke-dasharray":dash}:{})}));
+    const title=svgEl("text",{x:24,y:28,fill:"#ffd166","font-size":"18","font-weight":"700"});title.textContent="المساقط الهندسية الثلاثة — الأبعاد بالمليمتر";root.appendChild(title);
     if(!modelObjects.length){addText(root,450,360,"أضف قطعًا إلى المجسم لعرض المساقط",18);return;}
+    const bounds=modelObjects.map(o=>{
+      const pts=[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]].map(c=>transformModelVertex([o.x+c[0]*o.w/2,o.y+c[1]*o.h,o.z+c[2]*o.d/2],o));
+      return {o,min:[0,1,2].map(k=>Math.min(...pts.map(p=>p[k]))),max:[0,1,2].map(k=>Math.max(...pts.map(p=>p[k])))};
+    });
     const views=[
       {title:"المسقط الأمامي (X × Y)",x:25,y:55,w:410,h:285,horizontal:0,vertical:1},
       {title:"المسقط الجانبي (Z × Y)",x:465,y:55,w:410,h:285,horizontal:2,vertical:1},
       {title:"المسقط العلوي (X × Z)",x:25,y:385,w:410,h:285,horizontal:0,vertical:2}
     ];
-    const bounds=modelObjects.map(o=>{
-      const pts=[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]].map(c=>transformModelVertex([o.x+c[0]*o.w/2,o.y+c[1]*o.h,o.z+c[2]*o.d/2],o));
-      return {o,min:[0,1,2].map(k=>Math.min(...pts.map(p=>p[k]))),max:[0,1,2].map(k=>Math.max(...pts.map(p=>p[k])))};
-    });
     views.forEach(v=>{
       const g=svgEl("g");root.appendChild(g);
       g.appendChild(svgEl("rect",{x:v.x,y:v.y,width:v.w,height:v.h,rx:8,fill:"#101d2c",stroke:"#53677d","stroke-width":"1.2"}));
       addText(g,v.x+14,v.y+24,v.title,15,"start","700");
       const hmin=Math.min(...bounds.map(b=>b.min[v.horizontal])),hmax=Math.max(...bounds.map(b=>b.max[v.horizontal]));
       const vmin=Math.min(...bounds.map(b=>b.min[v.vertical])),vmax=Math.max(...bounds.map(b=>b.max[v.vertical]));
-      const pad=42,scale=Math.min((v.w-pad*2)/Math.max(1,hmax-hmin),(v.h-pad*2-25)/Math.max(1,vmax-vmin));
-      const ox=v.x+(v.w-(hmax-hmin)*scale)/2,oy=v.y+v.h-30-(v.h-65-(vmax-vmin)*scale)/2;
+      const pad=48,scale=Math.min((v.w-pad*2)/Math.max(1,hmax-hmin),(v.h-pad*2-28)/Math.max(1,vmax-vmin));
+      const ox=v.x+(v.w-(hmax-hmin)*scale)/2,oy=v.y+v.h-43-(v.h-75-(vmax-vmin)*scale)/2;
+      const mapPoint=p=>[ox+(p[v.horizontal]-hmin)*scale,oy-(p[v.vertical]-vmin)*scale];
       bounds.forEach((b,i)=>{
         const x=ox+(b.min[v.horizontal]-hmin)*scale,y=oy-(b.max[v.vertical]-vmin)*scale;
         const w=Math.max(3,(b.max[v.horizontal]-b.min[v.horizontal])*scale),h=Math.max(3,(b.max[v.vertical]-b.min[v.vertical])*scale);
-        g.appendChild(svgEl("rect",{x,y,width:w,height:h,fill:b.o.color||"#c49a55","fill-opacity":".22",stroke:b.o.id===selectedModelObjectId?"#ffd166":"#9bb1c8","stroke-width":b.o.id===selectedModelObjectId?"2.5":"1.3"}));
+        g.appendChild(svgEl("rect",{x,y,width:w,height:h,fill:b.o.color||"#c49a55","fill-opacity":".22",stroke:b.o.id===selectedModelObjectId?"#ffd166":"#9bb1c8","stroke-width":b.o.id===selectedModelObjectId?"2.5":"1.1"}));
         const cx=x+w/2,cy=y+h/2;
-        g.appendChild(svgEl("circle",{cx,cy,r:11,fill:"#ffd166",stroke:"#182536","stroke-width":"1"}));
-        addText(g,cx,cy+4,String(i+1),11,"middle","700");
+        g.appendChild(svgEl("circle",{cx,cy,r:10,fill:"#ffd166",stroke:"#182536","stroke-width":"1"}));addText(g,cx,cy+4,String(i+1),10,"middle","700","#172334");
+        // Hole coordinates are explicit local offsets from the part centre: x,y,z,diameter; entries separated by semicolons.
+        String(b.o.holeSpec||"").split(";").forEach(entry=>{
+          const m=entry.trim().match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*$/);
+          if(!m)return;
+          const local=[Number(m[1]),Number(m[2]),Number(m[3]),Number(m[4])];
+          const world=transformModelVertex([b.o.x+local[0],b.o.y+local[1],b.o.z+local[2]],b.o);
+          const [hx,hy]=mapPoint(world),radius=Math.max(3,local[3]*scale/2);
+          g.appendChild(svgEl("circle",{cx:hx,cy:hy,r:radius,fill:"none",stroke:"#ffcf66","stroke-width":"1.6"}));
+          line(g,hx-5,hy,hx+5,hy,"#ffcf66",1);line(g,hx,hy-5,hx,hy+5,"#ffcf66",1);
+        });
       });
-      addText(g,v.x+v.w/2,v.y+v.h-9,""+Math.round(hmax-hmin)+" مم × "+Math.round(vmax-vmin)+" مم",11,"middle","700");
+      // Overall dimension lines with extension ticks.
+      const dimY=v.y+v.h-30,dimX=v.x+v.w-18;
+      line(g,ox,dimY,ox+(hmax-hmin)*scale,dimY,"#ffd166",1);
+      line(g,ox,dimY-5,ox,dimY+5,"#ffd166",1);line(g,ox+(hmax-hmin)*scale,dimY-5,ox+(hmax-hmin)*scale,dimY+5,"#ffd166",1);
+      addText(g,v.x+v.w/2,dimY-5,Math.round(hmax-hmin)+" مم",10,"middle","700","#ffd166");
+      line(g,dimX,oy-(vmax-vmin)*scale,dimX,oy,"#ffd166",1);
+      line(g,dimX-5,oy-(vmax-vmin)*scale,dimX+5,oy-(vmax-vmin)*scale,"#ffd166",1);line(g,dimX-5,oy,dimX+5,oy,"#ffd166",1);
+      addText(g,dimX-5,oy-(vmax-vmin)*scale/2,Math.round(vmax-vmin)+" مم",9,"end","700","#ffd166");
+      addText(g,v.x+12,v.y+v.h-8,"الثقوب المرسومة: إحداثيات صريحة فقط",9,"start","400","#aebed0");
     });
     const panel=svgEl("g");root.appendChild(panel);
     panel.appendChild(svgEl("rect",{x:465,y:385,width:410,height:285,rx:8,fill:"#101d2c",stroke:"#53677d","stroke-width":"1.2"}));
-    addText(panel,480,410,"تفكيك وترقيم القطع",15,"start","700");
-    const shown=modelObjects.slice(0,8),rowH= Math.min(27,215/Math.max(1,shown.length));
+    addText(panel,480,410,"ترقيم القطع وربطها بالتجميعة",15,"start","700");
+    const shown=modelObjects.slice(0,8),rowH=Math.min(25,215/Math.max(1,shown.length));
     shown.forEach((o,i)=>{
       const y=438+i*rowH;
-      panel.appendChild(svgEl("circle",{cx:490,cy:y-4,r:10,fill:"#ffd166"}));addText(panel,490,y,String(i+1),10,"middle","700");
-      addText(panel,510,y,o.label+" — "+Math.round(o.w)+"×"+Math.round(o.h)+"×"+Math.round(o.d)+" مم",11,"start");
-      if(i<shown.length-1)panel.appendChild(svgEl("line",{x1:490,y1:y+8,x2:490,y2:y+rowH-7,stroke:"#8da4bc","stroke-width":"1.2","stroke-dasharray":"3 3"}));
+      panel.appendChild(svgEl("circle",{cx:490,cy:y-4,r:10,fill:"#ffd166"}));addText(panel,490,y,String(i+1),10,"middle","700","#172334");
+      addText(panel,510,y,o.label+" — "+Math.round(o.w)+"×"+Math.round(o.h)+"×"+Math.round(o.d)+" مم",10,"start");
+      if(i<shown.length-1)line(panel,490,y+8,490,y+rowH-7,"#8da4bc",1,"3 3");
     });
     if(modelObjects.length>8)addText(panel,480,655,"وباقي القطع: "+(modelObjects.length-8)+" قطعة",11,"start");
-    addText(panel,24,695,"الترقيم حسب ترتيب القطع في قائمة الأجسام؛ هذا تفكيك تعريفي وليس محاكاة فصل هندسية كاملة.",11,"start");
+    addText(panel,24,695,"لا تُرسم ثقوب تخمينية؛ صيغة الثقب: X,Y,Z,القطر مم — إزاحات من مركز القطعة، وافصل بين الثقوب بفاصلة منقوطة.",10,"start");
     const list=$("modelManufacturingList");if(!list)return;
     const safe=value=>String(value??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-    list.innerHTML="<div class='table-wrap'><table><thead><tr><th>رقم</th><th>القطعة</th><th>الثقوب ومراكزها</th><th>اللحامات</th><th>نوع الوصلة / التجميع</th></tr></thead><tbody>"+modelObjects.map((o,i)=>"<tr><td>"+(i+1)+"</td><td>"+safe(o.label)+"</td><td>"+safe(o.holeSpec||"غير محدد")+"</td><td>"+safe(o.weldSpec||"غير محدد")+"</td><td>"+safe(o.jointSpec||"غير محدد")+"</td><td>"+safe(o.componentSpec||"—")+"</td></tr>").join("")+"</tbody></table></div>";
+    list.innerHTML="<div class='table-wrap'><table><thead><tr><th>رقم</th><th>القطعة</th><th>الثقوب ومراكزها</th><th>قاعدة المحرك / التثبيت</th><th>اللحامات</th><th>نوع الوصلة / مكان التركيب</th><th>المكونات</th></tr></thead><tbody>"+modelObjects.map((o,i)=>"<tr><td>"+(i+1)+"</td><td>"+safe(o.label)+"</td><td>"+safe(o.holeSpec||"غير محدد")+"</td><td>"+safe(o.mountSpec||"غير محدد — يلزم تحديد أبعاد القاعدة ونمط المسامير")+"</td><td>"+safe(o.weldSpec||"غير محدد")+"</td><td>"+safe(o.jointSpec||"غير محدد")+"</td><td>"+safe(o.componentSpec||"—")+"</td></tr>").join("")+"</tbody></table></div>";
   }
+
   function exportModelManufacturingReport() {
     if(!modelObjects.length){toast("لا توجد قطع لتصدير تقريرها");return;}
     const quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
@@ -1550,7 +1570,7 @@
     if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
     modelHistoryPush();o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
     o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
-    o.holeSpec=$("modelHoleSpec").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
+    o.holeSpec=$("modelHoleSpec").value.trim();o.mountSpec=$("modelMountSpec").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
     renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
   }
   function exportModelObj() {
