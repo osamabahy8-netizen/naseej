@@ -133,3 +133,7 @@
 .cut-table th,.cut-table td{padding:10px;text-align:right;border-bottom:1px solid #30445d;white-space:nowrap}
 .cut-table th{color:#e5c27e;background:#0d1726}
 @media(max-width:700px){.drawing-grid{grid-template-columns:1fr}.cost-inputs,.material-summary{grid-template-columns:1fr}}
+
+
+/* Independent dimensions for each selected component */
+.part-dimensions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.part-dimensions label{font-size:10px!important;line-height:1.5}.part-dimensions input{min-width:0}@media(max-width:420px){.part-dimensions{grid-template-columns:1fr}}
