@@ -39,41 +39,64 @@
   let activeDrag = null;
   let suppressNodeClickUntil = 0;
   svg.addEventListener("pointerdown", event => {
-    if (linking || event.button !== 0) return;
+    if (linking || (event.pointerType === "mouse" && event.button !== 0)) return;
     const group = event.target.closest && event.target.closest("g.node");
     if (!group) return;
     const node = data.nodes.find(item => item.id === group.dataset.nodeId);
     if (!node) return;
-    activeDrag = { id: node.id, startX: event.clientX, startY: event.clientY, moved: false };
-    svg.setPointerCapture(event.pointerId);
+    activeDrag = {
+      id: node.id, pointerId: event.pointerId,
+      startX: event.clientX, startY: event.clientY,
+      moved: false
+    };
+    try { svg.setPointerCapture(event.pointerId); } catch (_) {}
+    event.preventDefault();
   });
   svg.addEventListener("pointermove", event => {
-    if (!activeDrag) return;
+    if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
     const dx = event.clientX - activeDrag.startX, dy = event.clientY - activeDrag.startY;
     if (!activeDrag.moved && Math.hypot(dx,dy) < 5) return;
     activeDrag.moved = true;
+    event.preventDefault();
     const rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const node = data.nodes.find(item => item.id === activeDrag.id);
     if (!node) return;
     node.xRatio = Math.max(.07, Math.min(.93, (event.clientX - rect.left) / rect.width));
     node.yRatio = Math.max(.09, Math.min(.91, (event.clientY - rect.top) / rect.height));
-    suppressNodeClickUntil = Date.now() + 350;
-    render();
+    const x = node.xRatio * rect.width, y = node.yRatio * rect.height;
+    const group = svg.querySelector('g.node[data-node-id="' + activeDrag.id + '"]');
+    if (group) group.setAttribute("transform", "translate(" + x + " " + y + ")");
+    const points = positions(), byId = new Map(points.map(p => [p.id,p]));
+    svg.querySelectorAll("line.edge").forEach(line => {
+      const a = byId.get(line.dataset.from), b = byId.get(line.dataset.to);
+      if (a && b) {
+        line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+        line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+      }
+    });
+    suppressNodeClickUntil = Date.now() + 500;
   });
-  function finishDrag() {
-    if (!activeDrag) return;
-    if (activeDrag.moved) { save(); toast("تم حفظ مكان الفكرة"); }
+  function finishDrag(event) {
+    if (!activeDrag || (event && event.pointerId !== activeDrag.pointerId)) return;
+    const moved = activeDrag.moved;
     activeDrag = null;
+    if (moved) { save(); toast("تم حفظ مكان الفكرة"); }
   }
   svg.addEventListener("pointerup", finishDrag);
   svg.addEventListener("pointercancel", finishDrag);
+  svg.addEventListener("lostpointercapture", finishDrag);
 
   function render() {
     svg.replaceChildren();
     const points = positions(), byId = new Map(points.map(p => [p.id,p]));
     data.edges.forEach(edge => {
       const a = byId.get(edge.from), b = byId.get(edge.to);
-      if (a && b) svg.appendChild(svgEl("line", {x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"edge"}));
+      if (a && b) {
+        const line = svgEl("line", {x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"edge"});
+        line.dataset.from = edge.from; line.dataset.to = edge.to;
+        svg.appendChild(line);
+      }
     });
     points.forEach(node => {
       const g = svgEl("g", {class:"node " + (node.type === "project" ? "project" : "idea") + (node.id === selectedId ? " selected" : ""), transform:`translate(${node.x} ${node.y})`});
