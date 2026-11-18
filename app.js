@@ -584,41 +584,106 @@
   }
 
   function openCatalogItemInModel(item){
-    const isClothingRail=item.id==="fashion-rail";
-    const width=isClothingRail?1050:900;
-    const height=isClothingRail?1600:1200;
-    const depth=isClothingRail?525:450;
-    const tube=30, plate=24;
     const color=$("standColor")?.value||"#c49a55";
     const objects=[];
-    const add=(label,x,y,z,w,h,d,partColor=color)=>objects.push({id:uid(),type:"box",label,x,y,z,w,h,d,color:partColor,rx:0,ry:0,rz:0});
-    if(isClothingRail){
+    const add=(label,x,y,z,w,h,d,partColor=color,type="box",rx=0,ry=0,rz=0)=>objects.push({id:uid(),type,label,x,y,z,w,h,d,color:partColor,rx,ry,rz});
+    const dark="#263342",glass="#6e9eae",rubber="#20252b",metal="#aeb9c5",light="#f3d98a";
+    if(item.id==="fashion-rail"){
+      const width=1050,height=1600,depth=525,tube=30,plate=24,px=width/2-tube/2,pz=depth/2-tube/2;
       add("القاعدة",0,0,0,width,plate,depth);
-      const px=width/2-tube/2,pz=depth/2-tube/2;
-      add("القائم الأمامي الأيسر",-px,plate,-pz,tube,height-plate,tube);
-      add("القائم الأمامي الأيمن",px,plate,-pz,tube,height-plate,tube);
-      add("القائم الخلفي الأيسر",-px,plate,pz,tube,height-plate,tube);
-      add("القائم الخلفي الأيمن",px,plate,pz,tube,height-plate,tube);
-      add("عارضة الإطار الأمامية",0,height-tube,-pz,width,tube,tube);
-      add("عارضة الإطار الخلفية",0,height-tube,pz,width,tube,tube);
-      add("عارضة الجانب الأيسر",-px,height-tube,0,tube,tube,depth);
-      add("عارضة الجانب الأيمن",px,height-tube,0,tube,tube,depth);
-      add("ماسورة تعليق الملابس",0,height-2*tube,0,width-2*tube,24,24,"#aeb9c5");
+      add("القائم الأمامي الأيسر",-px,plate,-pz,tube,height-plate,tube);add("القائم الأمامي الأيمن",px,plate,-pz,tube,height-plate,tube);
+      add("القائم الخلفي الأيسر",-px,plate,pz,tube,height-plate,tube);add("القائم الخلفي الأيمن",px,plate,pz,tube,height-plate,tube);
+      add("عارضة الإطار الأمامية",0,height-tube,-pz,width,tube,tube);add("عارضة الإطار الخلفية",0,height-tube,pz,width,tube,tube);
+      add("عارضة الجانب الأيسر",-px,height-tube,0,tube,tube,depth);add("عارضة الجانب الأيمن",px,height-tube,0,tube,tube,depth);
+      add("ماسورة تعليق الملابس",0,height-2*tube,0,width-2*tube,24,24,metal);
+    }else if(item.id.startsWith("toycar-")&&item.id!=="toycar-track"){
+      const ride=item.id==="toycar-rideon"||item.id==="toycar-pedal";
+      const L=ride?1100:320,W=ride?620:190,H=ride?520:125;
+      const wheel=ride?185:66, wheelW=ride?75:28, axleX=L*.31, axleZ=W*.43, baseY=wheel*.48;
+      add("الشاسيه السفلي",0,baseY+35,0,L*.72,70,W*.58,dark);
+      add("أرضية المقصورة",0,baseY+90,0,L*.58,28,W*.62,metal);
+      add("غطاء الجسم السفلي",0,baseY+120,0,L*.86,ride?145:48,W*.88,color);
+      add("غطاء المقدمة",L*.29,baseY+190,0,L*.28,ride?90:35,W*.82,color);
+      add("المصد الأمامي",L*.47,baseY+95,0,ride?48:22,ride?58:28,W*.96,dark);
+      add("المصد الخلفي",-L*.45,baseY+95,0,ride?42:20,W*.9,ride?48:24,dark);
+      add("الكابينة", -L*.08,baseY+(ride?245:75),0,L*.40,ride?190:45,W*.66,color);
+      add("السقف", -L*.08,baseY+(ride?435:113),0,L*.36,ride?28:12,W*.68,dark);
+      add("الزجاج الأمامي",L*.08,baseY+(ride?300:90),0,L*.035,ride?125:27,W*.60,glass);
+      add("الزجاج الخلفي",-L*.25,baseY+(ride?300:90),0,L*.03,ride?115:25,W*.58,glass);
+      add("المقعد", -L*.12,baseY+(ride?160:105),0,L*.20,ride?85:24,W*.42,dark);
+      if(ride)add("عجلة القيادة",L*.08,baseY+245,0,95,18,18,dark,"cylinder",90);
+      [-1,1].forEach(side=>{
+        [-1,1].forEach(front=>{
+          const x=front*axleX,z=side*axleZ;
+          add((front>0?"العجلة الأمامية ":"العجلة الخلفية ")+(side>0?"اليمنى":"اليسرى"),x,baseY-wheel/2,z,wheel,wheelW,wheel,rubber,"cylinder",90);
+          add("جنط العجلة",x,baseY-wheel/2,z+side*(wheelW*.52),wheel*.48,wheelW*.18,wheel*.48,metal,"cylinder",90);
+        });
+      });
+      add("المصباح الأمامي الأيمن",L*.45,baseY+170,W*.31,ride?55:20,ride?38:12,ride?48:18,light);
+      add("المصباح الأمامي الأيسر",L*.45,baseY+170,-W*.31,ride?55:20,ride?38:12,ride?48:18,light);
+      add("المحور الأمامي",L*.31,baseY-wheel/2,0,28,28,W*.88,metal);
+      add("المحور الخلفي",-L*.31,baseY-wheel/2,0,28,28,W*.88,metal);
+    }else if(item.id==="toyair-plane"||item.id==="toyair-rc"){
+      const L=item.id==="toyair-plane"?650:900,span=item.id==="toyair-plane"?780:1050;
+      add("جسم الطائرة",0,110,0,L,72,74,"#e8e2d2");
+      add("مقدمة الطائرة",L*.39,110,0,150,60,62,"#e8e2d2");
+      add("الجناح الرئيسي",0,155,0,170,24,span,"#d7dce2");
+      add("الجناح الخلفي", -L*.36,155,0,95,18,span*.34,"#d7dce2");
+      add("الزعنفة الرأسية",-L*.36,205,0,105,110,20,"#d7dce2");
+      add("قمرة القيادة",L*.04,190,0,L*.22,72,66,glass);
+      add("المروحة — الشفرة الأولى",L*.49,112,0,22,18,220,metal,"box",0,0,0);
+      add("المروحة — الشفرة الثانية",L*.49,112,0,220,18,22,metal,"box",0,0,0);
+      add("قاعدة الهبوط الأمامية",L*.12,20,0,22,90,22,dark);
+      add("قاعدة الهبوط الخلفية",-L*.27,20,0,22,90,22,dark);
+    }else if(item.id.startsWith("toyair-quad")){
+      const arm=220,span=580,guard=130;
+      add("اللوح المركزي السفلي",0,80,0,220,28,180,dark);
+      add("غطاء الإلكترونيات",0,110,0,180,45,145,color);
+      add("ذراع أمامي أيمن",arm/2,80,arm/2,span/2,28,34,metal,"box",0,45,0);
+      add("ذراع أمامي أيسر",arm/2,80,-arm/2,span/2,28,34,metal,"box",0,-45,0);
+      add("ذراع خلفي أيمن",-arm/2,80,arm/2,span/2,28,34,metal,"box",0,-45,0);
+      add("ذراع خلفي أيسر",-arm/2,80,-arm/2,span/2,28,34,metal,"box",0,45,0);
+      [[arm,arm],[arm,-arm],[-arm,arm],[-arm,-arm]].forEach((p,i)=>{
+        const [x,z]=p;
+        add("محرك "+(i+1),x,105,z,62,42,62,dark,"cylinder");
+        add("شفرة مروحة "+(i+1)+" أ",x,150,z,18,8,guard*1.7,metal);
+        add("شفرة مروحة "+(i+1)+" ب",x,150,z,guard*1.7,8,18,metal);
+        add("حاجز حماية "+(i+1)+" — أمامي",x,145,z-guard,guard*1.8,12,12,color);
+        add("حاجز حماية "+(i+1)+" — خلفي",x,145,z+guard,guard*1.8,12,12,color);
+        add("حاجز حماية "+(i+1)+" — يمين",x+guard,145,z,12,12,guard*2,color);
+        add("حاجز حماية "+(i+1)+" — يسار",x-guard,145,z,12,12,guard*2,color);
+      });
+      add("وحدة البطارية",0,45,-35,125,35,95,"#394c62");
+      add("قاعدة الهبوط",0,15,0,300,12,230,dark);
+    }else if(item.cat==="fashion"||item.cat==="retail"||item.cat==="cafe"||item.cat==="mall"){
+      const w=1100,d=520,h=900,th=35;
+      add("القاعدة",0,0,0,w,th,d,dark);
+      add("الجانب الأيمن",w/2-th/2,th,0,th,h-th,d,color);
+      add("الجانب الأيسر",-w/2+th/2,th,0,th,h-th,d,color);
+      add("اللوح الخلفي",0,th,-d/2+th/2,w,h-th,th,color);
+      add("سطح المنتج",0,h-th,0,w,th,d,color);
+      if(item.id.includes("rail")||item.id.includes("fashion")){
+        add("رف سفلي",0,260,0,w-th*2,22,d-th*2,color);
+        add("رف أوسط",0,520,0,w-th*2,22,d-th*2,color);
+        add("عارضة تعليق",0,h-100,d*.22,w-th*2,25,25,metal);
+      }else{
+        add("رف داخلي أول",0,300,0,w-th*2,22,d-th*2,color);
+        add("رف داخلي ثان",0,600,0,w-th*2,22,d-th*2,color);
+      }
     }else{
-      add(item.name,0,0,0,width,height,depth);
+      add("القاعدة الرئيسية",0,0,0,900,90,450,color);
+      add("الجسم الرئيسي",0,90,0,900,720,450,color);
+      add("لوح علوي",0,810,0,940,24,490,metal);
     }
     modelObjects=objects;
     selectedModelObjectId=objects[0]?.id||null;
     modelProjectName=item.name;
     window.activeModelProjectId=null;
     $("modelName").value=modelProjectName;
-    $("modelCameraAngle").value=35;
-    modelCameraAngle=35;
-    const modelTab=document.querySelector('.main-tab[data-view="modelView"]');
-    if(modelTab)modelTab.click();
-    renderModelDrawing();
-    renderModelObjectEditor();
-    toast("فتحنا "+item.name+" في المرسم ثلاثي الأبعاد");
+    $("modelCameraAngle").value=35;modelCameraAngle=35;
+    const modelTab=document.querySelector('.main-tab[data-view="modelView"]');if(modelTab)modelTab.click();
+    renderModelDrawing();renderModelObjectEditor();
+    toast("فتحنا "+item.name+" كمكونات ثلاثية الأبعاد قابلة للتعديل");
   }
 
   document.querySelectorAll("[data-material-3d]").forEach(button=>{
@@ -777,33 +842,49 @@
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
+    const corners=[];
+    modelObjects.forEach(o=>{
+      const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      [[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]].forEach(c=>{
+        corners.push(transformModelVertex([x+c[0]*w/2,y+c[1]*h,z+c[2]*d/2],o));
+      });
+    });
+    if(!corners.length)corners.push([-500,0,-300],[500,900,300]);
+    const raw=corners.map(p=>projectModelPoint(p[0],p[1],p[2],modelCameraAngle,1,0,0));
+    const minX=Math.min(...raw.map(p=>p[0])),maxX=Math.max(...raw.map(p=>p[0]));
+    const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
+    const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
+    const scale=Math.min(.8,500/spanX,420/spanY);
+    const cx=450-(minX+maxX)*scale/2,cy=315-(minY+maxY)*scale/2;
+    const project=(x,y,z)=>projectModelPoint(x,y,z,modelCameraAngle,scale,cx,cy);
     const grid=document.createElementNS(NS,"g");
     for(let n=-8;n<=8;n++){
-      const p1=projectModelPoint(n*500,0,-4000,modelCameraAngle,.075,450,360),p2=projectModelPoint(n*500,0,4000,modelCameraAngle,.075,450,360);
-      const p3=projectModelPoint(-4000,0,n*500,modelCameraAngle,.075,450,360),p4=projectModelPoint(4000,0,n*500,modelCameraAngle,.075,450,360);
-      [ [p1,p2],[p3,p4] ].forEach(pair=>{const line=svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#49627d","stroke-width":"1.5"});grid.appendChild(line);});
+      const p1=project(n*500,0,-4000),p2=project(n*500,0,4000),p3=project(-4000,0,n*500),p4=project(4000,0,n*500);
+      [[p1,p2],[p3,p4]].forEach(pair=>grid.appendChild(svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#49627d","stroke-width":"1.2"})));
     }
     root.appendChild(grid);
     const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
-    axes.forEach(axis=>{const p=projectModelPoint(...axis.a,modelCameraAngle,.075,450,360),q=projectModelPoint(...axis.b,modelCameraAngle,.075,450,360);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"4"}));const t=svgEl("text",{x:q[0]+6,y:q[1]-5,fill:axis.c,"font-size":"15"});t.textContent=axis.t;root.appendChild(t);});
+    axes.forEach(axis=>{const p=project(...axis.a),q=project(...axis.b);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+5,y:q[1]-5,fill:axis.c,"font-size":"14"});t.textContent=axis.t;root.appendChild(t);});
     const faces=[];
     modelObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
-      const addVertex=p=>{const v=transformModelVertex([x+p[0],y+p[1],z+p[2]],o);out+="v "+v.join(" ")+"\\n";};
       if(o.type==="cylinder"){
-        const sides=16,bottom=[],top=[];
+        const sides=24,bottom=[],top=[];
         for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;bottom.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);top.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
-        faces.push({o,projected:top.map(p=>projectModelPoint(...transformModelVertex(p,o),modelCameraAngle,.075,450,360)),depth:y+h+x+z,shade:1,face:"top"});
-        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]],projected=quad.map(p=>projectModelPoint(...transformModelVertex(p,o),modelCameraAngle,.075,450,360));faces.push({o,projected,depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.72+(k%3)*.08,face:k});}
+        faces.push({o,projected:top.map(p=>project(...transformModelVertex(p,o))),depth:y+h+x+z,shade:1});
+        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]];faces.push({o,projected:quad.map(p=>project(...transformModelVertex(p,o))),depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.68+(k%4)*.07});}
       }else{
         const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
-        const faceDefs=[{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}];
-        faceDefs.forEach(f=>{const projected=f.ids.map(k=>projectModelPoint(...transformModelVertex(pts[k],o),modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:f.ids[0]});});
+        [{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}].forEach(f=>{
+          faces.push({o,projected:f.ids.map(k=>project(...transformModelVertex(pts[k],o))),depth:f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4,shade:f.shade});
+        });
       }
     });
     faces.sort((a,b)=>a.depth-b.depth);
-    faces.forEach(f=>{const poly=svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,"stroke":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"3":"1.5","data-object-id":f.o.id,class:"model-object-face"});root.appendChild(poly);});
-    const labels=svgEl("g");modelObjects.forEach(o=>{const p=projectModelPoint(o.x,o.y+o.h+70,o.z,modelCameraAngle,.075,450,360),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"13","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});root.appendChild(labels);
+    faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
+    const labels=svgEl("g");
+    modelObjects.forEach(o=>{const p=project(o.x,o.y+o.h+35,o.z),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"11","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});
+    root.appendChild(labels);
     const list=$("modelObjectList");list.innerHTML="";
     modelObjects.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="model-object-choice"+(o.id===selectedModelObjectId?" active":"");b.textContent=o.label;b.addEventListener("click",()=>{selectedModelObjectId=o.id;renderModelDrawing();renderModelObjectEditor();});list.appendChild(b);});
     $("modelPreviewName").textContent=modelProjectName;
