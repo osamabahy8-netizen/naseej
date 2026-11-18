@@ -132,8 +132,13 @@
             <strong id="selectedPartTitle">القطعة المحددة</strong>
             <label for="partCustomName">اسم القطعة</label><input id="partCustomName" maxlength="60">
             <label for="partCustomMaterial">الخامة / المقطع</label><input id="partCustomMaterial" maxlength="80" placeholder="مثال: ماسورة 3×3 سم، سمك 1 مم">
+            <div class="part-dimensions">
+              <label for="partDimLength">الطول (مم)</label><input id="partDimLength" type="number" min="1" max="3000" step="1">
+              <label id="partDimWidthLabel" for="partDimWidth">العرض / العمق (مم)</label><input id="partDimWidth" type="number" min="1" max="3000" step="1">
+              <label id="partDimThicknessLabel" for="partDimThickness">السُمك (مم)</label><input id="partDimThickness" type="number" min="1" max="3000" step="1">
+            </div>
             <label for="partCustomNotes">ملاحظات التعديل أو الاستبدال</label><textarea id="partCustomNotes" rows="2" maxlength="400"></textarea>
-            <button type="button" id="savePartBtn" class="button button-primary">حفظ بيانات القطعة</button>
+            <button type="button" id="savePartBtn" class="button button-primary">حفظ أبعاد ومواصفات القطعة</button>
           </div>
         </div>
         <div id="referenceImageBox" class="reference-image-box" hidden><h4>الصورة المرجعية</h4><img id="savedReferenceImage" alt="الصورة المرجعية المحفوظة"></div>
