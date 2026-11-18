@@ -924,6 +924,91 @@
     const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55",rx:0,ry:0,rz:0};
     modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
   }
+  const standModelLibrary = [
+    {id:"single-rail",name:"استاند ملابس مفرد",category:"ملابس",description:"قاعدة وأربع قوائم علوية مع ماسورة تعليق",parts:[
+      ["قاعدة سفلية",600,35,420,0,0,0,"صاج قاعدة","حديد",2],
+      ["قائم يمين",30,1450,30,285,35,195,"ماسورة مربعة 3×3","حديد",1],
+      ["قائم يسار",30,1450,30,-285,35,195,"ماسورة مربعة 3×3","حديد",1],
+      ["عارضة تعليق",570,30,30,0,1435,195,"ماسورة تعليق","حديد",1]
+    ]},
+    {id:"double-rail",name:"استاند ملابس مزدوج",category:"ملابس",description:"صفا تعليق متوازيان مع قاعدة وأعمدة",parts:[
+      ["قاعدة",850,35,520,0,0,0,"صاج قاعدة","حديد",2],
+      ["قائم أمامي يمين",30,1450,30,400,35,-225,"ماسورة مربعة 3×3","حديد",1],
+      ["قائم أمامي يسار",30,1450,30,-400,35,-225,"ماسورة مربعة 3×3","حديد",1],
+      ["قائم خلفي يمين",30,1450,30,400,35,225,"ماسورة مربعة 3×3","حديد",1],
+      ["قائم خلفي يسار",30,1450,30,-400,35,225,"ماسورة مربعة 3×3","حديد",1],
+      ["عارضة أمامية",800,30,30,0,1435,-225,"ماسورة تعليق","حديد",1],
+      ["عارضة خلفية",800,30,30,0,1435,225,"ماسورة تعليق","حديد",1]
+    ]},
+    {id:"four-way",name:"استاند أربع اتجاهات",category:"ملابس",description:"عمود مركزي وأربع أذرع عرض",parts:[
+      ["قاعدة",420,35,420,0,0,0,"صاج قاعدة","حديد",1],
+      ["عمود مركزي",40,1500,40,0,35,0,"ماسورة مربعة 4×4","حديد",1],
+      ["ذراع أمامي",650,25,25,0,1450,-320,"ماسورة تعليق","حديد",1],
+      ["ذراع خلفي",650,25,25,0,1450,320,"ماسورة تعليق","حديد",1],
+      ["ذراع يمين",25,25,650,320,1450,0,"ماسورة تعليق","حديد",1],
+      ["ذراع يسار",25,25,650,-320,1450,0,"ماسورة تعليق","حديد",1]
+    ]},
+    {id:"wall-rack",name:"استاند جداري",category:"ملابس",description:"لوح خلفي وحاملان وذراع تعليق",parts:[
+      ["لوح خلفي",900,1200,35,0,600,0,"لوح تثبيت","حديد",1],
+      ["حامل جانبي يمين",35,500,35,380,350,35,"قطاع مربع","حديد",1],
+      ["حامل جانبي يسار",35,500,35,-380,350,35,"قطاع مربع","حديد",1],
+      ["ماسورة تعليق",780,30,30,0,850,260,"ماسورة تعليق","حديد",1]
+    ]},
+    {id:"nesting-table",name:"طقم طاولات عرض متداخلة",category:"عرض",description:"ثلاث طاولات عرض بأحجام مختلفة",parts:[
+      ["سطح الطاولة الكبيرة",900,35,600,0,900,0,"خشب أو صاج","خشب",1],
+      ["قاعدة الطاولة الكبيرة",35,900,35,-400,0,-250,"قطاع مربع","حديد",1],
+      ["قاعدة الطاولة الكبيرة",35,900,35,400,0,-250,"قطاع مربع","حديد",1],
+      ["سطح الطاولة المتوسطة",700,35,500,0,650,0,"خشب أو صاج","خشب",1],
+      ["قاعدة الطاولة المتوسطة",30,650,30,-300,0,-200,"قطاع مربع","حديد",1],
+      ["قاعدة الطاولة المتوسطة",30,650,30,300,0,-200,"قطاع مربع","حديد",1],
+      ["سطح الطاولة الصغيرة",500,35,400,0,400,0,"خشب أو صاج","خشب",1],
+      ["قاعدة الطاولة الصغيرة",25,400,25,-220,0,-150,"قطاع مربع","حديد",1],
+      ["قاعدة الطاولة الصغيرة",25,400,25,220,0,-150,"قطاع مربع","حديد",1]
+    ]},
+    {id:"shoe-rack",name:"استاند أحذية متعدد الأرفف",category:"أحذية",description:"قائمان جانبيان وأربعة أرفف",parts:[
+      ["قائم يمين",30,1200,30,360,0,0,"ماسورة مربعة","حديد",1],
+      ["قائم يسار",30,1200,30,-360,0,0,"ماسورة مربعة","حديد",1],
+      ["رف سفلي",720,25,300,0,100,0,"صاج مثني","حديد",1],
+      ["رف ثاني",720,25,300,0,400,0,"صاج مثني","حديد",1],
+      ["رف ثالث",720,25,300,0,700,0,"صاج مثني","حديد",1],
+      ["رف علوي",720,25,300,0,1000,0,"صاج مثني","حديد",1]
+    ]},
+    {id:"gondola",name:"وحدة عرض سوبر ماركت مزدوجة",category:"سوبر ماركت",description:"عمودان مركزيان وأرفف على الجانبين",parts:[
+      ["عمود خلفي يمين",45,1800,45,420,0,0,"قائم مثقب","حديد",1],
+      ["عمود خلفي يسار",45,1800,45,-420,0,0,"قائم مثقب","حديد",1],
+      ["رف أمامي سفلي",800,35,420,0,180,-240,"رف صاج","حديد",1],
+      ["رف أمامي أوسط",800,35,420,0,650,-240,"رف صاج","حديد",1],
+      ["رف أمامي علوي",800,35,420,0,1120,-240,"رف صاج","حديد",1],
+      ["رف خلفي سفلي",800,35,420,0,180,240,"رف صاج","حديد",1],
+      ["رف خلفي أوسط",800,35,420,0,650,240,"رف صاج","حديد",1],
+      ["رف خلفي علوي",800,35,420,0,1120,240,"رف صاج","حديد",1]
+    ]},
+    {id:"counter-display",name:"استاند عرض كاونتر متعدد الطبقات",category:"عرض",description:"قاعدة وثلاث طبقات عرض صغيرة",parts:[
+      ["قاعدة",450,30,300,0,0,0,"صاج أو خشب","خشب",1],
+      ["لوح خلفي",450,500,25,0,250,-130,"لوح خلفي","خشب",1],
+      ["رف سفلي",420,25,180,0,100,-30,"رف عرض","خشب",1],
+      ["رف أوسط",420,25,150,0,250,-55,"رف عرض","خشب",1],
+      ["رف علوي",420,25,120,0,400,-80,"رف عرض","خشب",1]
+    ]}
+  ];
+  function addStandModelTemplate() {
+    const select=$("standModelTemplate");
+    const template=standModelLibrary.find(item=>item.id===select.value);
+    if(!template){toast("اختار موديل من المكتبة الأول");return;}
+    const baseX=modelObjects.length?Math.max(...modelObjects.map(o=>o.x+o.w/2))+900:0;
+    const color=template.category==="عرض"?"#b98b52":"#c49a55";
+    const added=template.parts.map((part,index)=>{
+      const [label,w,h,d,x,y,z,profile,material,quantity]=part;
+      return {id:uid(),type:"box",label,w,h,d,x:baseX+x,y,z,warn:false,color,rx:0,ry:0,rz:0,material,profile,thickness:material==="خشب"?18:1.5,quantity,cutLength:Math.max(w,h,d),holeSpec:"غير محدد — يلزم تحديده حسب التصميم",weldSpec:"يحدد بعد مراجعة طريقة التصنيع",jointSpec:"وصلة مقترحة للمراجعة قبل التنفيذ"};
+    });
+    modelObjects.push(...added);
+    modelProjectName=template.name;
+    $("modelName").value=template.name;
+    selectedModelObjectId=added[0].id;
+    modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
+    renderModelDrawing();renderModelObjectEditor();renderModelProjectOptions();renderModelCutList();renderManufacturingDrawings();save();
+    toast("تم إدخال "+template.name+" إلى الرسم ثلاثي الأبعاد — عدّل كل قطعة حسب المقاس المطلوب");
+  }
   function duplicateModelObject() {
     const source=modelObjects.find(o=>o.id===selectedModelObjectId);if(!source)return;
     const copy={...source,id:uid(),label:source.label+" - نسخة",x:source.x+Math.max(100,source.w/2),z:source.z+Math.max(100,source.d/2)};
@@ -1293,6 +1378,7 @@
     $("modelAssemblyStartBtn").addEventListener("click",()=>{if(!modelObjects.length){toast("أضف قطعًا أولًا");return;}modelAssemblyGuideOn=true;modelAssemblyStep=0;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeToggleBtn").textContent="عرض التفكيك";$("modelExplodeMoveBtn").disabled=true;$("modelAssemblyGuide").hidden=false;$("modelAssemblyStartBtn").textContent="دليل التجميع نشط";selectedModelObjectId=modelObjects[0].id;renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();});
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
+    $("addStandModelTemplateBtn").addEventListener("click",addStandModelTemplate);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
