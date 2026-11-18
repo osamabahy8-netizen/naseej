@@ -643,15 +643,18 @@
       const size=document.createElement("p");size.innerHTML="<strong>مقاسات مرجعية:</strong> ";size.append(document.createTextNode(item.size));
       const material=document.createElement("p");material.innerHTML="<strong>الخامات:</strong> ";material.append(document.createTextNode(item.material));
       const detail=document.createElement("p");detail.textContent=item.detail;
-      const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="افتح التصميم في مرسم 3D";
+      card.append(top,title,size,material,detail);
+      const actions=document.createElement("div");actions.className="catalog-card-actions";
+      actions.style.display="flex";actions.style.flexWrap="wrap";actions.style.gap="8px";actions.style.marginTop="12px";
+      const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="＋ إضافة إلى الرسم 3D";
+      modelButton.setAttribute("aria-label","إضافة "+item.name+" إلى مرسم الرسم ثلاثي الأبعاد");
       modelButton.addEventListener("click",()=>openCatalogItemInModel(item));
-      card.append(top,title,size,material,detail,modelButton);
       const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
       button.addEventListener("click",()=>{
         const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\nالمقاسات المرجعية: "+item.size+"\nالخامات: "+item.material+"\nتفاصيل: "+item.detail+"\n\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
         data.nodes.push(node);selectedId=node.id;activeGroupFilter="all";save();render();toast("اتضافت بطاقة الشغل لخريطة نسيج");
       });
-      card.append(button);host.append(card);
+      actions.append(modelButton,button);card.append(actions);host.append(card);
     });
   }
 
