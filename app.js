@@ -302,7 +302,7 @@
     $("savedDesigns").value=""; renderStandModel();
   }
   function exportStandOBJ() {
-    const v=standValues(), output=["# Naseej separate-part stand model","o Naseej_Stand"];
+    const v=standValues(), output=["# Naseej separate-part stand model","# Units: centimeters","o Naseej_Stand"];
     let vertexCount=0;
     function addPart(name,boxes){
       output.push("","o "+name);
@@ -314,23 +314,29 @@
         vertexCount+=8;
       });
     }
-    const p=Math.max(2.2,Math.min(4,v.width*.035)), top=v.height-5;
-    addPart("Base",[[0,0,0,v.width,v.depth,3]]);
-    addPart("Post_Front_Left",[[0,0,3,p,p,v.height-3]]);
-    addPart("Post_Front_Right",[[v.width-p,0,3,p,p,v.height-3]]);
-    addPart("Post_Rear_Left",[[0,v.depth-p,3,p,p,v.height-3]]);
-    addPart("Post_Rear_Right",[[v.width-p,v.depth-p,3,p,p,v.height-3]]);
-    addPart("Top_Frame",[[0,0,top,v.width,p,5],[0,v.depth-p,top,v.width,p,5],[0,p,top,p,v.depth-2*p,5],[v.width-p,p,top,p,v.depth-2*p,5]]);
-    addPart("Hanger_Rail",[[p,v.depth*.48,v.height-20,v.width-2*p,2.4,2.4]]);
+    const mm=n=>n/10;
+    const base=getPartDimensions("base",v), bx=mm(base.length), by=mm(base.width);
+    const baseThickness=mm(base.thickness);
+    addPart("Base",[[0,0,0,bx,by,baseThickness]]);
+    ["post-front-left","post-front-right","post-rear-left","post-rear-right"].forEach((id)=>{
+      const dim=getPartDimensions(id,v),pw=mm(dim.width),pd=mm(dim.depth),ph=mm(dim.length);
+      const x=id.endsWith("right")?bx-pw:0,y=id.includes("rear")?by-pd:0;
+      addPart(id.replace(/-/g,"_"),[[x,y,baseThickness,pw,pd,ph]]);
+    });
+    const frame=getPartDimensions("top-frame",v);
+    addPart("Top_Frame",[[0,0,v.height-mm(frame.thickness),mm(frame.length),mm(frame.width),mm(frame.thickness)]]);
+    const rail=getPartDimensions("hanger-rail",v);
+    addPart("Hanger_Rail",[[mm(Math.max(0,base.width*0.05)),by*.48,v.height-20,mm(rail.length),mm(rail.width),mm(rail.depth)]]);
     for(let i=0;i<v.shelves;i++){
+      const id="shelf-"+(i+1),dim=getPartDimensions(id,v);
       const z=12+(v.height-28)*(i+1)/(v.shelves+1);
-      addPart("Shelf_"+(i+1),[[p,p,z,v.width-2*p,v.depth-2*p,2.5],[p,p,z+2.5,v.width-2*p,1.4,1.8]]);
+      addPart("Shelf_"+(i+1),[[mm(30),mm(30),z,mm(dim.length),mm(dim.width),mm(dim.thickness)]]);
     }
     const blob=new Blob([output.join("\\n")],{type:"model/obj"});
     const url=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=url;a.download=(v.name||"naseej-stand").replace(/[^\\p{L}\\p{N}_-]+/gu,"_")+".obj";
-    a.click();URL.revokeObjectURL(url);
-    toast("تم تصدير المجسم بأجزائه المنفصلة");
+    a.href=url;a.download=safeFileName(v.name)+".obj";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1200);
+    toast("تم تصدير المجسم بأبعاد القطع المعدلة");
   }
 
   function safeFileName(value) {
@@ -354,11 +360,11 @@
     renderManufacturingSheet();
     const svgSource=new XMLSerializer().serializeToString($("standPreview"));
     const parts=standPartDefinitions(v).map(part=>{
-      const spec=partSpecs[part.id]||{};
-      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes};
+      const spec=partSpecs[part.id]||{},dimensions=getPartDimensions(part.id,v);
+      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes,dimensions};
     });
     const esc=value=>String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
+    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
     const cutRows=(latestCutRows||[]).map(row=>"<tr><td>"+esc(row.name)+"</td><td>"+esc(row.qty)+"</td><td>"+esc(row.length)+"</td><td>"+esc(row.total)+"</td><td>"+esc(row.material)+"</td></tr>").join("");
     const image=v.image?'<section><h2>الصورة المرجعية</h2><img class="reference" src="'+v.image+'" alt="الصورة المرجعية"></section>':"";
     const page=[
@@ -367,7 +373,7 @@
       "<header class=\"hero\"><h1>"+esc(v.name)+"</h1><div>ملف عرض مستقل صادر من نسيج</div><div class=\"note\">يمكن فتح هذا الملف مباشرة في متصفح الكمبيوتر أو الهاتف دون فتح موقع نسيج.</div></header>",
       "<div class=\"meta\"><div><b>العرض</b><br>"+esc(v.width)+" سم</div><div><b>الارتفاع</b><br>"+esc(v.height)+" سم</div><div><b>العمق</b><br>"+esc(v.depth)+" سم</div><div><b>عدد الرفوف</b><br>"+esc(v.shelves)+"</div><div><b>الخامة الرئيسية</b><br>"+esc(v.material)+"</div></div>",
       "<section><h2>المعاينة المجسمة</h2><div class=\"model\">"+svgSource+"</div></section>",
-      "<section><h2>بيانات القطع</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
+      "<section><h2>بيانات القطع وأبعادها المستقلة</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الأبعاد (مم)</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
       "<section><h2>جدول القص المبدئي</h2><table><thead><tr><th>القطعة</th><th>العدد</th><th>طول القطعة مم</th><th>الإجمالي مم</th><th>الخامة</th></tr></thead><tbody>"+cutRows+"</tbody></table></section>",
       "<section><h2>ملاحظات التصميم</h2><p>"+esc(v.notes||"لا توجد ملاحظات إضافية.")+"</p><p class=\"note\">هذا ملف عرض وحصر مبدئي، وليس اعتمادًا إنشائيًا أو أمر تصنيع نهائيًا. يجب مراجعة المقاسات والوصلات والسماكات والأحمال قبل التصنيع.</p></section>",
       image,
