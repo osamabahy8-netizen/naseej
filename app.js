@@ -1057,6 +1057,15 @@
     root.appendChild(grid);
     const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
     axes.forEach(axis=>{const p=project(...axis.a),q=project(...axis.b);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+5,y:q[1]-5,fill:axis.c,"font-size":"14"});t.textContent=axis.t;root.appendChild(t);});
+    if(modelExplodedView){
+      renderObjects.forEach((o,i)=>{
+        const original=modelObjects[i];
+        const from=project(...transformModelVertex([original.x,original.y+original.h/2,original.z],original));
+        const to=project(...transformModelVertex([o.x,o.y+o.h/2,o.z],o));
+        root.appendChild(svgEl("line",{x1:from[0],y1:from[1],x2:to[0],y2:to[1],stroke:"#ffd166","stroke-width":"2","stroke-dasharray":"6 5","pointer-events":"none"}));
+        root.appendChild(svgEl("circle",{cx:from[0],cy:from[1],r:"4",fill:"#ffd166","pointer-events":"none"}));
+      });
+    }
     const faces=[];
     renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
