@@ -22,7 +22,11 @@
       <input id="importInput" type="file" accept="application/json,.json" hidden>
     </div>
   </header>
-  <main class="layout">
+  <nav class="main-tabs" aria-label="أقسام نسيج">
+    <button type="button" class="main-tab active" data-view="ideasView">خريطة الأفكار</button>
+    <button type="button" class="main-tab" data-view="designView">استوديو التصميم والتصنيع</button>
+  </nav>
+  <main class="layout" id="ideasView">
     <section class="workspace">
       <div class="section-heading">
         <div><span class="eyebrow">مساحة العمل</span><h2>خريطة نسيج</h2></div>
@@ -54,6 +58,52 @@
       <section class="panel help-panel"><h3>طريقة الاستخدام</h3><ol><li>أضف فكرة أو مشروعًا.</li><li>افتح العنصر لتعديل اسمه ووصفه.</li><li>استخدم زر «ربط» ثم اختر عنصرًا آخر.</li><li>صدّر نسخة احتياطية لحفظ بياناتك.</li></ol></section>
     </aside>
   </main>
+  <section id="designView" class="design-view" hidden>
+    <div class="design-heading">
+      <div><span class="eyebrow">ورشة نسيج</span><h2>استوديو التصميم والتصنيع</h2><p>ابدأ بتصميم استانْد عرض الملابس، وعدّل المقاسات وشاهد المجسم مباشرة.</p></div>
+    </div>
+    <div class="design-layout">
+      <section class="panel design-controls">
+        <h3>بيانات التصميم</h3>
+        <label for="designName">اسم التصميم</label>
+        <input id="designName" maxlength="70" value="استاند عرض ملابس">
+        <div class="dimension-grid">
+          <div><label for="standWidth">العرض (سم)</label><input id="standWidth" type="number" min="20" max="200" value="90"></div>
+          <div><label for="standHeight">الارتفاع (سم)</label><input id="standHeight" type="number" min="40" max="250" value="180"></div>
+          <div><label for="standDepth">العمق (سم)</label><input id="standDepth" type="number" min="20" max="120" value="45"></div>
+          <div><label for="shelfCount">عدد الرفوف</label><input id="shelfCount" type="number" min="1" max="6" value="3"></div>
+        </div>
+        <label for="standMaterial">الخامة الأساسية</label>
+        <select id="standMaterial"><option value="steel">مواسير حديد</option><option value="aluminum">ألومنيوم</option><option value="wood">خشب مع معدن</option></select>
+        <label for="standColor">لون الهيكل</label><input id="standColor" type="color" value="#c49a55">
+        <label for="standNotes">ملاحظات التصنيع</label>
+        <textarea id="standNotes" rows="3" placeholder="مثال: ماسورة 3×3 سم، سمك 1 مم، قاعدة قابلة للفك..."></textarea>
+        <label for="standImage">صورة مرجعية للتصميم</label>
+        <input id="standImage" type="file" accept="image/*">
+        <img id="referencePreview" class="reference-preview" alt="معاينة الصورة المرجعية" hidden>
+        <div class="design-actions">
+          <button type="button" id="saveDesignBtn" class="button button-primary">حفظ التصميم</button>
+          <button type="button" id="newDesignBtn" class="button button-quiet">تصميم جديد</button>
+        </div>
+        <label for="savedDesigns">التصميمات المحفوظة</label>
+        <select id="savedDesigns"><option value="">اختر تصميمًا محفوظًا</option></select>
+        <button type="button" id="loadDesignBtn" class="button button-quiet">فتح التصميم</button>
+      </section>
+      <section class="panel design-preview-panel">
+        <div class="preview-title"><div><span class="eyebrow">معاينة مجسمة</span><h3 id="previewName">استاند عرض ملابس</h3></div><span class="preview-tag">عرض ثلاثي الأبعاد</span></div>
+        <p class="preview-hint">اسحب المجسم بإصبعك أو بالماوس لتغيير زاوية الرؤية.</p>
+        <div id="standStage" class="stand-stage">
+          <svg id="standPreview" viewBox="0 0 640 520" role="img" aria-label="معاينة مجسمة لاستاند عرض الملابس"></svg>
+        </div>
+        <div class="preview-actions">
+          <button type="button" id="resetViewBtn" class="button button-quiet">إعادة زاوية العرض</button>
+          <button type="button" id="downloadStandBtn" class="button button-primary">حفظ صورة التصميم</button>
+        </div>
+        <div id="referenceImageBox" class="reference-image-box" hidden><h4>الصورة المرجعية</h4><img id="savedReferenceImage" alt="الصورة المرجعية المحفوظة"></div>
+      </section>
+    </div>
+    <p class="design-disclaimer">المعاينة المجسمة تصور مبدئي للأبعاد والشكل، وليست رسمة تنفيذ هندسية نهائية أو اعتمادًا لتحمل الأحمال. راجع المقاسات والوصلات والخامات قبل التصنيع.</p>
+  </section>
   <dialog id="nodeDialog">
     <form id="nodeForm" method="dialog">
       <div class="dialog-heading"><div><span class="eyebrow">عنصر جديد</span><h2 id="dialogTitle">إضافة فكرة</h2></div><button class="icon-button" value="cancel" aria-label="إغلاق">×</button></div>
