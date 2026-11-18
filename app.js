@@ -695,9 +695,16 @@
     const faces=[];
     modelObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
-      const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
-      const faceDefs=[{ids:[4,5,6,7],shade:1.12},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}];
-      faceDefs.forEach((f,i)=>{const projected=f.ids.map(k=>projectModelPoint(...pts[k],modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:i});});
+      if(o.type==="cylinder"){
+        const sides=16,bottom=[],top=[];
+        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;bottom.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);top.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
+        faces.push({o,projected:top.map(p=>projectModelPoint(...p,modelCameraAngle,.075,450,360)),depth:y+h+x+z,shade:1,face:"top"});
+        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]],projected=quad.map(p=>projectModelPoint(...p,modelCameraAngle,.075,450,360));faces.push({o,projected,depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.72+(k%3)*.08,face:k});}
+      }else{
+        const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
+        const faceDefs=[{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}];
+        faceDefs.forEach(f=>{const projected=f.ids.map(k=>projectModelPoint(...pts[k],modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:f.ids[0]});});
+      }
     });
     faces.sort((a,b)=>a.depth-b.depth);
     faces.forEach(f=>{const poly=svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,"stroke":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"3":"1.5","data-object-id":f.o.id,class:"model-object-face"});root.appendChild(poly);});
@@ -720,14 +727,26 @@
     modelObjects.forEach(o=>{
       out+="o "+o.label.replace(/[^\w\u0600-\u06FF-]/g,"_")+"\n";
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
-      const v=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
-      v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\n";});
-      [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\n";});
-      offset+=8;
+      if(o.type==="cylinder"){
+        const sides=16,vertices=[];
+        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);}
+        for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;vertices.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
+        vertices.forEach(p=>{out+="v "+p.join(" ")+"\\n";});
+        out+="f "+Array.from({length:sides},(_,i)=>offset+i).reverse().join(" ")+"\\n";
+        out+="f "+Array.from({length:sides},(_,i)=>offset+sides+i).join(" ")+"\\n";
+        for(let k=0;k<sides;k++){const n=(k+1)%sides;out+="f "+[offset+k,offset+n,offset+sides+n,offset+sides+k].join(" ")+"\\n";}
+        offset+=sides*2;
+      }else{
+        const v=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
+        v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\\n";});
+        [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\\n";});
+        offset+=8;
+      }
     });
     downloadBlobFile(out,"text/plain;charset=utf-8",(modelProjectName||"naseej-3d")+".obj");toast("تم تجهيز ملف OBJ");
   }
   function setupModelStudio() {
+    $("modelDrawing").addEventListener("click",event=>{const face=event.target.closest&&event.target.closest("[data-object-id]");if(!face)return;selectedModelObjectId=face.getAttribute("data-object-id");renderModelDrawing();renderModelObjectEditor();});
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
