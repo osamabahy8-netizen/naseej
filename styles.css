@@ -156,7 +156,7 @@
 .model-object-editor[hidden]{display:none}
 .model-dimension-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 .model-stage{overflow:hidden;border:1px solid #30445d;border-radius:14px;background:#0b1523;background-image:radial-gradient(#25394f 1px,transparent 1px);background-size:20px 20px}
-#modelDrawing{width:100%;height:auto;display:block;min-height:340px;touch-action:pan-y}
+#modelDrawing{width:100%;height:auto;display:block;min-height:380px;touch-action:none}
 .model-object-face{cursor:pointer}
 @media(max-width:850px){.model-layout{grid-template-columns:1fr}.model-view{padding:0 12px}}
 
