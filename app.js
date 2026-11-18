@@ -1150,6 +1150,18 @@
     });
     downloadBlobFile(out,"text/plain;charset=utf-8",(modelProjectName||"naseej-3d")+".obj");toast("تم تجهيز ملف OBJ");
   }
+  function modelDrawingFitScale() {
+    if(!modelObjects.length)return .8*modelZoom;
+    const corners=[];
+    modelObjects.forEach(o=>{
+      const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      [[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]].forEach(c=>corners.push(transformModelVertex([x+c[0]*w/2,y+c[1]*h,z+c[2]*d/2],o)));
+    });
+    const projected=corners.map(p=>projectModelPoint(p[0],p[1],p[2],modelCameraAngle,1,0,0));
+    const spanX=Math.max(1,Math.max(...projected.map(p=>p[0]))-Math.min(...projected.map(p=>p[0])));
+    const spanY=Math.max(1,Math.max(...projected.map(p=>p[1]))-Math.min(...projected.map(p=>p[1])));
+    return Math.min(.8,500/spanX,420/spanY)*modelZoom;
+  }
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
     const drawing=$("modelDrawing");
@@ -1160,14 +1172,24 @@
       const points=[...activePointers.values()];
       return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
     };
+    let partDrag=null;
     drawing.addEventListener("pointerdown",event=>{
       activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(drawing.setPointerCapture)drawing.setPointerCapture(event.pointerId);
       if(activePointers.size===2){
-        orbitStart=null;pinchStartDistance=Math.max(1,pointerDistance());pinchStartZoom=modelZoom;orbitMoved=true;
+        partDrag=null;orbitStart=null;pinchStartDistance=Math.max(1,pointerDistance());pinchStartZoom=modelZoom;orbitMoved=true;
         event.preventDefault();return;
       }
-      if(activePointers.size===1){orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;}
+      const face=event.target.closest&&event.target.closest("[data-object-id]");
+      if(face&&!modelExplodedView){
+        const object=modelObjects.find(o=>o.id===face.getAttribute("data-object-id"));
+        if(object){
+          selectedModelObjectId=object.id;renderModelObjectEditor();
+          partDrag={id:object.id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:object.x,originZ:object.z,scale:modelDrawingFitScale(),angle:modelCameraAngle};
+          orbitStart=null;orbitMoved=false;event.preventDefault();return;
+        }
+      }
+      if(activePointers.size===1){partDrag=null;orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;}
     });
     drawing.addEventListener("pointermove",event=>{
       if(!activePointers.has(event.pointerId))return;
@@ -1177,12 +1199,29 @@
         if(pinchStartDistance>0){modelZoom=Math.max(.45,Math.min(3.5,pinchStartZoom*distance/pinchStartDistance));renderModelDrawing();}
         event.preventDefault();return;
       }
+      if(partDrag&&partDrag.pointerId===event.pointerId){
+        const object=modelObjects.find(o=>o.id===partDrag.id);if(!object)return;
+        const rect=drawing.getBoundingClientRect();
+        const dxScreen=(event.clientX-partDrag.startX)*900/rect.width;
+        const dyScreen=(event.clientY-partDrag.startY)*620/rect.height;
+        const u=dxScreen/(.62*partDrag.scale),v=dyScreen/(.34*partDrag.scale);
+        const angle=partDrag.angle*Math.PI/180;
+        object.x=partDrag.originX+Math.cos(angle)*u+Math.sin(angle)*v;
+        object.z=partDrag.originZ-Math.sin(angle)*u+Math.cos(angle)*v;
+        if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;
+        $("modelPosX").value=Math.round(object.x);$("modelPosZ").value=Math.round(object.z);
+        renderModelDrawing();event.preventDefault();return;
+      }
       if(!orbitStart)return;
       const delta=event.clientX-orbitStart.x;
       if(Math.abs(delta)>3)orbitMoved=true;
       if(orbitMoved){modelCameraAngle=(orbitStart.angle+delta*.55+360)%360;$("modelCameraAngle").value=Math.round(modelCameraAngle);renderModelDrawing();}
     });
     const endOrbit=event=>{
+      if(event&&partDrag&&partDrag.pointerId===event.pointerId){
+        if(orbitMoved){save();renderModelObjectEditor();renderManufacturingDrawings();}
+        partDrag=null;
+      }
       if(event)activePointers.delete(event.pointerId);
       if(activePointers.size<2)pinchStartDistance=0;
       if(activePointers.size===0)orbitStart=null;
