@@ -91,6 +91,7 @@
 
   // Stand design studio: parametric isometric model and local design library.
   let currentDesignId = null;
+  let assemblySteps = [];
   let pendingReferenceImage = "";
   let standRotation = {x:0,y:0};
   function standValues() {
@@ -109,7 +110,8 @@
       color: /^#[0-9a-fA-F]{6}$/.test($("standColor").value) ? $("standColor").value : "#c49a55",
       notes: $("standNotes").value.trim(),
       image: pendingReferenceImage,
-      parts: JSON.parse(JSON.stringify(partSpecs))
+      parts: JSON.parse(JSON.stringify(partSpecs)),
+      assemblySteps: JSON.parse(JSON.stringify(assemblySteps))
     };
   }
   function shadeColor(hex, amount) {
@@ -213,6 +215,7 @@
     $("explodeToggleBtn").textContent=explodedView?"إعادة تجميع القطع":"تفكيك القطع";
     renderPartsList();
     renderManufacturingSheet();
+    renderAssemblyGuide();
   }
   function renderPartsList(){
     const host=$("standPartsList");if(!host)return;
@@ -312,6 +315,47 @@
     try{save();renderStandModel();toast("تم حفظ مواصفات القطعة");}
     catch(error){toast("تعذر حفظ التعديل في مساحة التخزين");}
   }
+  function createAssemblyDraft(){
+    const defs=standPartDefinitions(standValues()),byId=new Map(defs.map(part=>[part.id,part]));
+    const rank=id=>id==="base"?0:id.startsWith("post-")?1:id==="top-frame"?2:id==="hanger-rail"?3:id.startsWith("shelf-")?4:5;
+    const seen=new Set(),steps=[];
+    defs.forEach(part=>{
+      const joint=partSpecs[part.id]?.joint||{},partnerId=joint.partnerId;
+      if(!partnerId||!byId.has(partnerId)||!joint.type)return;
+      const pair=[part.id,partnerId].sort().join("|");if(seen.has(pair))return;seen.add(pair);
+      const partner=byId.get(partnerId),spec=partSpecs[part.id]||{};
+      steps.push({id:uid(),partId:part.id,partnerId,partName:spec.name||part.name,partnerName:partSpecs[partnerId]?.name||partner.name,jointType:joint.type,quantity:Number(joint.quantity)||0,diameter:Number(joint.diameter)||0,length:Number(joint.length)||0,position:String(joint.position||""),note:""});
+    });
+    steps.sort((a,b)=>rank(a.partId)-rank(b.partId));assemblySteps=steps;renderAssemblyGuide();
+    toast(steps.length?"اتولدت مسودة من الوصلات المحددة فقط":"مفيش وصلات مرتبطة بطرفين؛ حدّد القطعة المتصلة واحفظها الأول");
+  }
+  function renderAssemblyGuide(){
+    const host=$("assemblyStepsList");if(!host)return;host.replaceChildren();
+    if(!assemblySteps.length){const p=document.createElement("p");p.className="field-hint";p.textContent="لسه مفيش خطوات. احفظ وصلة وحدد القطعة المتصلة بها، وبعدها ولّد المسودة.";host.appendChild(p);return;}
+    assemblySteps.forEach((step,index)=>{
+      const card=document.createElement("div");card.className="assembly-step";
+      const head=document.createElement("div");head.className="assembly-step-head";
+      const title=document.createElement("strong");title.textContent="الخطوة "+(index+1)+" — "+step.partName+" مع "+step.partnerName;head.appendChild(title);
+      const controls=document.createElement("div");controls.className="assembly-step-controls";
+      [["↑","up"],["↓","down"],["حذف","remove"]].forEach(([label,action])=>{const b=document.createElement("button");b.type="button";b.className="button button-quiet";b.textContent=label;b.dataset.stepAction=action;b.dataset.stepId=step.id;b.disabled=(action==="up"&&index===0)||(action==="down"&&index===assemblySteps.length-1);controls.appendChild(b);});
+      head.appendChild(controls);card.appendChild(head);
+      const detail=document.createElement("p");detail.textContent=(jointTypeLabels[step.jointType]||step.jointType)+" — العدد: "+step.quantity+" — القطر: "+step.diameter+" مم — الطول: "+step.length+" مم — المكان: "+(step.position||"غير محدد");card.appendChild(detail);
+      const label=document.createElement("label");label.textContent="ملاحظة تنفيذ للخطوة";const input=document.createElement("input");input.type="text";input.maxLength=180;input.value=step.note||"";input.dataset.stepNote=step.id;input.placeholder="مثال: راجع تطابق الفتحات قبل الربط";label.appendChild(input);card.appendChild(label);host.appendChild(card);
+    });
+  }
+  function persistAssemblySteps(){if(currentDesignId){const saved=data.designs.find(d=>d.id===currentDesignId);if(saved)saved.assemblySteps=JSON.parse(JSON.stringify(assemblySteps));}save();}
+  function handleAssemblyGuideClick(event){
+    const button=event.target.closest("button[data-step-action]");if(!button)return;
+    const index=assemblySteps.findIndex(step=>step.id===button.dataset.stepId);if(index<0)return;
+    const action=button.dataset.stepAction;
+    if(action==="remove")assemblySteps.splice(index,1);
+    else{const target=action==="up"?index-1:index+1;if(target<0||target>=assemblySteps.length)return;[assemblySteps[index],assemblySteps[target]]=[assemblySteps[target],assemblySteps[index]];}
+    renderAssemblyGuide();persistAssemblySteps();
+  }
+  function handleAssemblyNote(event){
+    const input=event.target.closest("input[data-step-note]");if(!input)return;
+    const step=assemblySteps.find(item=>item.id===input.dataset.stepNote);if(step){step.note=input.value;persistAssemblySteps();}
+  }
   function refreshSavedDesigns() {
     const select = $("savedDesigns"), chosen = select.value;
     select.replaceChildren();
@@ -333,7 +377,7 @@
   function loadStandDesign() {
     const d=data.designs.find(item=>item.id===$("savedDesigns").value);
     if(!d){toast("اختار تصميمًا محفوظًا الأول");return;}
-    currentDesignId=d.id; partSpecs=d.parts||{}; selectedPartId="base";
+    currentDesignId=d.id; partSpecs=d.parts||{}; assemblySteps=Array.isArray(d.assemblySteps)?d.assemblySteps:[]; selectedPartId="base";
     $("designName").value=d.name; $("standWidth").value=d.width; $("standHeight").value=d.height;
     $("standDepth").value=d.depth; $("shelfCount").value=d.shelves;
     $("standMaterial").value=d.material||"steel"; $("standColor").value=d.color||"#c49a55";
@@ -345,7 +389,7 @@
     renderStandModel(); toast("تم فتح التصميم");
   }
   function resetStandDesign() {
-    currentDesignId=null; pendingReferenceImage=""; partSpecs={}; selectedPartId="base"; explodedView=false;
+    currentDesignId=null; pendingReferenceImage=""; partSpecs={}; assemblySteps=[]; selectedPartId="base"; explodedView=false;
     $("designName").value="استاند عرض ملابس"; $("standWidth").value=90;
     $("standHeight").value=180; $("standDepth").value=45; $("shelfCount").value=3;
     $("standMaterial").value="steel"; $("standColor").value="#c49a55"; $("standNotes").value="";
@@ -401,6 +445,7 @@
   function exportDesignDataFile() {
     const design=standValues();
     design.parts=JSON.parse(JSON.stringify(partSpecs));
+    design.assemblySteps=JSON.parse(JSON.stringify(assemblySteps));
     design.exportedAt=new Date().toISOString();
     design.connectionLibrary=JSON.parse(JSON.stringify(data.connectionLibrary||[]));
     design.format="naseej-design-v1";
@@ -418,6 +463,8 @@
     });
     const esc=value=>String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
     const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.joint.type+" — عدد "+p.joint.quantity+" — قطر "+p.joint.diameter+" مم — طول "+p.joint.length+" مم — "+p.joint.position+" — متصلة بـ: "+p.connectedPartName)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
+    const assemblyRows=(assemblySteps||[]).map((step,index)=>"<li><b>الخطوة "+(index+1)+": "+esc(step.partName)+" مع "+esc(step.partnerName)+"</b><br>"+esc((jointTypeLabels[step.jointType]||step.jointType)+" — العدد "+step.quantity+" — القطر "+step.diameter+" مم — الطول "+step.length+" مم — "+(step.position||"مكان غير محدد"))+(step.note?"<br>ملاحظة: "+esc(step.note):"")+"</li>").join("");
+    const assemblySection="<section><h2>دليل التجميع — مسودة قابلة للمراجعة</h2>"+(assemblyRows?"<ol>"+assemblyRows+"</ol>":"<p>لا توجد خطوات تجميع محفوظة.</p>")+"<p class=\"note\">الخطوات مبنية على الوصلات التي تم ربط طرفيها داخل التصميم، وترتيبها قابل للتعديل. ليست تعليمات تنفيذ معتمدة.</p></section>";
     const cutRows=(latestCutRows||[]).map(row=>"<tr><td>"+esc(row.name)+"</td><td>"+esc(row.qty)+"</td><td>"+esc(row.length)+"</td><td>"+esc(row.total)+"</td><td>"+esc(row.material)+"</td></tr>").join("");
     const image=v.image?'<section><h2>الصورة المرجعية</h2><img class="reference" src="'+v.image+'" alt="الصورة المرجعية"></section>':"";
     const page=[
@@ -427,6 +474,7 @@
       "<div class=\"meta\"><div><b>العرض</b><br>"+esc(v.width)+" سم</div><div><b>الارتفاع</b><br>"+esc(v.height)+" سم</div><div><b>العمق</b><br>"+esc(v.depth)+" سم</div><div><b>عدد الرفوف</b><br>"+esc(v.shelves)+"</div><div><b>الخامة الرئيسية</b><br>"+esc(v.material)+"</div></div>",
       "<section><h2>المعاينة المجسمة</h2><div class=\"model\">"+svgSource+"</div></section>",
       "<section><h2>بيانات القطع وأبعادها المستقلة</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الأبعاد (مم)</th><th>طريقة التثبيت</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
+      assemblySection,
       "<section><h2>جدول القص المبدئي</h2><table><thead><tr><th>القطعة</th><th>العدد</th><th>طول القطعة مم</th><th>الإجمالي مم</th><th>الخامة</th></tr></thead><tbody>"+cutRows+"</tbody></table></section>",
       "<section><h2>ملاحظات التصميم</h2><p>"+esc(v.notes||"لا توجد ملاحظات إضافية.")+"</p><p class=\"note\">هذا ملف عرض وحصر مبدئي، وليس اعتمادًا إنشائيًا أو أمر تصنيع نهائيًا. يجب مراجعة المقاسات والوصلات والسماكات والأحمال قبل التصنيع.</p></section>",
       image,
@@ -602,6 +650,9 @@
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
     $("savePartBtn").addEventListener("click",saveSelectedPart);
+    $("generateAssemblyDraftBtn").addEventListener("click",createAssemblyDraft);
+    $("assemblyStepsList").addEventListener("click",handleAssemblyGuideClick);
+    $("assemblyStepsList").addEventListener("change",handleAssemblyNote);
     $("saveConnectionLibraryBtn").addEventListener("click",saveConnectionToLibrary);
     $("applyConnectionLibraryBtn").addEventListener("click",applyLibraryConnection);
     ["tubePrice","sheetPrice","wastePercent"].forEach(id=>$(id).addEventListener("input",renderManufacturingSheet));
