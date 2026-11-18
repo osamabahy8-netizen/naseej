@@ -24,3 +24,9 @@
   #detailsPanel.is-open .details-empty{padding:12px 8px}
   #detailsPanel.is-open .detail-actions .button:first-child{border-color:var(--gold)}
 }
+
+
+/* Drag ideas on the map with a finger or mouse */
+#network{touch-action:none;user-select:none;-webkit-user-select:none}
+.node{cursor:grab}
+.node:active{cursor:grabbing}
