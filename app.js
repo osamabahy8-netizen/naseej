@@ -1438,6 +1438,44 @@
     const labels=svgEl("g");
     renderObjects.forEach(o=>{const p=project(o.x,o.y+o.h+35,o.z),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"11","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});
     root.appendChild(labels);
+    // Technical callouts: identify mechanical/electronic components and point to their actual model positions.
+    const technical=svgEl("g",{"pointer-events":"none"});
+    const classify=o=>{
+      const n=(o.label+" "+(o.profile||"")+" "+(o.componentSpec||"")).toLowerCase();
+      if(/محرك|motor|brushless/.test(n))return ["محرك","motor"];
+      if(/ترس|gear|دفرنس|علبة تروس/.test(n))return ["نقل الحركة","gear"];
+      if(/محور|axle|عمود دوران/.test(n))return ["محور دوران","shaft"];
+      if(/esc|منظم سرعة/.test(n))return ["منظم السرعة ESC","electronics"];
+      if(/متحكم|flight controller|f4|imu|جيروسكوب/.test(n))return ["متحكم الطيران / IMU","electronics"];
+      if(/بطارية|lipo|battery/.test(n))return ["البطارية","electronics"];
+      if(/مستشعر|حساس|sensor|receiver|مستقبل|سيرفو|servo|بارومتر|optical flow|tof/.test(n))return ["إلكترونيات / حساس","electronics"];
+      if(/مروحة|propeller/.test(n))return ["مروحة","prop"];
+      return null;
+    };
+    const technicalParts=renderObjects.map(o=>({o,kind:classify(o)})).filter(v=>v.kind);
+    const priority={motor:0,gear:1,shaft:2,electronics:3,prop:4};
+    technicalParts.sort((a,b)=>priority[a.kind[1]]-priority[b.kind[1]]);
+    technicalParts.slice(0,9).forEach((item,i)=>{
+      const o=item.o,p=project(o.x,o.y+o.h/2,o.z);
+      const laneY=42+i*29,laneX=660;
+      technical.appendChild(svgEl("path",{d:"M "+p[0]+" "+p[1]+" L "+Math.min(625,p[0]+35)+" "+p[1]+" L "+(laneX-8)+" "+laneY,fill:"none",stroke:item.kind[1]==="motor"?"#ff9d5c":item.kind[1]==="gear"||item.kind[1]==="shaft"?"#7dd3fc":"#a7e0a0","stroke-width":"1.8"}));
+      technical.appendChild(svgEl("circle",{cx:p[0],cy:p[1],r:item.kind[1]==="motor"?Math.max(12,Math.min(22,Math.max(o.w,o.d)*scale*.55)):7,fill:"none",stroke:item.kind[1]==="motor"?"#ff9d5c":item.kind[1]==="gear"||item.kind[1]==="shaft"?"#7dd3fc":"#a7e0a0","stroke-width":"2"}));
+      technical.appendChild(svgEl("rect",{x:laneX-5,y:laneY-16,width:225,height:23,rx:5,fill:"#0a1422",stroke:"#60758d","stroke-width":"1"}));
+      const t=svgEl("text",{x:laneX+5,y:laneY,fill:"#f4f7fb","font-size":"12","text-anchor":"start"});
+      t.textContent=(i+1)+". "+item.kind[0]+" — "+o.label;
+      technical.appendChild(t);
+    });
+    if(technicalParts.length){
+      const legend=svgEl("text",{x:655,y:20,fill:"#ffd166","font-size":"13","font-weight":"700","text-anchor":"start"});
+      legend.textContent="تحديد مواقع المكونات الفنية";
+      technical.appendChild(legend);
+    }
+    if(technicalParts.length>9){
+      const more=svgEl("text",{x:660,y:315,fill:"#b8c7d8","font-size":"11","text-anchor":"start"});
+      more.textContent="وباقي المكونات موضحة في قائمة القطع وجدول المواصفات";
+      technical.appendChild(more);
+    }
+    root.appendChild(technical);
     const summary=$("modelDimensionSummary");
     if(summary){
       const bounds=axis=>{const vals=[];modelObjects.forEach(o=>{const c=axis==="x"?[o.x-o.w/2,o.x+o.w/2]:axis==="y"?[o.y,o.y+o.h]:[o.z-o.d/2,o.z+o.d/2];vals.push(...c);});return vals.length?Math.round(Math.max(...vals)-Math.min(...vals)):0;};
