@@ -553,6 +553,36 @@
     {id:"water-play-set",cat:"water",name:"طقم ألعاب مياه جماعي",icon:"🌊",size:"وحدات رش صغيرة وخراطيم قصيرة حسب مساحة اللعب",material:"بلاستيك مقاوم للماء + وصلات سريعة",detail:"وحدات قابلة للتجميع والفك، ضغط مياه منخفض، وصلات آمنة، وأرضية لعب غير زلقة."}
   ];
   const catalogLabels={fashion:"محلات الملابس",retail:"التجزئة والسوبر ماركت",cafe:"الكافيهات والمطاعم",mall:"المولات والأكشاك",metal:"مشغولات الحديد",decor:"الديكور والعناصر الخاصة",toycar:"عربيات ومركبات الأطفال",toyair:"الطائرات والدرون",toyprops:"ألعاب ومجسمات أطفال",water:"مسدسات وألعاب المياه"};
+  function openMaterialSampleInModel(material){
+    const materials={steel:{label:"مواسير الحديد",color:"#87919b"},aluminum:{label:"قطاعات الألومنيوم",color:"#c4cbd2"},wood:{label:"الخشب مع المعدن",color:"#a87945"}};
+    const chosen=materials[material]||materials.steel;
+    modelObjects=[
+      {id:uid(),type:"box",label:chosen.label+" — قطاع مستطيل",x:-180,y:0,z:0,w:420,h:40,d:40,color:chosen.color,rx:0,ry:0,rz:0},
+      {id:uid(),type:"box",label:chosen.label+" — لوح خامة",x:180,y:0,z:0,w:420,h:18,d:260,color:chosen.color,rx:0,ry:0,rz:0},
+      {id:uid(),type:"box",label:chosen.label+" — عينة قطاع",x:0,y:100,z:0,w:300,h:30,d:30,color:chosen.color,rx:0,ry:0,rz:0}
+    ];
+    selectedModelObjectId=modelObjects[0].id;
+    modelProjectName="معاينة خامة: "+chosen.label;
+    window.activeModelProjectId=null;
+    $("modelName").value=modelProjectName;
+    $("modelCameraAngle").value=35;modelCameraAngle=35;
+    const tab=document.querySelector('.main-tab[data-view="modelView"]');if(tab)tab.click();
+    renderModelDrawing();renderModelObjectEditor();
+    toast("فتحنا معاينة "+chosen.label+" في الرسم ثلاثي الأبعاد");
+  }
+
+  function renderCatalogCategoryLaunchers(){
+    const host=$("catalogCategoryLaunchers");if(!host)return;
+    host.replaceChildren();
+    Object.entries(catalogLabels).forEach(([key,label])=>{
+      const first=fabricationCatalog.find(item=>item.cat===key);if(!first)return;
+      const btn=document.createElement("button");btn.type="button";btn.className="button button-quiet";
+      btn.textContent="رسم قسم "+label+" 3D";
+      btn.addEventListener("click",()=>openCatalogItemInModel(first));
+      host.append(btn);
+    });
+  }
+
   function openCatalogItemInModel(item){
     const isClothingRail=item.id==="fashion-rail";
     const width=isClothingRail?1050:900;
@@ -591,7 +621,12 @@
     toast("فتحنا "+item.name+" في المرسم ثلاثي الأبعاد");
   }
 
+  document.querySelectorAll("[data-material-3d]").forEach(button=>{
+    button.addEventListener("click",()=>openMaterialSampleInModel(button.dataset.material3d));
+  });
+
   function renderFabricationCatalog(){
+    renderCatalogCategoryLaunchers();
     const host=$("catalogGrid");if(!host)return;
     host.replaceChildren();
     const query=$("catalogSearch").value.trim().toLowerCase();
