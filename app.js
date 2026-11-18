@@ -656,20 +656,125 @@
       add("وحدة البطارية",0,45,-35,125,35,95,"#394c62");
       add("قاعدة الهبوط",0,15,0,300,12,230,dark);
     }else if(item.cat==="fashion"||item.cat==="retail"||item.cat==="cafe"||item.cat==="mall"){
-      const w=1100,d=520,h=900,th=35;
-      add("القاعدة",0,0,0,w,th,d,dark);
-      add("الجانب الأيمن",w/2-th/2,th,0,th,h-th,d,color);
-      add("الجانب الأيسر",-w/2+th/2,th,0,th,h-th,d,color);
-      add("اللوح الخلفي",0,th,-d/2+th/2,w,h-th,th,color);
-      add("سطح المنتج",0,h-th,0,w,th,d,color);
-      if(item.id.includes("rail")||item.id.includes("fashion")){
-        add("رف سفلي",0,260,0,w-th*2,22,d-th*2,color);
-        add("رف أوسط",0,520,0,w-th*2,22,d-th*2,color);
-        add("عارضة تعليق",0,h-100,d*.22,w-th*2,25,25,metal);
+      const w=1100,d=520,h=900,t=32;
+      const legs=(ww,dd,hh,th=35)=>{[-1,1].forEach(x=>[-1,1].forEach(z=>add("رجل هيكل",x*(ww/2-th/2),0,z*(dd/2-th/2),th,hh,th,dark)));};
+      const shelf=(label,y,ww=w-70,dd=d-70,th=24,mat=color)=>add(label,0,y,0,ww,th,dd,mat);
+      const frame=(ww,dd,hh,th=35)=>{legs(ww,dd,hh,th);add("عارضة أمامية",0,hh-th,dd/2-th/2,ww,th,th);add("عارضة خلفية",0,hh-th,-dd/2+th/2,ww,th,th);add("عارضة جانبية يمين",ww/2-th/2,hh-th,0,th,th,dd);add("عارضة جانبية يسار",-ww/2+th/2,hh-th,0,th,th,dd);};
+      if(item.id==="fashion-wall"){
+        add("لوح تثبيت حائطي",0,500,-25,1200,1000,35,color);
+        for(let y of [180,430,680]){add("حامل رف أيمن",480,y,30,35,220,35,dark);add("حامل رف أيسر",-480,y,30,35,220,35,dark);shelf("رف حائطي",y+210,1050,300,28);}
+        add("ماسورة تعليق",0,930,210,1050,28,28,metal);
+      }else if(item.id==="fashion-table"||item.id==="cafe-table"||item.id==="kitchen-table"){
+        const ww=item.id==="kitchen-table"?1400:1100,dd=item.id==="cafe-table"?700:650,hh=item.id==="kitchen-table"?900:760;
+        frame(ww,dd,hh,item.id==="kitchen-table"?40:45);add("سطح الترابيزة",0,hh-35,0,ww,35,dd,item.id==="kitchen-table"?"#c7cdd1":color);
+        if(item.id==="cafe-table")add("قاعدة عمود وسط",0,20,0,100,hh-55,100,dark);
+      }else if(item.id==="fashion-gondola"||item.id==="retail-gondola"||item.id==="retail-wall"||item.id==="fashion-shoes"){
+        const double=item.id==="fashion-gondola"||item.id==="retail-gondola",ww=double?1200:1000,dd=double?900:420;
+        frame(ww,dd,1700,35);
+        for(let y=250;y<1600;y+=300){shelf("رف عرض مستوى "+(Math.round(y/300)),y,ww-55,dd-55,28);if(double)shelf("رف خلفي مقابل",y,ww-55,dd-55,28);}
+        if(item.id.includes("shoes"))for(let y=180;y<1500;y+=260)add("حامل ميل رف الأحذية",0,y,0,ww-80,16,dd-70,metal);
+        add("عارضة تقوية خلفية",0,850,-dd/2+20,ww,30,30,dark);
+      }else if(item.id.includes("cash")||item.id.includes("checkout")||item.id==="cafe-counter"||item.id==="mall-food"){
+        const ww=item.id==="retail-checkout"?1700:1300,dd=item.id==="retail-checkout"?750:650,hh=950;
+        add("قاعدة الكاونتر",0,20,0,ww,40,dd,dark);add("واجهة أمامية",0,40,dd/2-18,ww,hh-40,36,color);
+        add("جانب يمين",ww/2-18,40,0,36,hh-40,dd,color);add("جانب يسار",-ww/2+18,40,0,36,hh-40,dd,color);
+        add("سطح الكاونتر",0,hh,0,ww+35,35,dd+35,metal);
+        for(let x of [-ww*.28,0,ww*.28]){add("درج تخزين",x,hh*.35,-dd*.18,ww*.22,115,dd*.42,dark);add("واجهة درج",x,hh*.35,dd*.04,ww*.22,110,18,metal);}
+        add("رف خدمة داخلي",0,hh*.48,-dd*.28,ww*.86,25,dd*.3,color);
+        if(item.id==="retail-checkout")add("سير الكاشير",ww*.27,hh+20,0,ww*.35,24,dd*.72,dark);
+      }else if(item.id==="fashion-mirror"){
+        add("إطار المرآة",0,650,0,650,1300,35,metal);add("سطح المرآة",0,650,22,590,1240,8,glass);
+        add("مقعد البنش",0,230,260,700,55,300,color);legs(700,300,230,35);
+      }else if(item.id==="fashion-display"){
+        add("قاعدة منصة",0,30,0,850,60,650,color);add("عمود تثبيت المانيكان",0,60,0,45,850,45,metal);add("قرص تثبيت علوي",0,900,0,260,30,260,metal);
+        add("لوح خلفية عرض",0,750,-300,850,1100,30,dark);
+      }else if(item.id==="retail-produce"){
+        frame(1150,650,1450,35);for(let y of [300,650,1000])add("صندوق عرض مائل",0,y,80,1050,210,480,color, "box", -12);
+        add("حافة أمامية",0,250,320,1080,55,28,metal);
+      }else if(item.id==="retail-bakery"){
+        add("قاعدة الفاترينة",0,30,0,1300,60,650,dark);add("أرضية العرض",0,100,0,1260,22,610,metal);
+        add("زجاج أمامي",0,430,300,1260,650,14,glass);add("زجاج خلفي",0,430,-300,1260,650,14,glass);
+        add("زجاج جانبي أيمن",630,430,0,14,650,610,glass);add("زجاج جانبي أيسر",-630,430,0,14,650,610,glass);
+        add("سقف الفاترينة",0,770,0,1300,28,650,metal);shelf("رف زجاجي أول",330,1150,520,16,glass);shelf("رف زجاجي ثان",550,1150,520,16,glass);
+      }else if(item.id==="cafe-backbar"){
+        add("ظهر الوحدة",0,550,-230,1400,1100,35,color);for(let x of [-480,0,480]){add("رف علوي",x,900,-90,420,30,260,metal);add("رف أوسط",x,620,-90,420,30,260,metal);add("وحدة تخزين سفلية",x,250,0,420,420,420,color);}
+      }else if(item.id==="cafe-partition"||item.id==="mall-bench"){
+        if(item.id==="cafe-partition"){frame(1200,80,1500,30);add("لوح فاصل",0,750,0,1120,1350,18,glass);add("كسوة سفلية",0,250,0,1120,500,28,color);}
+        else{add("مقعد",0,430,0,1400,65,420,color);add("ظهر المقعد",0,760,-180,1400,600,55,color);legs(1400,420,430,45);for(let x of [-600,0,600])add("مسند ذراع",x,620,0,70,350,480,metal);}
+      }else if(item.id==="kitchen-sink"){
+        frame(1200,650,880,40);add("حوض الستانلس",0,860,0,600,190,420,metal);add("تجويف الحوض",0,880,0,520,12,340,dark);add("رقبة الخلاط",0,1030,-180,28,170,28,metal);add("صنبور",0,1110,-80,180,25,25,metal);
+      }else if(item.id==="kitchen-shelf"||item.id==="kitchen-rack"){
+        const mobile=item.id==="kitchen-rack";frame(mobile?900:1400,mobile?600:380,mobile?1700:950,32);
+        for(let y=mobile?120:220;y<(mobile?1600:900);y+=(mobile?380:300))shelf("رف ستانلس",y,mobile?820:1320,mobile?540:340,22,metal);
+        if(mobile)[[-1,-1],[-1,1],[1,-1],[1,1]].forEach(p=>add("عجلة حركة",p[0]*410,45,p[1]*260,85,85,85,rubber,"cylinder"));
+      }else if(item.id==="kitchen-hood"){
+        add("غطاء الشفاط",0,900,0,1500,180,750,metal);add("مدخنة",0,1250,-100,420,650,420,metal);add("حافة تجميع",0,790,0,1550,25,800,dark);
+      }else if(item.id==="cafe-trolley"||item.id==="kitchen-trolley"){
+        frame(850,550,900,30);for(let y of [250,550,850])shelf("صينية خدمة",y,800,500,25,metal);
+        [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(p=>add("عجلة العربة",p[0]*380,35,p[1]*230,90,70,90,rubber,"cylinder"));
+        add("مقبض دفع",0,920,-250,500,25,25,metal);
+      }else if(item.id==="mall-kiosk"){
+        add("أرضية الكشك",0,25,0,2200,50,1600,dark);frame(2200,1600,2300,55);
+        add("سقف الكشك",0,2300,0,2300,90,1700,color);add("كاونتر أمامي",0,900,780,2000,900,70,color);
+        add("واجهة زجاجية",0,1550,650,1800,700,18,glass);add("لافتة علوية",0,2150,0,1800,220,80,metal);
+      }else if(item.id==="mall-pop"){
+        frame(1000,650,1900,35);for(let y of [450,900,1350])shelf("رف عرض متنقل",y,950,600,25,color);
+        [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(p=>add("عجلة قاعدة",p[0]*460,35,p[1]*280,100,80,100,rubber,"cylinder"));
+        add("يافطة علوية",0,1800,0,1000,180,35,color);
       }else{
-        add("رف داخلي أول",0,300,0,w-th*2,22,d-th*2,color);
-        add("رف داخلي ثان",0,600,0,w-th*2,22,d-th*2,color);
+        frame(1100,520,900,35);shelf("سطح علوي");shelf("رف سفلي",250);
       }
+    }else if(item.cat==="metal"){
+      if(item.id==="metal-stair"){
+        for(let i=0;i<10;i++){const y=i*175,x=i*260;add("درجة سلم "+(i+1),x,y,0,300,35,950,metal);}
+        add("كمرة جانبية يمين",1150,700,0,2700,55,55,dark,"box",0,0,-33);add("كمرة جانبية يسار",1150,700,900,2700,55,55,dark,"box",0,0,-33);
+        add("درابزين أيمن",1150,1150,0,2700,35,35,color);add("درابزين أيسر",1150,1150,900,2700,35,35,color);
+      }else if(item.id==="metal-canopy"){
+        frame(3000,1800,2600,90);for(let x of [-1400,1400])add("عمود مظلة",x,0,0,90,2600,90,dark);
+        add("هيكل السقف",0,2650,0,3200,90,2000,metal);for(let z=-850;z<=850;z+=250)add("عارضة سقف",0,2580,z,3100,45,45,color);
+      }else if(item.id==="metal-rack"){
+        frame(1800,900,2400,70);for(let y of [450,950,1450,1950])shelf("رف تخزين أحمال",y,1700,820,55,metal);
+        for(let x of [-820,820])for(let z of [-390,390])add("لوح قاعدة تثبيت",x,25,z,150,25,150,dark);
+      }else if(item.id==="metal-cart"){
+        frame(1000,650,950,35);for(let y of [220,520,820])shelf("صينية عربة نقل",y,950,600,30,metal);
+        [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(p=>add("عجلة نقل",p[0]*450,45,p[1]*280,110,90,110,rubber,"cylinder"));
+        add("مقبض دفع",0,1000,-280,600,30,30,metal);
+      }
+    }else if(item.cat==="decor"){
+      if(item.id==="decor-screen"){
+        add("إطار محيط",0,900,0,1200,1800,45,dark);add("لوح زخرفة ليزر",0,900,28,1120,1720,8,metal);
+        for(let x of [-500,-250,0,250,500])add("قطاع زخرفي رأسي",x,900,50,12,1650,12,color);
+        add("قاعدة تثبيت",0,35,0,1350,70,180,color);
+      }else if(item.id==="decor-light"){
+        frame(1000,300,500,35);add("إطار اللافتة",0,900,0,1800,650,45,metal);add("لوح الواجهة",0,900,28,1700,550,12,glass);
+        add("حامل علوي",0,1250,0,1900,45,45,dark);add("علبة كهرباء",0,520,-100,350,180,200,dark);
+      }else if(item.id==="decor-planter"){
+        add("قاعدة الحوض",0,25,0,1000,50,500,metal);add("واجهة أمامية",0,300,240,1000,550,25,color);add("واجهة خلفية",0,300,-240,1000,550,25,color);
+        add("جانب أيمن",488,300,0,25,550,500,color);add("جانب أيسر",-488,300,0,25,550,500,color);add("بطانة داخلية",0,310,0,930,480,430,dark);
+      }
+    }else if(item.id==="toycar-track"){
+      add("قاعدة المضمار",0,35,0,1400,70,900,color);add("مسار مستقيم",0,80,0,1300,35,650,dark);
+      add("حاجز جانبي أيمن",0,130,330,1300,100,35,light);add("حاجز جانبي أيسر",0,130,-330,1300,100,35,light);
+      add("منحدر بداية",500,170,0,380,220,650,color,"box",0,0,-18);
+    }else if(item.cat==="toyprops"){
+      if(item.id==="toyprops-robot"){
+        add("جذع الروبوت",0,430,0,190,260,130,color);add("رأس الروبوت",0,610,0,150,145,135,metal);
+        for(let side of [-1,1]){add("ذراع",side*145,430,0,70,230,75,color);add("كف",side*145,300,0,90,80,90,metal);add("ساق",side*55,160,0,80,230,90,dark);add("قدم",side*55,35,45,125,55,180,metal);}
+        add("لوحة صدر",0,460,72,110,90,12,glass);add("هوائي",0,700,0,18,90,18,metal);
+      }else if(item.id==="toyprops-foam"){
+        add("قاعدة مجموعة المجسمات",0,20,0,850,40,500,color);add("مجسم أداة أول",-250,140,0,150,220,120,"#e7b95c");add("مجسم مركبة",0,130,0,280,180,160,"#78a9c7");add("مجسم أداة ثان",270,140,0,150,220,120,"#86b78a");
+      }else{
+        add("جسم لعبة شكلي آمن",0,120,0,240,80,75,"#e9a4b2");add("مقبض لين",0,30,0,90,150,100,"#e9a4b2");add("قطعة زينة أمامية",130,130,0,35,45,45,light);
+      }
+    }else if(item.cat==="water"){
+      add("جسم الخزان",0,120,0,300,170,140,"#6eaacb");
+      add("مقبض علوي",0,235,0,180,35,110,color);
+      add("مجرى مياه أمامي",185,145,0,180,45,45,metal);
+      add("فوهة رش منخفضة الضغط",285,145,0,70,24,24,light);
+      if(item.id!=="water-pistol-manual"){add("غطاء خزان",0,220,-65,95,28,95,dark);add("وحدة مضخة مغلقة",0,80,-45,125,80,85,dark);}
+      if(item.id==="water-blaster-electric"){add("حجرة بطارية معزولة",0,55,65,150,70,90,dark);add("زر تشغيل",75,220,35,35,22,35,light);}
+      if(item.id==="water-toy-squirters"){add("شكل لعبة أول",-220,80,0,140,130,130,"#7db7cf");add("شكل لعبة ثان",220,80,0,140,130,130,"#e9b76a");}
+      if(item.id==="water-play-set"){add("قاعدة مجموعة اللعب",0,20,0,1000,40,700,color);for(let x of [-350,0,350])add("برج رش مياه",x,220,0,70,380,70,"#6eaacb");}
     }else{
       add("القاعدة الرئيسية",0,0,0,900,90,450,color);
       add("الجسم الرئيسي",0,90,0,900,720,450,color);
