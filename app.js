@@ -13,7 +13,7 @@
   function loadData() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"nodes":[],"edges":[]}');
-      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [] };
+      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [], connectionLibrary: Array.isArray(saved.connectionLibrary) ? saved.connectionLibrary : [] };
     } catch { return { nodes: [], edges: [] }; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -240,12 +240,37 @@
     $("partDimThickness").value=Math.round(dims.thickness||dims.depth||0);
     $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
     $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
-    const joint=spec.joint||{};
+    const joint=spec.joint||{};\n    renderConnectionLibrary();
     $("partJointType").value=joint.type||"bolt";
     $("partJointQty").value=joint.quantity??2;
     $("partJointDiameter").value=joint.diameter??6;
     $("partJointLength").value=joint.length??20;
     $("partJointPosition").value=joint.position||"عند طرفي القطعة";
+  }
+  const jointTypeLabels={bolt:"مسمار وصامولة",screw:"برغي",insert:"جلبة ملولبة",slot:"تعشيق ولسان ومجرى",plate:"صفيحة تثبيت",weld:"لحام ثابت"};
+  function renderConnectionLibrary(){
+    const select=$("connectionLibrarySelect");if(!select)return;
+    const chosen=select.value;select.replaceChildren();
+    const first=document.createElement("option");first.value="";first.textContent="اختار وصلة محفوظة لإعادة استخدامها";select.appendChild(first);
+    (data.connectionLibrary||[]).forEach(item=>{const option=document.createElement("option");option.value=item.id;option.textContent=item.name+" — "+(jointTypeLabels[item.joint.type]||item.joint.type);select.appendChild(option);});
+    if((data.connectionLibrary||[]).some(item=>item.id===chosen))select.value=chosen;
+  }
+  function applyLibraryConnection(){
+    const item=(data.connectionLibrary||[]).find(entry=>entry.id===$("connectionLibrarySelect").value);
+    if(!item){toast("اختار وصلة من المكتبة الأول");return;}
+    $("partJointType").value=item.joint.type||"bolt";$("partJointQty").value=item.joint.quantity??0;
+    $("partJointDiameter").value=item.joint.diameter??0;$("partJointLength").value=item.joint.length??0;
+    $("partJointPosition").value=item.joint.position||"";
+    toast("تم تحميل بيانات الوصلة؛ احفظ مواصفات القطعة لتطبيقها");
+  }
+  function saveConnectionToLibrary(){
+    const name=prompt("اسم الوصلة في المكتبة، مثال: تثبيت رف جانبي");if(name===null)return;
+    const clean=name.trim();if(!clean){toast("اكتب اسمًا للوصلة");return;}
+    if((data.connectionLibrary||[]).some(item=>item.name.toLowerCase()===clean.toLowerCase())){toast("اسم الوصلة موجود في المكتبة بالفعل");return;}
+    const joint={type:$("partJointType").value,quantity:Math.max(0,Math.min(100,Number($("partJointQty").value)||0)),diameter:Math.max(0,Math.min(30,Number($("partJointDiameter").value)||0)),length:Math.max(0,Math.min(200,Number($("partJointLength").value)||0)),position:$("partJointPosition").value.trim().slice(0,120)};
+    data.connectionLibrary=data.connectionLibrary||[];const item={id:uid(),name:clean,joint,createdAt:new Date().toISOString()};data.connectionLibrary.push(item);
+    try{save();renderConnectionLibrary();$("connectionLibrarySelect").value=item.id;toast("اتحفظت الوصلة في المكتبة لإعادة استخدامها");}
+    catch(error){data.connectionLibrary.pop();toast("تعذر حفظ الوصلة في مساحة التخزين");}
   }
   function saveSelectedPart(){
     const part=standPartDefinitions(standValues()).find(p=>p.id===selectedPartId);
@@ -364,7 +389,7 @@
     const design=standValues();
     design.parts=JSON.parse(JSON.stringify(partSpecs));
     design.exportedAt=new Date().toISOString();
-    design.format="naseej-design-v1";
+    design.connectionLibrary=JSON.parse(JSON.stringify(data.connectionLibrary||[]));\n    design.format="naseej-design-v1";
     downloadBlobFile(JSON.stringify(design,null,2),"application/json;charset=utf-8",safeFileName(design.name)+".naseej.json");
     toast("تم حفظ ملف التصميم الأصلي");
   }
@@ -562,7 +587,7 @@
     $("exportDesignDataBtn").addEventListener("click",exportDesignDataFile);
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
-    $("savePartBtn").addEventListener("click",saveSelectedPart);
+    $("savePartBtn").addEventListener("click",saveSelectedPart);\n    $("saveConnectionLibraryBtn").addEventListener("click",saveConnectionToLibrary);\n    $("applyConnectionLibraryBtn").addEventListener("click",applyLibraryConnection);
     ["tubePrice","sheetPrice","wastePercent"].forEach(id=>$(id).addEventListener("input",renderManufacturingSheet));
     $("exportCutListBtn").addEventListener("click",exportCutList);
     $("standImage").addEventListener("change",event=>{
@@ -842,7 +867,7 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error("invalid");
-      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : [],designs:Array.isArray(parsed.designs) ? parsed.designs : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
+      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : [],designs:Array.isArray(parsed.designs) ? parsed.designs : [],connectionLibrary:Array.isArray(parsed.connectionLibrary) ? parsed.connectionLibrary : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
     } catch { toast("ملف النسخة الاحتياطية غير صالح"); }
     event.target.value = "";
   });
