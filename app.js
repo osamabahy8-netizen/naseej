@@ -1412,6 +1412,57 @@
     });
     faces.sort((a,b)=>a.depth-b.depth);
     faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"#ffd166":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"4":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
+    // Mechanical detail overlays: motor shafts, gear meshes, axle centerlines and wheel hubs.
+    const mechanical=svgEl("g",{"pointer-events":"none"});
+    const ring=(x,y,z,rx,rz,color,width=2)=>{
+      const pts=[];
+      for(let k=0;k<=32;k++){const a=2*Math.PI*k/32;pts.push(project(x+Math.cos(a)*rx,y,z+Math.sin(a)*rz));}
+      mechanical.appendChild(svgEl("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:color,"stroke-width":String(width)}));
+    };
+    const line3=(a,b,color,width=2,dash)=>{
+      const p=project(...a),q=project(...b);
+      mechanical.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:color,"stroke-width":String(width),...(dash?{"stroke-dasharray":dash}:{})}));
+    };
+    const gear=(x,y,z,r,color)=>{
+      ring(x,y,z,r,r,color,2.4);
+      ring(x,y+1,z,r*.58,r*.58,color,1.5);
+      for(let k=0;k<12;k++){
+        const a=2*Math.PI*k/12;
+        line3([x+Math.cos(a)*r*.86,y,z+Math.sin(a)*r*.86],[x+Math.cos(a)*r*1.12,y,z+Math.sin(a)*r*1.12],color,2.4);
+      }
+      ring(x,y+2,z,Math.max(3,r*.17),Math.max(3,r*.17),color,2);
+    };
+    renderObjects.forEach(o=>{
+      const name=(o.label+" "+(o.profile||"")).toLowerCase();
+      const cx=o.x,cy=o.y+o.h/2,cz=o.z;
+      if(/محرك|motor|brushless|gear motor/.test(name)){
+        const r=Math.max(8,Math.min(o.w,o.d)*.38);
+        ring(cx,o.y+o.h,cz,r,r,"#ffb36b",2.2);
+        ring(cx,o.y+o.h*.78,cz,r*.88,r*.88,"#ffb36b",1.4);
+        line3([cx,o.y+o.h,cz],[cx,o.y+o.h+Math.max(24,o.h*.7),cz],"#fff0c2",4);
+        ring(cx,o.y+o.h+Math.max(24,o.h*.7),cz,Math.max(3,r*.16),Math.max(3,r*.16),"#fff0c2",2);
+        line3([cx-r*.55,cy,cz],[cx+r*.55,cy,cz],"#f7d5a4",1.2);
+      }
+      if(/ترس|gear|دفرنس|علبة/.test(name)){
+        const r=Math.max(12,Math.min(o.w,o.d)*.3);
+        gear(cx-r*.48,cy+o.h*.12,cz,r,"#7dd3fc");
+        gear(cx+r*.48,cy+o.h*.12,cz,r*.72,"#b6e3ff");
+        line3([cx-r*1.2,cy+o.h*.12,cz],[cx+r*1.25,cy+o.h*.12,cz],"#d9e9f5",2,"5 4");
+      }
+      if(/محور|axle|عمود دوران|shaft/.test(name)){
+        const len=Math.max(o.w,o.d)*.62;
+        line3([cx-len/2,cy,cz],[cx+len/2,cy,cz],"#fff0c2",4);
+        ring(cx-len/2,cy,cz,Math.max(4,o.h*.22),Math.max(4,o.h*.22),"#fff0c2",1.8);
+        ring(cx+len/2,cy,cz,Math.max(4,o.h*.22),Math.max(4,o.h*.22),"#fff0c2",1.8);
+      }
+      if(/عجلة|إطار|wheel|tire/.test(name)){
+        const r=Math.max(6,Math.min(o.w,o.d)*.23);
+        ring(cx,cy,cz,r,r,"#d8e0e8",2);
+        ring(cx,cy,cz,r*.42,r*.42,"#ffffff",2);
+        line3([cx-r*.7,cy,cz],[cx+r*.7,cy,cz],"#d8e0e8",1.5);
+      }
+    });
+    root.appendChild(mechanical);
     const selected=renderObjects.find(o=>o.id===selectedModelObjectId);
     const dimensions=svgEl("g");
     if(selected){
