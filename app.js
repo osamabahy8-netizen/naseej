@@ -185,6 +185,7 @@
     });
     $("explodeToggleBtn").textContent=explodedView?"إعادة تجميع القطع":"تفكيك القطع";
     renderPartsList();
+    renderManufacturingSheet();
   }
   function renderPartsList(){
     const host=$("standPartsList");if(!host)return;
@@ -370,6 +371,45 @@
       card.append(top,title,size,material,detail,button);host.append(card);
     });
   }
+
+  let latestCutRows = [];
+  function renderManufacturingSheet(){
+    const v=standValues(), w=v.width*10, h=v.height*10, d=v.depth*10, tube=30, clearW=Math.max(0,w-2*tube), clearD=Math.max(0,d-2*tube);
+    const rows=[
+      {name:"قوائم رأسية",qty:4,length:Math.max(0,h-30),material:"ماسورة مربعة 30×30 مم"},
+      {name:"عارضتان علويتان أمامية وخلفية",qty:2,length:w,material:"ماسورة مربعة 30×30 مم"},
+      {name:"عارضتان علويتان جانبيتان",qty:2,length:d,material:"ماسورة مربعة 30×30 مم"},
+      {name:"عارضة تعليق الملابس",qty:1,length:clearW,material:"ماسورة/قضيب حسب الاختيار"}
+    ];
+    for(let i=0;i<v.shelves;i++) rows.push({name:"إطار الرف "+(i+1)+" — ضلع طويل",qty:2,length:clearW,material:"ماسورة 20×20 مم مبدئيًا"},{name:"إطار الرف "+(i+1)+" — ضلع جانبي",qty:2,length:clearD,material:"ماسورة 20×20 مم مبدئيًا"});
+    latestCutRows=rows.map(r=>({...r,total:r.qty*r.length}));
+    const tubeTotal=latestCutRows.reduce((sum,r)=>sum+r.total,0)/1000;
+    const sheetArea=(w*d+v.shelves*clearW*clearD)/1000000;
+    const waste=Math.max(0,Math.min(100,Number($("wastePercent")?.value)||0))/100;
+    const tubePrice=Math.max(0,Number($("tubePrice")?.value)||0),sheetPrice=Math.max(0,Number($("sheetPrice")?.value)||0);
+    const tubeCost=tubeTotal*(1+waste)*tubePrice, sheetCost=sheetArea*(1+waste)*sheetPrice;
+    $("materialSummary").innerHTML='<div><strong>'+tubeTotal.toFixed(2)+' م</strong><span>إجمالي أطوال المواسير قبل الهالك</span></div><div><strong>'+sheetArea.toFixed(2)+' م²</strong><span>مساحة القاعدة والرفوف التقديرية</span></div><div><strong>'+Math.round(tubeCost+sheetCost).toLocaleString("ar-EG")+' ج</strong><span>تقدير خامات وفق الأسعار المدخلة</span></div>';
+    $("cutListBody").innerHTML=latestCutRows.map(r=>'<tr><td>'+r.name+'</td><td>'+r.qty+'</td><td>'+r.length.toFixed(0)+' مم للقطعة</td><td>'+r.material+'</td></tr>').join('')+'<tr><td>قاعدة صاج</td><td>1</td><td>'+w.toFixed(0)+' × '+d.toFixed(0)+' مم</td><td>صاج — مساحة '+(w*d/1000000).toFixed(2)+' م²</td></tr>'+Array.from({length:v.shelves},(_,i)=>'<tr><td>لوح الرف '+(i+1)+'</td><td>1</td><td>'+clearW.toFixed(0)+' × '+clearD.toFixed(0)+' مم</td><td>خشب أو صاج — حسب الاختيار</td></tr>').join('');
+    function drawing(id,view){
+      const el=$(id), scale=Math.min(210/(view==="side"?d:w),170/h), width=(view==="side"?d:w)*scale,height=h*scale,x=(320-width)/2,y=218-height;
+      const postW=Math.max(3,tube*scale), color=v.color;
+      let shapes='<rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" fill="none" stroke="'+color+'" stroke-width="'+postW+'"/>';
+      if(view==="front"||view==="side"){
+        for(let i=0;i<v.shelves;i++){const yy=y+height*(1-(12+(v.height-28)*(i+1)/(v.shelves+1))/v.height);shapes+='<line x1="'+(x+postW)+'" y1="'+yy+'" x2="'+(x+width-postW)+'" y2="'+yy+'" stroke="#d5b477" stroke-width="4"/>';}
+        if(view==="front")shapes+='<line x1="'+(x+postW)+'" y1="'+(y+height*0.11)+'" x2="'+(x+width-postW)+'" y2="'+(y+height*0.11)+'" stroke="#d5b477" stroke-width="5"/>';
+      } else {shapes='<rect x="'+x+'" y="'+(y+height*.18)+'" width="'+width+'" height="'+(height*.65)+'" fill="none" stroke="'+color+'" stroke-width="5"/><line x1="'+x+'" y1="'+(y+height*.18)+'" x2="'+(x+width)+'" y2="'+(y+height*.18)+'" stroke="#d5b477" stroke-width="3"/>';}
+      el.innerHTML='<rect width="320" height="260" rx="10" fill="#0b1523"/>'+shapes+'<text x="160" y="246" fill="#bac7d6" font-size="11" text-anchor="middle">'+(view==="front"?"العرض "+v.width+" سم × الارتفاع "+v.height+" سم":view==="side"?"العمق "+v.depth+" سم × الارتفاع "+v.height+" سم":"بصمة القاعدة "+v.width+" × "+v.depth+" سم")+'</text>';
+    }
+    drawing("frontDrawing","front");drawing("sideDrawing","side");drawing("topDrawing","top");
+  }
+  function exportCutList(){
+    if(!latestCutRows.length)renderManufacturingSheet();
+    const rows=[["القطعة","العدد","طول القطعة مم","إجمالي الطول مم","الخامة"],...latestCutRows.map(r=>[r.name,r.qty,r.length,r.total,r.material])];
+    const csv="\\uFEFF"+rows.map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(",")).join("\\r\\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download="naseej-cut-list.csv";a.click();URL.revokeObjectURL(url);toast("تم تصدير جدول القص");
+  }
+
   function setupDesignStudio() {
     $("catalogSearch").addEventListener("input",renderFabricationCatalog);
     $("catalogCategory").addEventListener("change",renderFabricationCatalog);
@@ -390,6 +430,8 @@
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
     $("savePartBtn").addEventListener("click",saveSelectedPart);
+    ["tubePrice","sheetPrice","wastePercent"].forEach(id=>$(id).addEventListener("input",renderManufacturingSheet));
+    $("exportCutListBtn").addEventListener("click",exportCutList);
     $("standImage").addEventListener("change",event=>{
       const file=event.target.files[0]; if(!file)return;
       if(!file.type.startsWith("image/")){toast("اختار ملف صورة");return;}
