@@ -262,6 +262,37 @@
     $("standImage").value=""; $("referencePreview").hidden=true; $("referenceImageBox").hidden=true;
     $("savedDesigns").value=""; renderStandModel();
   }
+  function exportStandOBJ() {
+    const v=standValues(), output=["# Naseej separate-part stand model","o Naseej_Stand"];
+    let vertexCount=0;
+    function addPart(name,boxes){
+      output.push("","o "+name);
+      boxes.forEach(([x,y,z,w,d,h])=>{
+        const verts=[[x,y,z],[x+w,y,z],[x+w,y+d,z],[x,y+d,z],[x,y,z+h],[x+w,y,z+h],[x+w,y+d,z+h],[x,y+d,z+h]];
+        verts.forEach(([vx,vy,vz])=>output.push("v "+vx.toFixed(3)+" "+vz.toFixed(3)+" "+vy.toFixed(3)));
+        const n=vertexCount+1;
+        [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(face=>output.push("f "+face.map(i=>n+i-1).join(" ")));
+        vertexCount+=8;
+      });
+    }
+    const p=Math.max(2.2,Math.min(4,v.width*.035)), top=v.height-5;
+    addPart("Base",[[0,0,0,v.width,v.depth,3]]);
+    addPart("Post_Front_Left",[[0,0,3,p,p,v.height-3]]);
+    addPart("Post_Front_Right",[[v.width-p,0,3,p,p,v.height-3]]);
+    addPart("Post_Rear_Left",[[0,v.depth-p,3,p,p,v.height-3]]);
+    addPart("Post_Rear_Right",[[v.width-p,v.depth-p,3,p,p,v.height-3]]);
+    addPart("Top_Frame",[[0,0,top,v.width,p,5],[0,v.depth-p,top,v.width,p,5],[0,p,top,p,v.depth-2*p,5],[v.width-p,p,top,p,v.depth-2*p,5]]);
+    addPart("Hanger_Rail",[[p,v.depth*.48,v.height-20,v.width-2*p,2.4,2.4]]);
+    for(let i=0;i<v.shelves;i++){
+      const z=12+(v.height-28)*(i+1)/(v.shelves+1);
+      addPart("Shelf_"+(i+1),[[p,p,z,v.width-2*p,v.depth-2*p,2.5],[p,p,z+2.5,v.width-2*p,1.4,1.8]]);
+    }
+    const blob=new Blob([output.join("\\n")],{type:"model/obj"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=(v.name||"naseej-stand").replace(/[^\\p{L}\\p{N}_-]+/gu,"_")+".obj";
+    a.click();URL.revokeObjectURL(url);
+    toast("تم تصدير المجسم بأجزائه المنفصلة");
+  }
   function downloadStandImage() {
     const svg=$("standPreview");
     const source=new XMLSerializer().serializeToString(svg);
@@ -290,6 +321,7 @@
     $("loadDesignBtn").addEventListener("click",loadStandDesign);
     $("newDesignBtn").addEventListener("click",resetStandDesign);
     $("downloadStandBtn").addEventListener("click",downloadStandImage);
+    $("exportObjBtn").addEventListener("click",exportStandOBJ);
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
     $("savePartBtn").addEventListener("click",saveSelectedPart);
