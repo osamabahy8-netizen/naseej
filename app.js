@@ -326,7 +326,7 @@
       const partner=byId.get(partnerId),spec=partSpecs[part.id]||{};
       steps.push({id:uid(),partId:part.id,partnerId,partName:spec.name||part.name,partnerName:partSpecs[partnerId]?.name||partner.name,jointType:joint.type,quantity:Number(joint.quantity)||0,diameter:Number(joint.diameter)||0,length:Number(joint.length)||0,position:String(joint.position||""),note:""});
     });
-    steps.sort((a,b)=>rank(a.partId)-rank(b.partId));assemblySteps=steps;renderAssemblyGuide();
+    steps.sort((a,b)=>rank(a.partId)-rank(b.partId));assemblySteps=steps;renderAssemblyGuide();persistAssemblySteps();
     toast(steps.length?"اتولدت مسودة من الوصلات المحددة فقط":"مفيش وصلات مرتبطة بطرفين؛ حدّد القطعة المتصلة واحفظها الأول");
   }
   function renderAssemblyGuide(){
