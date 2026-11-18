@@ -294,6 +294,51 @@
     a.click();URL.revokeObjectURL(url);
     toast("تم تصدير المجسم بأجزائه المنفصلة");
   }
+
+  function safeFileName(value) {
+    return (value || "naseej-design").replace(/[^\\p{L}\\p{N}_-]+/gu,"_").slice(0,80) || "naseej-design";
+  }
+  function downloadBlobFile(content,type,filename) {
+    const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1200);
+  }
+  function exportDesignDataFile() {
+    const design=standValues();
+    design.parts=JSON.parse(JSON.stringify(partSpecs));
+    design.exportedAt=new Date().toISOString();
+    design.format="naseej-design-v1";
+    downloadBlobFile(JSON.stringify(design,null,2),"application/json;charset=utf-8",safeFileName(design.name)+".naseej.json");
+    toast("تم حفظ ملف التصميم الأصلي");
+  }
+  function exportStandaloneDesignFile() {
+    const v=standValues();
+    renderManufacturingSheet();
+    const svgSource=new XMLSerializer().serializeToString($("standPreview"));
+    const parts=standPartDefinitions(v).map(part=>{
+      const spec=partSpecs[part.id]||{};
+      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes};
+    });
+    const esc=value=>String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
+    const cutRows=(latestCutRows||[]).map(row=>"<tr><td>"+esc(row.name)+"</td><td>"+esc(row.qty)+"</td><td>"+esc(row.length)+"</td><td>"+esc(row.total)+"</td><td>"+esc(row.material)+"</td></tr>").join("");
+    const image=v.image?'<section><h2>الصورة المرجعية</h2><img class="reference" src="'+v.image+'" alt="الصورة المرجعية"></section>':"";
+    const page=[
+      "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>"+esc(v.name)+" - تصميم مستقل من نسيج</title>",
+      "<style>body{font-family:Arial,Tahoma,sans-serif;margin:0;background:#eef1f5;color:#182334;line-height:1.7}.wrap{max-width:1100px;margin:auto;padding:24px}.hero{background:#142235;color:#fff;padding:24px;border-radius:18px}.hero h1{margin:0 0 8px}.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:18px 0}.meta div,section{background:#fff;border:1px solid #dce2e9;border-radius:14px;padding:16px}.model{background:#0b1523;border-radius:14px;padding:12px;overflow:auto}.model svg{display:block;width:100%;height:auto;max-height:680px}.reference{max-width:100%;max-height:420px;object-fit:contain}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #dce2e9;padding:9px;text-align:right;vertical-align:top}th{background:#edf1f6}h2{margin-top:0}.note{color:#586579;font-size:13px}.actions{margin:16px 0}@media print{body{background:#fff}.wrap{max-width:none;padding:0}.hero,section{break-inside:avoid}.actions{display:none}}</style></head><body><main class=\"wrap\">",
+      "<header class=\"hero\"><h1>"+esc(v.name)+"</h1><div>ملف عرض مستقل صادر من نسيج</div><div class=\"note\">يمكن فتح هذا الملف مباشرة في متصفح الكمبيوتر أو الهاتف دون فتح موقع نسيج.</div></header>",
+      "<div class=\"meta\"><div><b>العرض</b><br>"+esc(v.width)+" سم</div><div><b>الارتفاع</b><br>"+esc(v.height)+" سم</div><div><b>العمق</b><br>"+esc(v.depth)+" سم</div><div><b>عدد الرفوف</b><br>"+esc(v.shelves)+"</div><div><b>الخامة الرئيسية</b><br>"+esc(v.material)+"</div></div>",
+      "<section><h2>المعاينة المجسمة</h2><div class=\"model\">"+svgSource+"</div></section>",
+      "<section><h2>بيانات القطع</h2><table><thead><tr><th>القطعة</th><th>الخامة / المقطع</th><th>الملاحظات</th></tr></thead><tbody>"+partRows+"</tbody></table></section>",
+      "<section><h2>جدول القص المبدئي</h2><table><thead><tr><th>القطعة</th><th>العدد</th><th>طول القطعة مم</th><th>الإجمالي مم</th><th>الخامة</th></tr></thead><tbody>"+cutRows+"</tbody></table></section>",
+      "<section><h2>ملاحظات التصميم</h2><p>"+esc(v.notes||"لا توجد ملاحظات إضافية.")+"</p><p class=\"note\">هذا ملف عرض وحصر مبدئي، وليس اعتمادًا إنشائيًا أو أمر تصنيع نهائيًا. يجب مراجعة المقاسات والوصلات والسماكات والأحمال قبل التصنيع.</p></section>",
+      image,
+      "<div class=\"actions\"><button onclick=\"window.print()\">طباعة / حفظ PDF</button></div><p class=\"note\">تم إنشاء الملف بواسطة نسيج.</p></main></body></html>"
+    ].join("");
+    downloadBlobFile(page,"text/html;charset=utf-8",safeFileName(v.name)+".html");
+    toast("تم تجهيز ملف العرض المستقل");
+  }
+
   function downloadStandImage() {
     const svg=$("standPreview");
     const source=new XMLSerializer().serializeToString(svg);
@@ -444,6 +489,8 @@
     $("newDesignBtn").addEventListener("click",resetStandDesign);
     $("downloadStandBtn").addEventListener("click",downloadStandImage);
     $("exportObjBtn").addEventListener("click",exportStandOBJ);
+    $("exportDesignFileBtn").addEventListener("click",exportStandaloneDesignFile);
+    $("exportDesignDataBtn").addEventListener("click",exportDesignDataFile);
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
     $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
     $("savePartBtn").addEventListener("click",saveSelectedPart);
