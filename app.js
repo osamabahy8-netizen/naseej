@@ -615,7 +615,7 @@
       [-1,1].forEach(side=>{
         [-1,1].forEach(front=>{
           const x=front*axleX,z=side*axleZ;
-          add((front>0?"العجلة الأمامية ":"العجلة الخلفية ")+(side>0?"اليمنى":"اليسرى"),x,baseY-wheel/2,z,wheel,wheelW,wheel,rubber,"cylinder",90);
+          add((front>0?"العجلة الأمامية ":"العجلة الخلفية ")+(side>0?"اليمنى":"اليسرى"),x,baseY-wheelW/2,z,wheel,wheelW,wheel,rubber,"cylinder",90);
           add("جنط العجلة",x,baseY-wheel/2,z+side*(wheelW*.52),wheel*.48,wheelW*.18,wheel*.48,metal,"cylinder",90);
         });
       });
