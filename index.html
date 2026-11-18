@@ -29,6 +29,12 @@
         <button id="addBtn" class="button button-primary" type="button">＋ فكرة جديدة</button>
       </div>
       <p class="hint">اضغط على أي فكرة لعرض تفاصيلها. اختر «ربط» ثم اضغط على فكرة ثانية لإنشاء علاقة بينهما.</p>
+      <div class="map-filter">
+        <label for="groupFilter">عرض الخريطة:</label>
+        <select id="groupFilter" aria-label="تصفية الأفكار حسب المجموعة">
+          <option value="all">عرض كل المجموعات</option>
+        </select>
+      </div>
       <div class="canvas-wrap">
         <svg id="network" role="img" aria-label="خريطة الأفكار المترابطة"></svg>
         <div id="emptyState" class="empty-state"><div class="empty-icon">✳</div><h3>ابدأ بنسج أفكارك</h3><p>أضف أول فكرة أو مشروع، وبعدها اربطه بباقي العناصر.</p><button id="emptyAddBtn" class="button button-primary" type="button">إضافة أول فكرة</button></div>
