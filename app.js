@@ -308,7 +308,72 @@
     img.onerror=()=>{URL.revokeObjectURL(url);toast("تعذر تجهيز الصورة");};
     img.src=url;
   }
+  const fabricationCatalog = [
+    {id:"fashion-rail",cat:"fashion",name:"استاند ملابس أرضي",icon:"👕",size:"عرض 900–1200 × عمق 450–600 × ارتفاع 1400–1800 مم",material:"حديد مربع أو دائري؛ دهان بودرة؛ وصلات قابلة للفك",detail:"حوامل تعليق مفردة أو مزدوجة، عجلات اختيارية، وقاعدة مانعة للانقلاب."},
+    {id:"fashion-wall",cat:"fashion",name:"وحدة تعليق حائطية",icon:"🧥",size:"عرض الوحدة 900–1200؛ ارتفاع 2100–2400؛ عمق 500–600 مم",material:"قوائم معدنية + أذرع تعليق + رف علوي",detail:"نظام ثقوب أو مجاري يسمح بتغيير ارتفاع الأذرع والرفوف."},
+    {id:"fashion-table",cat:"fashion",name:"ترابيزة عرض ملابس",icon:"🛍️",size:"ارتفاع 750–900؛ سطح 1200–1800 × 600–900 مم",material:"هيكل حديد + خشب أو MDF أو زجاج",detail:"درج أو رف سفلي، زوايا آمنة، وإمكانية التعشيق مع ترابيزات متداخلة."},
+    {id:"fashion-gondola",cat:"fashion",name:"جزيرة عرض مزدوجة",icon:"▤",size:"وحدات عرض 900–1200؛ ارتفاع 1200–1600؛ رف 300–450 مم",material:"صاج مثني + قوائم + أرفف قابلة للضبط",detail:"تُستخدم في منتصف المحل ويمكن تغيير الخطافات والرفوف والواجهات."},
+    {id:"fashion-shoes",cat:"fashion",name:"ستاند أحذية متعدد المستويات",icon:"👟",size:"عرض 600–1200؛ عمق 300–450؛ ارتفاع 1200–1800 مم",material:"حديد خفيف + أرفف صاج أو خشب",detail:"أرفف مائلة بحافة أمامية، أو أذرع فردية قابلة للتغيير."},
+    {id:"fashion-cash",cat:"fashion",name:"كاونتر كاشير محل",icon:"▰",size:"ارتفاع 900–1050؛ عمق 600–750؛ الطول حسب الموقع",material:"هيكل حديد + خشب أو HPL أو أكريليك",detail:"مكان درج النقدية والكمبيوتر والأسلاك والتخزين وواجهة الهوية التجارية."},
+    {id:"fashion-mirror",cat:"fashion",name:"مراية وبنش غرفة قياس",icon:"🪞",size:"بنش ارتفاع 430–480؛ عمق 350–450 مم؛ المراية حسب الحائط",material:"حديد مطلي + خشب مبطن + زجاج مرايا",detail:"خطافات شنط وملابس وحواف آمنة ومساحة حركة مناسبة."},
+    {id:"fashion-display",cat:"fashion",name:"منصة مانيكان وواجهة عرض",icon:"◈",size:"منصة 300–600 ارتفاع؛ مقاس السطح حسب المشهد",material:"حديد + خشب + أكريليك + إضاءة LED",detail:"وحدات متدرجة قابلة للتجميع وتغيير ترتيبها في واجهة المحل."},
+    {id:"retail-gondola",cat:"retail",name:"رفوف سوبر ماركت جزيرة",icon:"▥",size:"وحدة طول 900–1200؛ ارتفاع 1350–1800؛ عمق الرف 300–500 مم",material:"صاج مثني مطلي + قواعد وقوائم ودعامات",detail:"أرفف قابلة للتعديل، فواصل أسعار، نهايات عرض، مع حساب حمل كل رف."},
+    {id:"retail-wall",cat:"retail",name:"رفوف حائط للمخازن والعرض",icon:"▤",size:"عرض الوحدة 900–1200؛ ارتفاع 1800–2400؛ عمق 300–600 مم",material:"قوائم مثقبة + أرفف صاج أو سلك",detail:"اختيار سمك القطاع وعدد الدعامات بناءً على الحمل الفعلي."},
+    {id:"retail-checkout",cat:"retail",name:"كاونتر كاشير سير",icon:"🧾",size:"الارتفاع ومكان السير حسب خط التشغيل؛ يحدد من مخطط الموقع",material:"صاج + قطاعات حديد + سير ومكونات كهربائية",detail:"نحتاج تصميم منفصل للجزء الميكانيكي والكهرباء وحماية نقاط القرص."},
+    {id:"retail-produce",cat:"retail",name:"ستاند خضار وفاكهة",icon:"🥬",size:"وحدات عرض 900–1500 عرض؛ عمق 600–900 مم",material:"حديد مجلفن أو مطلي + صناديق خشب أو بلاستيك",detail:"ميول مناسب وسهولة تنظيف وتصريف ومراعاة وزن الحمولة."},
+    {id:"retail-bakery",cat:"retail",name:"فاترينة مخبوزات",icon:"🥐",size:"تُحدد حسب مساحة الخدمة والواجهة؛ عمق مرجعي 600–900 مم",material:"هيكل معدن + زجاج آمن + أرفف",detail:"الزجاج والتبريد والإضاءة ومتطلبات سلامة الغذاء تحتاج مواصفات المورد المختص."},
+    {id:"cafe-counter",cat:"cafe",name:"كاونتر كافيه واستقبال",icon:"☕",size:"ارتفاع خدمة مرجعي 900–1050؛ عمق 600–750 مم",material:"هيكل حديد + خشب أو HPL أو رخام صناعي",detail:"تقسيم ماكينة القهوة والثلاجات والحوض والكاشير وتمرير الكابلات."},
+    {id:"cafe-backbar",cat:"cafe",name:"وحدة خلفية للكافيه",icon:"☕",size:"عمق مرجعي 300–600؛ الارتفاع حسب الحائط والأجهزة",material:"حديد + أرفف خشب أو زجاج + إضاءة",detail:"أرفف أكواب وتخزين ومكان شاشة أو قائمة رقمية."},
+    {id:"cafe-table",cat:"cafe",name:"قواعد ترابيزات ومقاعد",icon:"🪑",size:"ترابيزة طعام غالبًا 700–760 ارتفاع؛ البار 1050–1150 تقريبًا",material:"مواسير حديد أو قطاعات صاج مقصوص ليزر",detail:"قواعد ثابتة أو قابلة للفك، رجل مركزية أو أربع أرجل، واختبار الثبات."},
+    {id:"cafe-partition",cat:"cafe",name:"فواصل جلسات وبارتشن",icon:"▥",size:"ارتفاع 900–1800؛ الطول حسب تقسيم المكان",material:"حديد + خشب أو زجاج أو شبك ممدد",detail:"قواعد ثابتة أو متحركة، أحواض زرع مدمجة، أو فواصل زخرفية."},
+    {id:"kitchen-table",cat:"cafe",name:"ترابيزة تجهيز ستانلس",icon:"▱",size:"طول 1000–1800؛ عمق 600–700؛ ارتفاع 800–900 مم",material:"ستانلس 304 لأسطح ملامسة الطعام؛ سمك السطح حسب الحمل",detail:"رف سفلي، رجل قابلة للضبط، وظهر مرتفع عند التركيب بجوار الحائط."},
+    {id:"kitchen-sink",cat:"cafe",name:"حوض غسيل ستانلس",icon:"🚰",size:"حوض مفرد أو مزدوج أو ثلاثي؛ مقاس الحوض حسب الأواني",material:"ستانلس مناسب للاستخدام الغذائي مع لحامات مصقولة",detail:"تحديد عدد الأحواض ومكان الصرف وحنفية الرش وحوض غسل الأيدي حسب الاشتراطات."},
+    {id:"kitchen-shelf",cat:"cafe",name:"أرفف حائط ستانلس",icon:"▤",size:"عمق مرجعي 300–400؛ أطوال 600–2000 مم",material:"ستانلس 304 أو خامة معتمدة لبيئة الاستخدام",detail:"حواف مثنية وحوامل قوية وسهولة فك التنظيف."},
+    {id:"kitchen-rack",cat:"cafe",name:"وحدة تخزين صواني وأواني",icon:"▥",size:"عرض 900–1500؛ عمق 450–600؛ ارتفاع 1600–1800 مم",material:"ستانلس أو حديد مطلي حسب منطقة الاستخدام",detail:"تباعد الأرفف حسب الصواني والأحمال، مع تثبيت ضد الانقلاب."},
+    {id:"kitchen-hood",cat:"cafe",name:"حامل شفاط ومظلة مطبخ",icon:"♨",size:"حسب خط الطهي ومعدات الحرارة؛ لا يعتمد مقاس ثابت",material:"ستانلس وفلاتر دهون ومجرى سحب",detail:"التصميم النهائي والشفط ومكافحة الحريق بواسطة مختص تهوية وسلامة."},
+    {id:"kitchen-trolley",cat:"cafe",name:"عربة خدمة أو صواني",icon:"▰",size:"عرض 500–700؛ عمق 800–1000؛ ارتفاع 850–1000 مم",material:"ستانلس أو حديد مطلي + عجلات صناعية",detail:"عجل بقفل، مقابض، حواف مانعة للسقوط، وحمولة معلومة."},
+    {id:"mall-kiosk",cat:"mall",name:"كشك مول قابل للفك",icon:"🏬",size:"المساحة حسب عقد المول؛ وحدات نموذجية 2000–3000 مم",material:"هيكل حديد + ألواح ديكور + زجاج + كهرباء",detail:"تصميم وحدات تنفصل للنقل، واجهات قابلة للتغيير، وإخفاء التوصيلات."},
+    {id:"mall-pop",cat:"mall",name:"ستاند موسمي متنقل",icon:"✳",size:"قاعدة 600–1200؛ ارتفاع 1400–2200 مم",material:"حديد خفيف + ألواح مطبوعة أو أكريليك",detail:"يتفك بسرعة ويُخزن مسطحًا مع عجلات أو قواعد قابلة للضبط."},
+    {id:"mall-food",cat:"mall",name:"كاونتر فود كورت",icon:"🍔",size:"ارتفاع خدمة 900–1050؛ العمق يحدد من الأجهزة والممرات",material:"حديد + ستانلس + كسوة ديكور",detail:"فصل منطقة الطلب عن التسليم ومكان شاشة المنيو ومعدات الخدمة."},
+    {id:"mall-bench",cat:"mall",name:"مقاعد انتظار عامة",icon:"🪑",size:"ارتفاع المقعد قرابة 430–470؛ العمق 400–500 مم",material:"حديد + خشب أو ألواح مدمجة",detail:"تصميم مقاوم للاستخدام الكثيف وسهل الصيانة والتنظيف."},
+    {id:"metal-stair",cat:"metal",name:"سلالم ودرابزين معدني",icon:"↗",size:"حسب الارتفاع والفتحة والكود؛ لا يعتمد قبل الحساب",material:"قطاعات حديد أو استانلس",detail:"يلزم حساب إنشائي وتفاصيل تثبيت وارتفاعات ودرابزين وفق الكود."},
+    {id:"metal-canopy",cat:"metal",name:"مظلات وبرجولات",icon:"⌂",size:"حسب البحر والرياح ونقاط التثبيت",material:"قطاعات حديد مجلفن أو مطلي",detail:"تصميم إنشائي وتصريف مياه وحماية ضد التآكل."},
+    {id:"metal-rack",cat:"metal",name:"أرفف مخازن وأحمال",icon:"▦",size:"تحدد من وزن الوحدة والبحور وعدد المستويات",material:"قطاعات مشكلة باردة أو ساخنة حسب الحمل",detail:"يلزم بيان حمولة الرف والباكية والتثبيت الأرضي ومراجعة مهندس."},
+    {id:"metal-cart",cat:"metal",name:"عربات نقل داخلية",icon:"▰",size:"حسب الصناديق والممرات؛ مقبض 850–1000 مم مرجعي",material:"حديد أو ستانلس + عجلات",detail:"تحديد الحمولة ومركز الثقل ونوع الأرضية والعجلات."},
+    {id:"decor-screen",cat:"decor",name:"فواصل ديكور ليزر",icon:"✥",size:"ألواح نموذجية 600–1200 عرض؛ الارتفاع حسب الموقع",material:"صاج ليزر + إطار حديد + دهان بودرة",detail:"نقوش هندسية أو نباتية أو هوية خاصة، مع قواعد تثبيت مخفية."},
+    {id:"decor-light",cat:"decor",name:"هياكل إضاءة ولافتات",icon:"✧",size:"حسب اللافتة والوزن ومكان التعليق",material:"حديد أو ألومنيوم + LED",detail:"توفير باب صيانة ومجرى كابلات ومصدر تغذية آمن."},
+    {id:"decor-planter",cat:"decor",name:"أحواض زرع وفواصل",icon:"🌿",size:"أحواض 300–1200 طول؛ ارتفاع 400–900 مم مرجعي",material:"صاج مطلي أو ستانلس + بطانة عازلة",detail:"فتحات صرف وبطانة داخلية وحماية الأرضية من المياه."}
+  ];
+  const catalogLabels={fashion:"محلات الملابس",retail:"التجزئة والسوبر ماركت",cafe:"الكافيهات والمطاعم",mall:"المولات والأكشاك",metal:"مشغولات الحديد",decor:"الديكور والعناصر الخاصة"};
+  function renderFabricationCatalog(){
+    const host=$("catalogGrid");if(!host)return;
+    host.replaceChildren();
+    const query=$("catalogSearch").value.trim().toLowerCase();
+    const category=$("catalogCategory").value;
+    const items=fabricationCatalog.filter(item=>(category==="all"||item.cat===category)&&(!query||(item.name+" "+item.size+" "+item.material+" "+item.detail).toLowerCase().includes(query)));
+    if(!items.length){const p=document.createElement("p");p.className="groups-empty";p.textContent="مفيش نتائج مطابقة للبحث.";host.append(p);return;}
+    items.forEach(item=>{
+      const card=document.createElement("article");card.className="catalog-card";
+      const top=document.createElement("div");top.className="catalog-card-top";
+      const icon=document.createElement("span");icon.className="catalog-icon";icon.textContent=item.icon;
+      const category=document.createElement("span");category.className="catalog-category";category.textContent=catalogLabels[item.cat];
+      top.append(icon,category);
+      const title=document.createElement("h4");title.textContent=item.name;
+      const size=document.createElement("p");size.innerHTML="<strong>مقاسات مرجعية:</strong> ";size.append(document.createTextNode(item.size));
+      const material=document.createElement("p");material.innerHTML="<strong>الخامات:</strong> ";material.append(document.createTextNode(item.material));
+      const detail=document.createElement("p");detail.textContent=item.detail;
+      const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
+      button.addEventListener("click",()=>{
+        const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\\nالمقاسات المرجعية: "+item.size+"\\nالخامات: "+item.material+"\\nتفاصيل: "+item.detail+"\\n\\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
+        data.nodes.push(node);selectedId=node.id;activeGroupFilter="all";save();render();toast("اتضافت بطاقة الشغل لخريطة نسيج");
+      });
+      card.append(top,title,size,material,detail,button);host.append(card);
+    });
+  }
   function setupDesignStudio() {
+    $("catalogSearch").addEventListener("input",renderFabricationCatalog);
+    $("catalogCategory").addEventListener("change",renderFabricationCatalog);
+    renderFabricationCatalog();
     document.querySelectorAll(".main-tab").forEach(tab=>tab.addEventListener("click",()=>{
       document.querySelectorAll(".main-tab").forEach(t=>t.classList.toggle("active",t===tab));
       $("ideasView").hidden=tab.dataset.view!=="ideasView";
