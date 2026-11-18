@@ -1007,6 +1007,15 @@
     const safe=value=>String(value??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
     list.innerHTML="<div class='table-wrap'><table><thead><tr><th>رقم</th><th>القطعة</th><th>الثقوب ومراكزها</th><th>اللحامات</th><th>نوع الوصلة / التجميع</th></tr></thead><tbody>"+modelObjects.map((o,i)=>"<tr><td>"+(i+1)+"</td><td>"+safe(o.label)+"</td><td>"+safe(o.holeSpec||"غير محدد")+"</td><td>"+safe(o.weldSpec||"غير محدد")+"</td><td>"+safe(o.jointSpec||"غير محدد")+"</td></tr>").join("")+"</tbody></table></div>";
   }
+  function exportModelManufacturingReport() {
+    if(!modelObjects.length){toast("لا توجد قطع لتصدير تقريرها");return;}
+    const quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+    const rows=[["رقم القطعة","اسم القطعة","العرض مم","الارتفاع مم","العمق مم","الخامة","القطاع","السمك مم","العدد","طول القص المقترح مم","الثقوب ومراكزها","اللحامات","نوع الوصلة","ملاحظة"]];
+    modelObjects.forEach((o,i)=>rows.push([i+1,o.label,Math.round(o.w),Math.round(o.h),Math.round(o.d),o.material||"حديد",o.profile||"",o.thickness??"",o.quantity||1,o.cutLength??Math.round(Math.max(o.w,o.h,o.d)),o.holeSpec||"غير محدد",o.weldSpec||"غير محدد",o.jointSpec||"غير محدد","مراجعة هندسية مطلوبة قبل التصنيع"]));
+    const csv="\uFEFF"+rows.map(row=>row.map(quote).join(",")).join("\r\n");
+    downloadBlobFile(csv,"text/csv;charset=utf-8",(modelProjectName||"naseej")+"_تقرير_التصنيع.csv");
+    toast("تم تجهيز تقرير التصنيع بصيغة CSV");
+  }
   function transformModelVertex(point,o) {
     let [x,y,z]=point;
     x-=o.x;y-=o.y+(o.h/2);z-=o.z;
@@ -1215,6 +1224,7 @@
       renderModelDrawing();
     }));
     $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";renderModelDrawing();});
+    $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
@@ -1224,7 +1234,7 @@
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
-    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();});
+    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
     if(!data.modelStudioInitialized){
       modelObjects=[{id:uid(),type:"box",label:"مجسم تجريبي",x:0,y:0,z:0,w:600,h:300,d:400,color:"#c49a55",rx:0,ry:0,rz:0}];
       selectedModelObjectId=modelObjects[0].id;
