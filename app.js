@@ -892,6 +892,8 @@
   let modelExplodedView = false;
   let modelExplodeMoveMode = false;
   let modelExplodeOffsets = {};
+  let modelAssemblyGuideOn = false;
+  let modelAssemblyStep = 0;
   let modelProjectName = "تصميم جديد";
   function modelProjectSnapshot() {
     return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
@@ -1034,8 +1036,9 @@
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
-    const center=modelObjects.reduce((a,o)=>[a[0]+o.x/modelObjects.length,a[1]+(o.y+o.h/2)/modelObjects.length,a[2]+o.z/modelObjects.length],[0,0,0]);
-    const renderObjects=modelObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};return {...o,x:o.x+dx/len*gap+extra.x,y:o.y+dy/len*gap+extra.y,z:o.z+dz/len*gap+extra.z};});
+    const center=modelObjects.length?modelObjects.reduce((a,o)=>[a[0]+o.x/modelObjects.length,a[1]+(o.y+o.h/2)/modelObjects.length,a[2]+o.z/modelObjects.length],[0,0,0]):[0,0,0];
+    const assemblyObjects=modelAssemblyGuideOn?modelObjects.slice(0,Math.max(1,Math.min(modelObjects.length,modelAssemblyStep+1))):modelObjects;
+    const renderObjects=assemblyObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};return {...o,x:o.x+dx/len*gap+extra.x,y:o.y+dy/len*gap+extra.y,z:o.z+dz/len*gap+extra.z};});
     const corners=[];
     renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
@@ -1085,7 +1088,7 @@
       }
     });
     faces.sort((a,b)=>a.depth-b.depth);
-    faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
+    faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"#ffd166":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"4":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
     const selected=renderObjects.find(o=>o.id===selectedModelObjectId);
     const dimensions=svgEl("g");
     if(selected){
@@ -1121,6 +1124,7 @@
     modelObjects.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="model-object-choice"+(o.id===selectedModelObjectId?" active":"");b.textContent=o.label;b.addEventListener("click",()=>{selectedModelObjectId=o.id;renderModelDrawing();renderModelObjectEditor();});list.appendChild(b);});
     $("modelPreviewName").textContent=modelProjectName;
     renderModelCutList();
+    if(modelAssemblyGuideOn)renderModelAssemblyGuide();
     renderManufacturingDrawings();
   }
   function saveModelObjectEdits() {
@@ -1173,6 +1177,15 @@
     const spanX=Math.max(1,Math.max(...projected.map(p=>p[0]))-Math.min(...projected.map(p=>p[0])));
     const spanY=Math.max(1,Math.max(...projected.map(p=>p[1]))-Math.min(...projected.map(p=>p[1])));
     return Math.min(.8,500/spanX,420/spanY)*modelZoom;
+  }
+  function renderModelAssemblyGuide(){
+    const panel=$("modelAssemblyGuide");if(!panel)return;
+    if(!modelObjects.length){panel.innerHTML="<p>أضف قطعًا إلى المجسم أولًا لبدء دليل التجميع.</p>";return;}
+    const index=Math.max(0,Math.min(modelAssemblyStep,modelObjects.length-1)),part=modelObjects[index];
+    panel.innerHTML="<div class=\"assembly-guide-head\"><strong>الخطوة "+(index+1)+" من "+modelObjects.length+": "+escapeHtml(part.label)+"</strong><span>"+(index===modelObjects.length-1?"آخر قطعة في القائمة":"تركيب القطعة الحالية")+"</span></div><p>الخامة: "+escapeHtml(part.material||"غير محددة")+" | الأبعاد: "+Math.round(part.w)+" × "+Math.round(part.h)+" × "+Math.round(part.d)+" مم</p><p>طريقة الوصلة: "+escapeHtml(part.jointSpec||"لم تُحدد بعد")+"</p><p>اللحام: "+escapeHtml(part.weldSpec||"لم يُحدد بعد")+"</p><div class=\"assembly-guide-actions\"><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyPrevBtn\" "+(index===0?"disabled":"")+">الخطوة السابقة</button><button type=\"button\" class=\"button button-primary\" id=\"modelAssemblyNextBtn\" "+(index===modelObjects.length-1?"disabled":"")+">الخطوة التالية</button><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyExitBtn\">عرض كل القطع</button></div><p class=\"catalog-footnote\">ترتيب الخطوات يتبع ترتيب القطع في قائمة الأجسام. راجع ترتيب التركيب الفعلي ونوع الوصلات قبل التنفيذ؛ النظام لا يستنتج تسلسلًا هندسيًا تلقائيًا.</p>";
+    $("modelAssemblyPrevBtn").addEventListener("click",()=>{modelAssemblyStep=Math.max(0,modelAssemblyStep-1);selectedModelObjectId=modelObjects[modelAssemblyStep].id;renderModelDrawing();renderModelObjectEditor();});
+    $("modelAssemblyNextBtn").addEventListener("click",()=>{modelAssemblyStep=Math.min(modelObjects.length-1,modelAssemblyStep+1);selectedModelObjectId=modelObjects[modelAssemblyStep].id;renderModelDrawing();renderModelObjectEditor();});
+    $("modelAssemblyExitBtn").addEventListener("click",()=>{modelAssemblyGuideOn=false;panel.hidden=true;$("modelAssemblyStartBtn").textContent="بدء دليل التجميع";renderModelDrawing();});
   }
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
@@ -1277,6 +1290,7 @@
       renderModelDrawing();
     }));
     $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";$("modelExplodeMoveBtn").disabled=!modelExplodedView;if(!modelExplodedView){modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";$("modelExplodeHint").textContent="التفكيك بصري مؤقت ولا يغيّر إحداثيات القطع الأصلية أو ملف المشروع.";}renderModelDrawing();});
+    $("modelAssemblyStartBtn").addEventListener("click",()=>{if(!modelObjects.length){toast("أضف قطعًا أولًا");return;}modelAssemblyGuideOn=true;modelAssemblyStep=0;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeToggleBtn").textContent="عرض التفكيك";$("modelExplodeMoveBtn").disabled=true;$("modelAssemblyGuide").hidden=false;$("modelAssemblyStartBtn").textContent="دليل التجميع نشط";selectedModelObjectId=modelObjects[0].id;renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();});
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
