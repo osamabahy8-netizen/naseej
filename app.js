@@ -61,6 +61,9 @@
   function renderDetails() {
     const node = data.nodes.find(n => n.id === selectedId);
     const host = $("detailsContent"); host.replaceChildren();
+    const mobileOpen = !!node && window.matchMedia("(max-width: 850px)").matches;
+    $("detailsPanel").classList.toggle("is-open", mobileOpen);
+    document.body.classList.toggle("details-open", mobileOpen);
     if (!node) {
       host.className = "details-empty";
       host.innerHTML = '<div class="details-symbol">◇</div><h3>لا يوجد عنصر محدد</h3><p>اختر فكرة من الخريطة لعرض تفاصيلها وتعديلها.</p>';
@@ -72,6 +75,7 @@
     const desc = document.createElement("p"); desc.className = "detail-description"; desc.textContent = node.description || "لا يوجد وصف مضاف حتى الآن.";
     const actions = document.createElement("div"); actions.className = "detail-actions";
     actions.append(
+      actionButton("إغلاق","button button-quiet",() => { selectedId = null; linking = false; render(); }),
       actionButton("تعديل","button button-quiet",() => openDialog(node)),
       actionButton(linking ? "إلغاء الربط" : "ربط بعنصر","button button-quiet",() => {
         if (linking) { linking = false; selectedId = node.id; toast("تم إلغاء وضع الربط"); render(); }
