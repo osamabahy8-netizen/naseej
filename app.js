@@ -7,6 +7,7 @@
   let data = loadData();
   let selectedId = null;
   let linking = false;
+  let activeGroupFilter = "all";
   let toastTimer;
 
   function loadData() {
@@ -89,7 +90,10 @@
 
   function render() {
     svg.replaceChildren();
-    const points = positions(), byId = new Map(points.map(p => [p.id,p]));
+    renderGroupFilter();
+    const allPoints = positions();
+    const points = activeGroupFilter === "all" ? allPoints : allPoints.filter(p => p.groupId === activeGroupFilter);
+    const byId = new Map(points.map(p => [p.id,p]));
     data.edges.forEach(edge => {
       const a = byId.get(edge.from), b = byId.get(edge.to);
       if (a && b) {
@@ -112,7 +116,18 @@
       });
       svg.appendChild(g);
     });
-    $("emptyState").hidden = data.nodes.length > 0;
+    $("emptyState").hidden = points.length > 0;
+    const emptyTitle = $("emptyState").querySelector("h3");
+    const emptyText = $("emptyState").querySelector("p");
+    if (activeGroupFilter !== "all" && points.length === 0) {
+      emptyTitle.textContent = "المجموعة دي لسه فاضية";
+      emptyText.textContent = "أضف فكرة جديدة واختر المجموعة دي من خانة المجموعة.";
+      $("emptyAddBtn").hidden = false;
+    } else {
+      emptyTitle.textContent = "ابدأ بنسج أفكارك";
+      emptyText.textContent = "أضف أول فكرة أو مشروع، وبعدها اربطه بباقي العناصر.";
+      $("emptyAddBtn").hidden = false;
+    }
     $("nodeCount").textContent = data.nodes.length;
     $("edgeCount").textContent = data.edges.length;
     renderDetails();
@@ -150,6 +165,23 @@
   }
   function actionButton(label, cls, fn) {
     const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = label; b.addEventListener("click",fn); return b;
+  }
+  function renderGroupFilter() {
+    const select = $("groupFilter");
+    const current = activeGroupFilter;
+    select.replaceChildren();
+    const all = document.createElement("option");
+    all.value = "all"; all.textContent = "عرض كل المجموعات";
+    select.appendChild(all);
+    data.groups.forEach(group => {
+      const option = document.createElement("option");
+      option.value = group.id;
+      const count = data.nodes.filter(node => node.groupId === group.id).length;
+      option.textContent = group.name + " (" + count + ")";
+      select.appendChild(option);
+    });
+    if (current !== "all" && !data.groups.some(group => group.id === current)) activeGroupFilter = "all";
+    select.value = activeGroupFilter;
   }
   function renderGroupOptions(selectedId = "") {
     const select = $("nodeGroup");
@@ -208,6 +240,14 @@
     if (id) Object.assign(data.nodes.find(n => n.id === id), values);
     else { const node = {id:uid(),...values}; data.nodes.push(node); selectedId = node.id; }
     save(); $("nodeDialog").close(); render(); toast(id ? "تم تحديث العنصر" : "تمت إضافة العنصر");
+  });
+  $("groupFilter").addEventListener("change", event => {
+    activeGroupFilter = event.target.value;
+    if (selectedId && activeGroupFilter !== "all") {
+      const selectedNode = data.nodes.find(node => node.id === selectedId);
+      if (!selectedNode || selectedNode.groupId !== activeGroupFilter) selectedId = null;
+    }
+    render();
   });
   $("addGroupBtn").addEventListener("click", createGroup);
   $("addBtn").addEventListener("click", () => openDialog());
