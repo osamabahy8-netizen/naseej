@@ -475,21 +475,29 @@
   let latestCutRows = [];
   function renderManufacturingSheet(){
     const v=standValues(), w=v.width*10, h=v.height*10, d=v.depth*10, tube=30, clearW=Math.max(0,w-2*tube), clearD=Math.max(0,d-2*tube);
-    const rows=[
-      {name:"قوائم رأسية",qty:4,length:Math.max(0,h-30),material:"ماسورة مربعة 30×30 مم"},
-      {name:"عارضتان علويتان أمامية وخلفية",qty:2,length:w,material:"ماسورة مربعة 30×30 مم"},
-      {name:"عارضتان علويتان جانبيتان",qty:2,length:d,material:"ماسورة مربعة 30×30 مم"},
-      {name:"عارضة تعليق الملابس",qty:1,length:clearW,material:"ماسورة/قضيب حسب الاختيار"}
-    ];
-    for(let i=0;i<v.shelves;i++) rows.push({name:"إطار الرف "+(i+1)+" — ضلع طويل",qty:2,length:clearW,material:"ماسورة 20×20 مم مبدئيًا"},{name:"إطار الرف "+(i+1)+" — ضلع جانبي",qty:2,length:clearD,material:"ماسورة 20×20 مم مبدئيًا"});
+    const baseDim=getPartDimensions("base",v), frameDim=getPartDimensions("top-frame",v), railDim=getPartDimensions("hanger-rail",v);
+    const rows=[];
+    ["post-front-left","post-front-right","post-rear-left","post-rear-right"].forEach((id,i)=>{
+      const dim=getPartDimensions(id,v);
+      rows.push({name:"القائم "+(i+1),qty:1,length:dim.length,material:"ماسورة "+dim.width+"×"+dim.depth+" مم"});
+    });
+    rows.push(
+      {name:"عارضتان علويتان أمامية وخلفية",qty:2,length:frameDim.length,material:"قطاع الإطار — حسب المقطع المحدد"},
+      {name:"عارضتان علويتان جانبيتان",qty:2,length:frameDim.width,material:"قطاع الإطار — حسب المقطع المحدد"},
+      {name:"عارضة تعليق الملابس",qty:1,length:railDim.length,material:"قطاع "+railDim.width+"×"+railDim.depth+" مم"}
+    );
+    for(let i=0;i<v.shelves;i++){
+      const dim=getPartDimensions("shelf-"+(i+1),v);
+      rows.push({name:"إطار الرف "+(i+1)+" — ضلع طويل",qty:2,length:dim.length,material:"حسب مقطع الرف المحدد"},{name:"إطار الرف "+(i+1)+" — ضلع جانبي",qty:2,length:dim.width,material:"حسب مقطع الرف المحدد"});
+    }
     latestCutRows=rows.map(r=>({...r,total:r.qty*r.length}));
     const tubeTotal=latestCutRows.reduce((sum,r)=>sum+r.total,0)/1000;
-    const sheetArea=(w*d+v.shelves*clearW*clearD)/1000000;
+    const sheetArea=(baseDim.length*baseDim.width+Array.from({length:v.shelves},(_,i)=>{const dim=getPartDimensions("shelf-"+(i+1),v);return dim.length*dim.width;}).reduce((sum,n)=>sum+n,0))/1000000;
     const waste=Math.max(0,Math.min(100,Number($("wastePercent")?.value)||0))/100;
     const tubePrice=Math.max(0,Number($("tubePrice")?.value)||0),sheetPrice=Math.max(0,Number($("sheetPrice")?.value)||0);
     const tubeCost=tubeTotal*(1+waste)*tubePrice, sheetCost=sheetArea*(1+waste)*sheetPrice;
     $("materialSummary").innerHTML='<div><strong>'+tubeTotal.toFixed(2)+' م</strong><span>إجمالي أطوال المواسير قبل الهالك</span></div><div><strong>'+sheetArea.toFixed(2)+' م²</strong><span>مساحة القاعدة والرفوف التقديرية</span></div><div><strong>'+Math.round(tubeCost+sheetCost).toLocaleString("ar-EG")+' ج</strong><span>تقدير خامات وفق الأسعار المدخلة</span></div>';
-    $("cutListBody").innerHTML=latestCutRows.map(r=>'<tr><td>'+r.name+'</td><td>'+r.qty+'</td><td>'+r.length.toFixed(0)+' مم للقطعة</td><td>'+r.material+'</td></tr>').join('')+'<tr><td>قاعدة صاج</td><td>1</td><td>'+w.toFixed(0)+' × '+d.toFixed(0)+' مم</td><td>صاج — مساحة '+(w*d/1000000).toFixed(2)+' م²</td></tr>'+Array.from({length:v.shelves},(_,i)=>'<tr><td>لوح الرف '+(i+1)+'</td><td>1</td><td>'+clearW.toFixed(0)+' × '+clearD.toFixed(0)+' مم</td><td>خشب أو صاج — حسب الاختيار</td></tr>').join('');
+    $("cutListBody").innerHTML=latestCutRows.map(r=>'<tr><td>'+r.name+'</td><td>'+r.qty+'</td><td>'+r.length.toFixed(0)+' مم للقطعة</td><td>'+r.material+'</td></tr>').join('')+'<tr><td>قاعدة صاج</td><td>1</td><td>'+baseDim.length.toFixed(0)+' × '+baseDim.width.toFixed(0)+' × '+baseDim.thickness.toFixed(1)+' مم</td><td>صاج — مساحة '+(baseDim.length*baseDim.width/1000000).toFixed(2)+' م²</td></tr>'+Array.from({length:v.shelves},(_,i)=>{const dim=getPartDimensions("shelf-"+(i+1),v);return '<tr><td>لوح الرف '+(i+1)+'</td><td>1</td><td>'+dim.length.toFixed(0)+' × '+dim.width.toFixed(0)+' × '+dim.thickness.toFixed(1)+' مم</td><td>خشب أو صاج — حسب الاختيار</td></tr>';}).join('');
     function drawing(id,view){
       const el=$(id), scale=Math.min(210/(view==="side"?d:w),170/h), width=(view==="side"?d:w)*scale,height=h*scale,x=(320-width)/2,y=218-height;
       const postW=Math.max(3,tube*scale), color=v.color;
