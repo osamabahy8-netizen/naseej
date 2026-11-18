@@ -646,7 +646,7 @@
       card.append(top,title,size,material,detail);
       const actions=document.createElement("div");actions.className="catalog-card-actions";
       actions.style.display="flex";actions.style.flexWrap="wrap";actions.style.gap="8px";actions.style.marginTop="12px";
-      const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="＋ إضافة إلى الرسم 3D";
+      const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="نقل المنتج إلى الرسم 3D";
       modelButton.setAttribute("aria-label","إضافة "+item.name+" إلى مرسم الرسم ثلاثي الأبعاد");
       modelButton.addEventListener("click",()=>openCatalogItemInModel(item));
       const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
