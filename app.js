@@ -108,7 +108,8 @@
       material: $("standMaterial").value,
       color: /^#[0-9a-fA-F]{6}$/.test($("standColor").value) ? $("standColor").value : "#c49a55",
       notes: $("standNotes").value.trim(),
-      image: pendingReferenceImage
+      image: pendingReferenceImage,
+      parts: JSON.parse(JSON.stringify(partSpecs))
     };
   }
   function shadeColor(hex, amount) {
@@ -121,42 +122,105 @@
   function project3D(x,y,z,scale,baseY) {
     return [320 + (x-y)*scale*.78, baseY + (x+y)*scale*.34 - z*scale];
   }
+  let explodedView = false;
+  let selectedPartId = "base";
+  let partSpecs = {};
+  function standPartDefinitions(v) {
+    const post = Math.max(2.2,Math.min(4,v.width*.035));
+    const parts = [
+      {id:"base",name:"القاعدة السفلية",material:"صاج أو قطاع معدني",notes:"قاعدة مستقلة قابلة للفك"},
+      {id:"post-front-left",name:"القائم الأمامي الأيسر",material:"ماسورة مربعة",notes:"يركب في فتحة القاعدة"},
+      {id:"post-front-right",name:"القائم الأمامي الأيمن",material:"ماسورة مربعة",notes:"يركب في فتحة القاعدة"},
+      {id:"post-rear-left",name:"القائم الخلفي الأيسر",material:"ماسورة مربعة",notes:"يركب في فتحة القاعدة"},
+      {id:"post-rear-right",name:"القائم الخلفي الأيمن",material:"ماسورة مربعة",notes:"يركب في فتحة القاعدة"},
+      {id:"top-frame",name:"الإطار العلوي",material:"ماسورة معدنية",notes:"يربط القوائم من أعلى"},
+      {id:"hanger-rail",name:"عارضة تعليق الملابس",material:"ماسورة أو قضيب",notes:"قابلة للاستبدال حسب العرض"}
+    ];
+    for(let i=0;i<v.shelves;i++)parts.push({id:"shelf-"+(i+1),name:"الرف رقم "+(i+1),material:"صاج أو خشب أو شبكة",notes:"رف منفصل قابل للفك والاستبدال"});
+    return parts;
+  }
   function renderStandModel() {
-    const v = standValues();
-    $("previewName").textContent = v.name;
-    const svg = $("standPreview");
-    const s = Math.min(1.65, 300 / Math.max(v.width,v.depth,v.height*.72));
-    const baseY = 445;
-    const points = (x,y,z) => project3D(x,y,z,s,baseY).join(",");
-    const faces = [];
-    const poly = (pts,fill,stroke="#172638") => faces.push('<polygon points="'+pts.map(p=>points(...p)).join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5" stroke-linejoin="round"/>');
-    const box = (x,y,z,w,d,h,color) => {
-      const c1=[x,y,z],c2=[x+w,y,z],c3=[x+w,y+d,z],c4=[x,y+d,z];
-      const t1=[x,y,z+h],t2=[x+w,y,z+h],t3=[x+w,y+d,z+h],t4=[x,y+d,z+h];
-      poly([t1,t2,t3,t4],shadeColor(color,25));
-      poly([c1,c2,t2,t1],shadeColor(color,-22));
-      poly([c2,c3,t3,t2],shadeColor(color,-42));
-      poly([c4,c3,t3,t4],shadeColor(color,-8));
-    };
-    const metal = v.color;
-    const dark = v.material === "wood" ? "#9a7047" : v.material === "aluminum" ? "#aeb9c5" : metal;
-    // Separate bottom base, uprights and upper crossbar.
-    box(0,0,0,v.width,v.depth,3,shadeColor(metal,-12));
-    const post = Math.max(2.2, Math.min(4,v.width*.035));
-    [[0,0],[v.width-post,0],[0,v.depth-post],[v.width-post,v.depth-post]].forEach(([x,y])=>box(x,y,3,post,post,v.height-3,dark));
-    box(0,0,v.height-5,v.width,v.depth,5,metal);
-    // Three-dimensional shelves, evenly distributed above the base.
-    for(let i=0;i<v.shelves;i++){
-      const z = 12 + (v.height-28)*(i+1)/(v.shelves+1);
-      box(post,post,z,v.width-2*post,v.depth-2*post,2.5,v.material==="wood"?"#a8794b":shadeColor(metal,-8));
-      // front support lip
-      box(post,post, z+2.5, v.width-2*post, 1.4, 1.8, shadeColor(metal,18));
+    const v=standValues(), svg=$("standPreview");
+    $("previewName").textContent=v.name;
+    const s=Math.min(1.65,300/Math.max(v.width,v.depth,v.height*.72));
+    const baseY=445, points=(x,y,z)=>project3D(x,y,z,s,baseY).join(",");
+    const groups=[];
+    const post=Math.max(2.2,Math.min(4,v.width*.035));
+    const defs=standPartDefinitions(v);
+    const shade=(hex,amount)=>shadeColor(hex,amount);
+    function makePart(id,draw,offset){
+      const shapes=[];
+      const poly=(pts,fill,stroke="#172638")=>shapes.push('<polygon points="'+pts.map(p=>points(...p)).join(" ")+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5" stroke-linejoin="round"/>');
+      const box=(x,y,z,w,d,h,color)=>{
+        const c1=[x,y,z],c2=[x+w,y,z],c3=[x+w,y+d,z],c4=[x,y+d,z];
+        const t1=[x,y,z+h],t2=[x+w,y,z+h],t3=[x+w,y+d,z+h],t4=[x,y+d,z+h];
+        poly([t1,t2,t3,t4],shade(color,25));poly([c1,c2,t2,t1],shade(color,-22));
+        poly([c2,c3,t3,t2],shade(color,-42));poly([c4,c3,t3,t4],shade(color,-8));
+      };
+      draw(box);
+      const chosen=selectedPartId===id;
+      const dx=explodedView?offset[0]:0,dy=explodedView?offset[1]:0;
+      groups.push('<g class="stand-part '+(chosen?"part-selected":"")+'" data-part-id="'+id+'" transform="translate('+dx+' '+dy+')" tabindex="0" role="button" aria-label="اختيار '+(defs.find(p=>p.id===id)?.name||id)+'">'+shapes.join("")+'</g>');
     }
-    // Hanging rail and side holders beneath the top frame.
-    box(post,v.depth*.48,v.height-20,v.width-2*post,2.4,2.4,shadeColor(metal,35));
-    const label = '<text x="320" y="492" fill="#9aa9bd" font-size="13" text-anchor="middle" direction="rtl">العرض '+v.width+' سم  •  الارتفاع '+v.height+' سم  •  العمق '+v.depth+' سم</text>';
-    svg.innerHTML = '<defs><linearGradient id="stageGlow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17283c"/><stop offset="1" stop-color="#0b1422"/></linearGradient></defs><rect width="640" height="520" rx="18" fill="url(#stageGlow)"/><ellipse cx="320" cy="448" rx="210" ry="34" fill="#020711" opacity=".45"/>'+faces.join("")+label;
-    svg.style.transform = "perspective(1000px) rotateX("+standRotation.x+"deg) rotateY("+standRotation.y+"deg)";
+    const metal=v.color,dark=v.material==="wood"?"#9a7047":v.material==="aluminum"?"#aeb9c5":metal;
+    makePart("base",box=>box(0,0,0,v.width,v.depth,3,shade(metal,-12)),[0,65]);
+    const postParts=[
+      ["post-front-left",0,0,-55,0],["post-front-right",v.width-post,0,55,0],
+      ["post-rear-left",0,v.depth-post,-55,20],["post-rear-right",v.width-post,v.depth-post,55,20]
+    ];
+    postParts.forEach(([id,x,y,dx,dy])=>makePart(id,box=>box(x,y,3,post,post,v.height-3,dark),[dx,dy]));
+    makePart("top-frame",box=>box(0,0,v.height-5,v.width,v.depth,5,metal),[0,-75]);
+    makePart("hanger-rail",box=>box(post,v.depth*.48,v.height-20,v.width-2*post,2.4,2.4,shade(metal,35)),[0,-112]);
+    for(let i=0;i<v.shelves;i++){
+      const id="shelf-"+(i+1),z=12+(v.height-28)*(i+1)/(v.shelves+1);
+      makePart(id,box=>{box(post,post,z,v.width-2*post,v.depth-2*post,2.5,v.material==="wood"?"#a8794b":shade(metal,-8));box(post,post,z+2.5,v.width-2*post,1.4,1.8,shade(metal,18));},[0,(i%2===0?1:-1)*(32+22*i)]);
+    }
+    const label='<text x="320" y="500" fill="#9aa9bd" font-size="13" text-anchor="middle" direction="rtl">العرض '+v.width+' سم  •  الارتفاع '+v.height+' سم  •  العمق '+v.depth+' سم</text>';
+    svg.innerHTML='<defs><linearGradient id="stageGlow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17283c"/><stop offset="1" stop-color="#0b1422"/></linearGradient></defs><rect width="640" height="520" rx="18" fill="url(#stageGlow)"/><ellipse cx="320" cy="448" rx="210" ry="34" fill="#020711" opacity=".35"/>'+groups.join("")+label;
+    svg.style.transform="perspective(1000px) rotateX("+standRotation.x+"deg) rotateY("+standRotation.y+"deg)";
+    svg.querySelectorAll(".stand-part").forEach(el=>{
+      const choose=()=>{selectedPartId=el.dataset.partId;renderStandModel();renderPartsList();};
+      el.addEventListener("click",e=>{e.stopPropagation();choose();});
+      el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();choose();}});
+    });
+    $("explodeToggleBtn").textContent=explodedView?"إعادة تجميع القطع":"تفكيك القطع";
+    renderPartsList();
+  }
+  function renderPartsList(){
+    const host=$("standPartsList");if(!host)return;
+    host.replaceChildren();
+    const defs=standPartDefinitions(standValues());
+    defs.forEach(part=>{
+      const spec=partSpecs[part.id]||{};
+      const button=document.createElement("button");button.type="button";
+      button.className="stand-part-choice"+(selectedPartId===part.id?" active":"");
+      button.textContent=(spec.name||part.name);
+      button.addEventListener("click",()=>{selectedPartId=part.id;renderStandModel();});
+      host.appendChild(button);
+    });
+    const part=defs.find(p=>p.id===selectedPartId);
+    $("partEditor").hidden=!part;
+    if(!part)return;
+    const spec=partSpecs[part.id]||{};
+    $("selectedPartTitle").textContent="تعديل: "+(spec.name||part.name);
+    $("partCustomName").value=spec.name||part.name;
+    $("partCustomMaterial").value=spec.material||part.material;
+    $("partCustomNotes").value=spec.notes||part.notes;
+  }
+  function saveSelectedPart(){
+    const part=standPartDefinitions(standValues()).find(p=>p.id===selectedPartId);
+    if(!part)return;
+    partSpecs[selectedPartId]={
+      name:$("partCustomName").value.trim()||part.name,
+      material:$("partCustomMaterial").value.trim(),
+      notes:$("partCustomNotes").value.trim()
+    };
+    if(currentDesignId){
+      const index=data.designs.findIndex(d=>d.id===currentDesignId);
+      if(index>=0)data.designs[index].parts=JSON.parse(JSON.stringify(partSpecs));
+    }
+    try{save();renderStandModel();toast("تم حفظ مواصفات القطعة");}
+    catch(error){toast("تعذر حفظ التعديل في مساحة التخزين");}
   }
   function refreshSavedDesigns() {
     const select = $("savedDesigns"), chosen = select.value;
@@ -172,14 +236,14 @@
     if(!design.name.trim()){toast("اكتب اسم التصميم أولًا");return;}
     const index=data.designs.findIndex(d=>d.id===design.id);
     if(index>=0)data.designs[index]=design; else data.designs.push(design);
-    currentDesignId=design.id;
+    currentDesignId=design.id; design.parts=JSON.parse(JSON.stringify(partSpecs));
     try { save(); refreshSavedDesigns(); $("savedDesigns").value=design.id; toast("تم حفظ التصميم على هذا الجهاز"); }
     catch(error){toast("مساحة التخزين ممتلئة؛ جرّب صورة مرجعية أصغر");}
   }
   function loadStandDesign() {
     const d=data.designs.find(item=>item.id===$("savedDesigns").value);
     if(!d){toast("اختار تصميمًا محفوظًا الأول");return;}
-    currentDesignId=d.id;
+    currentDesignId=d.id; partSpecs=d.parts||{}; selectedPartId="base";
     $("designName").value=d.name; $("standWidth").value=d.width; $("standHeight").value=d.height;
     $("standDepth").value=d.depth; $("shelfCount").value=d.shelves;
     $("standMaterial").value=d.material||"steel"; $("standColor").value=d.color||"#c49a55";
@@ -191,7 +255,7 @@
     renderStandModel(); toast("تم فتح التصميم");
   }
   function resetStandDesign() {
-    currentDesignId=null; pendingReferenceImage="";
+    currentDesignId=null; pendingReferenceImage=""; partSpecs={}; selectedPartId="base"; explodedView=false;
     $("designName").value="استاند عرض ملابس"; $("standWidth").value=90;
     $("standHeight").value=180; $("standDepth").value=45; $("shelfCount").value=3;
     $("standMaterial").value="steel"; $("standColor").value="#c49a55"; $("standNotes").value="";
@@ -227,6 +291,8 @@
     $("newDesignBtn").addEventListener("click",resetStandDesign);
     $("downloadStandBtn").addEventListener("click",downloadStandImage);
     $("resetViewBtn").addEventListener("click",()=>{standRotation={x:0,y:0};renderStandModel();});
+    $("explodeToggleBtn").addEventListener("click",()=>{explodedView=!explodedView;renderStandModel();});
+    $("savePartBtn").addEventListener("click",saveSelectedPart);
     $("standImage").addEventListener("change",event=>{
       const file=event.target.files[0]; if(!file)return;
       if(!file.type.startsWith("image/")){toast("اختار ملف صورة");return;}
