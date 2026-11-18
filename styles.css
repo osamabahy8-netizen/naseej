@@ -113,3 +113,23 @@
 .catalog-footnote{font-size:11px;line-height:1.9;color:var(--muted);margin:14px 0 0}
 @media(max-width:1050px){.catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.catalog-grid{grid-template-columns:1fr}.catalog-filters{grid-template-columns:1fr}}
+
+/* Engineering drawings and preliminary cut-list */
+.fabrication-sheet{margin-top:16px}
+.drawing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.drawing-card{background:#0d1726;border:1px solid #30445d;border-radius:12px;padding:10px;min-width:0}
+.drawing-card h4{margin:0 0 8px;font-size:12px;color:#e5c27e}
+.drawing-card svg{width:100%;height:auto;display:block}
+.cost-inputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+.cost-inputs label{display:block;font-size:11px;color:#bac7d6;margin-bottom:6px}
+.cost-inputs input{width:100%;min-width:0;background:#0b1523;color:#edf2f8;border:1px solid #30445d;border-radius:9px;padding:10px;font:inherit}
+.material-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}
+.material-summary div{background:#0d1726;border:1px solid #30445d;border-radius:11px;padding:12px}
+.material-summary strong,.material-summary span{display:block}
+.material-summary strong{font-size:18px;color:#e5c27e}
+.material-summary span{font-size:10px;line-height:1.7;color:#bac7d6;margin-top:5px}
+.table-scroll{overflow-x:auto}
+.cut-table{width:100%;border-collapse:collapse;font-size:11px;min-width:540px}
+.cut-table th,.cut-table td{padding:10px;text-align:right;border-bottom:1px solid #30445d;white-space:nowrap}
+.cut-table th{color:#e5c27e;background:#0d1726}
+@media(max-width:700px){.drawing-grid{grid-template-columns:1fr}.cost-inputs,.material-summary{grid-template-columns:1fr}}
