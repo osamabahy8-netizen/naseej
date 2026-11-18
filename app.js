@@ -959,7 +959,7 @@
   function modelProjectLoad() {
     const p=data.modelProjects.find(item=>item.id===$("savedModelProjects").value);
     if(!p){toast("اختار مشروع محفوظ الأول");return;}
-    modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number(p.cameraAngle)||35;window.activeModelProjectId=p.id;
+    modelHistoryPush();modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number(p.cameraAngle)||35;window.activeModelProjectId=p.id;
     $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();toast("تم فتح مشروع الرسم");
   }
   function modelProjectAddObject() {
@@ -1479,7 +1479,7 @@
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
-    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").disabled=true;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
+    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelHistoryPush();modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").disabled=true;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
     if(!data.modelStudioInitialized){
       modelObjects=[{id:uid(),type:"box",label:"مجسم تجريبي",x:0,y:0,z:0,w:600,h:300,d:400,color:"#c49a55",rx:0,ry:0,rz:0}];
       selectedModelObjectId=modelObjects[0].id;
