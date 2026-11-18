@@ -13,7 +13,7 @@
   function loadData() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"nodes":[],"edges":[]}');
-      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [], connectionLibrary: Array.isArray(saved.connectionLibrary) ? saved.connectionLibrary : [], modelProjects: Array.isArray(saved.modelProjects) ? saved.modelProjects : [] };
+      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [], connectionLibrary: Array.isArray(saved.connectionLibrary) ? saved.connectionLibrary : [], modelProjects: Array.isArray(saved.modelProjects) ? saved.modelProjects : [], modelStudioInitialized: saved.modelStudioInitialized === true };
     } catch { return { nodes: [], edges: [] }; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -702,11 +702,11 @@
     for(let n=-8;n<=8;n++){
       const p1=projectModelPoint(n*500,0,-4000,modelCameraAngle,.075,450,360),p2=projectModelPoint(n*500,0,4000,modelCameraAngle,.075,450,360);
       const p3=projectModelPoint(-4000,0,n*500,modelCameraAngle,.075,450,360),p4=projectModelPoint(4000,0,n*500,modelCameraAngle,.075,450,360);
-      [ [p1,p2],[p3,p4] ].forEach(pair=>{const line=svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#263b52","stroke-width":"1"});grid.appendChild(line);});
+      [ [p1,p2],[p3,p4] ].forEach(pair=>{const line=svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#49627d","stroke-width":"1.5"});grid.appendChild(line);});
     }
     root.appendChild(grid);
     const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
-    axes.forEach(axis=>{const p=projectModelPoint(...axis.a,modelCameraAngle,.075,450,360),q=projectModelPoint(...axis.b,modelCameraAngle,.075,450,360);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+6,y:q[1]-5,fill:axis.c,"font-size":"15"});t.textContent=axis.t;root.appendChild(t);});
+    axes.forEach(axis=>{const p=projectModelPoint(...axis.a,modelCameraAngle,.075,450,360),q=projectModelPoint(...axis.b,modelCameraAngle,.075,450,360);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"4"}));const t=svgEl("text",{x:q[0]+6,y:q[1]-5,fill:axis.c,"font-size":"15"});t.textContent=axis.t;root.appendChild(t);});
     const faces=[];
     modelObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
@@ -796,7 +796,13 @@
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
     $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();});
-    renderModelProjectOptions();renderModelDrawing();
+    if(!data.modelStudioInitialized){
+      modelObjects=[{id:uid(),type:"box",label:"مجسم تجريبي",x:0,y:0,z:0,w:600,h:300,d:400,color:"#c49a55",rx:0,ry:0,rz:0}];
+      selectedModelObjectId=modelObjects[0].id;
+      data.modelStudioInitialized=true;
+      save();
+    }
+    renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();
   }
 
   function setupDesignStudio() {
