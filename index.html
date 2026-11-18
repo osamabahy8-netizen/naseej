@@ -62,6 +62,23 @@
     <div class="design-heading">
       <div><span class="eyebrow">ورشة نسيج</span><h2>استوديو التصميم والتصنيع</h2><p>ابدأ بتصميم استانْد عرض الملابس، وعدّل المقاسات وشاهد المجسم مباشرة.</p></div>
     </div>
+    <section class="catalog-panel panel">
+      <div class="catalog-heading"><div><span class="eyebrow">مكتبة التصنيع</span><h3>كتالوج تجهيز المحلات والمطاعم</h3><p>اختار نوع الشغل عشان تشوف المنتجات والمقاسات المرجعية والخامات.</p></div></div>
+      <div class="catalog-filters">
+        <input id="catalogSearch" type="search" placeholder="ابحث عن استانْد أو رف أو كاونتر...">
+        <select id="catalogCategory" aria-label="نوع النشاط">
+          <option value="all">كل الأنشطة</option>
+          <option value="fashion">محلات الملابس والأزياء</option>
+          <option value="retail">محلات التجزئة والسوبر ماركت</option>
+          <option value="cafe">الكافيهات والمطاعم</option>
+          <option value="mall">المولات والأكشاك</option>
+          <option value="metal">مشغولات الحديد والمعادن</option>
+          <option value="decor">الديكور والعناصر الخاصة</option>
+        </select>
+      </div>
+      <div id="catalogGrid" class="catalog-grid"></div>
+      <p class="catalog-footnote">المقاسات المعروضة نقطة بداية للتصميم وليست مواصفة إلزامية. المقاس النهائي يتحدد من الموقع والمنتج ومسارات الحركة والأحمال والاشتراطات المحلية.</p>
+    </section>
     <div class="design-layout">
       <section class="panel design-controls">
         <h3>بيانات التصميم</h3>
