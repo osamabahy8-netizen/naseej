@@ -96,8 +96,21 @@
           <svg id="standPreview" viewBox="0 0 640 520" role="img" aria-label="معاينة مجسمة لاستاند عرض الملابس"></svg>
         </div>
         <div class="preview-actions">
+          <button type="button" id="explodeToggleBtn" class="button button-quiet">تفكيك القطع</button>
           <button type="button" id="resetViewBtn" class="button button-quiet">إعادة زاوية العرض</button>
           <button type="button" id="downloadStandBtn" class="button button-primary">حفظ صورة التصميم</button>
+        </div>
+        <div class="parts-workbench">
+          <h4>قطع الاستاند</h4>
+          <p>اختار أي قطعة من القائمة أو اضغط عليها في المجسم لتعديل مواصفاتها.</p>
+          <div id="standPartsList" class="stand-parts-list"></div>
+          <div id="partEditor" class="part-editor" hidden>
+            <strong id="selectedPartTitle">القطعة المحددة</strong>
+            <label for="partCustomName">اسم القطعة</label><input id="partCustomName" maxlength="60">
+            <label for="partCustomMaterial">الخامة / المقطع</label><input id="partCustomMaterial" maxlength="80" placeholder="مثال: ماسورة 3×3 سم، سمك 1 مم">
+            <label for="partCustomNotes">ملاحظات التعديل أو الاستبدال</label><textarea id="partCustomNotes" rows="2" maxlength="400"></textarea>
+            <button type="button" id="savePartBtn" class="button button-primary">حفظ بيانات القطعة</button>
+          </div>
         </div>
         <div id="referenceImageBox" class="reference-image-box" hidden><h4>الصورة المرجعية</h4><img id="savedReferenceImage" alt="الصورة المرجعية المحفوظة"></div>
       </section>
