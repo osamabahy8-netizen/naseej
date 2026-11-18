@@ -44,3 +44,18 @@
 .map-filter{display:flex;align-items:center;gap:10px;margin:0 0 14px;color:var(--muted);font-size:12px}
 .map-filter select{max-width:100%;min-width:190px;border:1px solid #30445d;border-radius:9px;background:#0b1523;color:#edf2f8;padding:10px;font:inherit}
 @media(max-width:540px){.map-filter{align-items:stretch;flex-direction:column;gap:6px}.map-filter select{width:100%;min-width:0}}
+
+
+/* Group management dialog */
+#groupsDialog{width:min(92vw,560px);max-height:85vh;overflow-y:auto}
+.groups-note{color:var(--muted);font-size:12px;line-height:1.8;margin:0 0 14px}
+.groups-list{display:flex;flex-direction:column;gap:9px}
+.managed-group{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid #30445d;border-radius:12px;background:#0d1726}
+.managed-group-info{display:flex;flex-direction:column;gap:5px;min-width:0}
+.managed-group-info strong{font-size:13px;overflow-wrap:anywhere}
+.managed-group-info span,.groups-empty{color:var(--muted);font-size:11px}
+.managed-group-actions{display:flex;gap:7px;flex-shrink:0}
+.managed-group-actions .button{padding:8px 10px;font-size:11px}
+.group-delete{border-color:#754343;color:#ffc0b8;background:#321f25}
+.groups-empty{padding:18px 10px;text-align:center;line-height:1.9}
+@media(max-width:420px){.map-filter #manageGroupsBtn{width:100%}.managed-group{align-items:stretch;flex-direction:column}.managed-group-actions .button{flex:1}}
