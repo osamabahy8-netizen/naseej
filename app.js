@@ -553,6 +553,44 @@
     {id:"water-play-set",cat:"water",name:"طقم ألعاب مياه جماعي",icon:"🌊",size:"وحدات رش صغيرة وخراطيم قصيرة حسب مساحة اللعب",material:"بلاستيك مقاوم للماء + وصلات سريعة",detail:"وحدات قابلة للتجميع والفك، ضغط مياه منخفض، وصلات آمنة، وأرضية لعب غير زلقة."}
   ];
   const catalogLabels={fashion:"محلات الملابس",retail:"التجزئة والسوبر ماركت",cafe:"الكافيهات والمطاعم",mall:"المولات والأكشاك",metal:"مشغولات الحديد",decor:"الديكور والعناصر الخاصة",toycar:"عربيات ومركبات الأطفال",toyair:"الطائرات والدرون",toyprops:"ألعاب ومجسمات أطفال",water:"مسدسات وألعاب المياه"};
+  function openCatalogItemInModel(item){
+    const isClothingRail=item.id==="fashion-rail";
+    const width=isClothingRail?1050:900;
+    const height=isClothingRail?1600:1200;
+    const depth=isClothingRail?525:450;
+    const tube=30, plate=24;
+    const color=$("standColor")?.value||"#c49a55";
+    const objects=[];
+    const add=(label,x,y,z,w,h,d,partColor=color)=>objects.push({id:uid(),type:"box",label,x,y,z,w,h,d,color:partColor,rx:0,ry:0,rz:0});
+    if(isClothingRail){
+      add("القاعدة",0,0,0,width,plate,depth);
+      const px=width/2-tube/2,pz=depth/2-tube/2;
+      add("القائم الأمامي الأيسر",-px,plate,-pz,tube,height-plate,tube);
+      add("القائم الأمامي الأيمن",px,plate,-pz,tube,height-plate,tube);
+      add("القائم الخلفي الأيسر",-px,plate,pz,tube,height-plate,tube);
+      add("القائم الخلفي الأيمن",px,plate,pz,tube,height-plate,tube);
+      add("عارضة الإطار الأمامية",0,height-tube,-pz,width,tube,tube);
+      add("عارضة الإطار الخلفية",0,height-tube,pz,width,tube,tube);
+      add("عارضة الجانب الأيسر",-px,height-tube,0,tube,tube,depth);
+      add("عارضة الجانب الأيمن",px,height-tube,0,tube,tube,depth);
+      add("ماسورة تعليق الملابس",0,height-2*tube,0,width-2*tube,24,24,"#aeb9c5");
+    }else{
+      add(item.name,0,0,0,width,height,depth);
+    }
+    modelObjects=objects;
+    selectedModelObjectId=objects[0]?.id||null;
+    modelProjectName=item.name;
+    window.activeModelProjectId=null;
+    $("modelName").value=modelProjectName;
+    $("modelCameraAngle").value=35;
+    modelCameraAngle=35;
+    const modelTab=document.querySelector('.main-tab[data-view="modelView"]');
+    if(modelTab)modelTab.click();
+    renderModelDrawing();
+    renderModelObjectEditor();
+    toast("فتحنا "+item.name+" في المرسم ثلاثي الأبعاد");
+  }
+
   function renderFabricationCatalog(){
     const host=$("catalogGrid");if(!host)return;
     host.replaceChildren();
@@ -570,12 +608,18 @@
       const size=document.createElement("p");size.innerHTML="<strong>مقاسات مرجعية:</strong> ";size.append(document.createTextNode(item.size));
       const material=document.createElement("p");material.innerHTML="<strong>الخامات:</strong> ";material.append(document.createTextNode(item.material));
       const detail=document.createElement("p");detail.textContent=item.detail;
+      if(item.id==="fashion-rail"){
+        const modelButton=document.createElement("button");modelButton.type="button";modelButton.className="button button-primary";modelButton.textContent="افتح في مرسم 3D";
+        modelButton.addEventListener("click",()=>openCatalogItemInModel(item));
+        card.append(top,title,size,material,detail,modelButton);
+      }
       const button=document.createElement("button");button.type="button";button.className="button button-quiet";button.textContent="إضافة إلى مشروعات نسيج";
       button.addEventListener("click",()=>{
         const node={id:uid(),title:item.name,type:"project",description:"القسم: "+catalogLabels[item.cat]+"\nالمقاسات المرجعية: "+item.size+"\nالخامات: "+item.material+"\nتفاصيل: "+item.detail+"\n\nملاحظة: المقاسات مبدئية وتحتاج مراجعة حسب الموقع والاستخدام."};
         data.nodes.push(node);selectedId=node.id;activeGroupFilter="all";save();render();toast("اتضافت بطاقة الشغل لخريطة نسيج");
       });
-      card.append(top,title,size,material,detail,button);host.append(card);
+      if(item.id!=="fashion-rail")card.append(top,title,size,material,detail);
+      card.append(button);host.append(card);
     });
   }
 
