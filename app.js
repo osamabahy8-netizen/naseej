@@ -1270,7 +1270,7 @@
     $("modelPartThickness").value=object.thickness??"";
     $("modelPartQuantity").value=object.quantity||1;
     $("modelPartCutLength").value=object.cutLength??Math.round(Math.max(object.w,object.h,object.d));
-    $("modelHoleSpec").value=object.holeSpec||"";$("modelMountSpec").value=object.mountSpec||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
+    $("modelHoleSpec").value=object.holeSpec||"";$("modelMountSpec").value=object.mountSpec||"";$("modelInstallLocation").value=object.installLocation||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
   }
   function renderModelCutList() {
     const host=$("modelCutList");if(!host)return;
@@ -1351,14 +1351,18 @@
     addText(panel,24,695,"لا تُرسم ثقوب تخمينية؛ صيغة الثقب: X,Y,Z,القطر مم — إزاحات من مركز القطعة، وافصل بين الثقوب بفاصلة منقوطة.",10,"start");
     const list=$("modelManufacturingList");if(!list)return;
     const safe=value=>String(value??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-    list.innerHTML="<div class='table-wrap'><table><thead><tr><th>رقم</th><th>القطعة</th><th>الثقوب ومراكزها</th><th>قاعدة المحرك / التثبيت</th><th>اللحامات</th><th>نوع الوصلة / مكان التركيب</th><th>المكونات</th></tr></thead><tbody>"+modelObjects.map((o,i)=>"<tr><td>"+(i+1)+"</td><td>"+safe(o.label)+"</td><td>"+safe(o.holeSpec||"غير محدد")+"</td><td>"+safe(o.mountSpec||"غير محدد — يلزم تحديد أبعاد القاعدة ونمط المسامير")+"</td><td>"+safe(o.weldSpec||"غير محدد")+"</td><td>"+safe(o.jointSpec||"غير محدد")+"</td><td>"+safe(o.componentSpec||"—")+"</td></tr>").join("")+"</tbody></table></div>";
+    list.innerHTML="<div class='table-wrap'><table><thead><tr><th>رقم</th><th>القطعة</th><th>الثقوب ومراكزها</th><th>قاعدة المحرك / التثبيت</th><th>اللحامات</th><th>نوع الوصلة</th><th>مكان التركيب والقطعة المتصلة</th><th>المكونات</th></tr></thead><tbody>"+modelObjects.map((o,i)=>"<tr data-part-index=\""+i+"\" style=\"cursor:pointer\"><td>"+(i+1)+"</td><td>"+safe(o.label)+"</td><td>"+safe(o.holeSpec||"غير محدد")+"</td><td>"+safe(o.mountSpec||"غير محدد — يلزم تحديد أبعاد القاعدة ونمط المسامير")+"</td><td>"+safe(o.weldSpec||"غير محدد")+"</td><td>"+safe(o.jointSpec||"غير محدد")+"</td><td>"+safe(o.installLocation||"غير محدد — حدّد القطعة الحاملة ورقمها")+"</td><td>"+safe(o.componentSpec||"—")+"</td></tr>").join("")+"</tbody></table></div>";
+    list.querySelectorAll("tr[data-part-index]").forEach(row=>row.addEventListener("click",()=>{
+      const index=Number(row.getAttribute("data-part-index")),part=modelObjects[index];if(!part)return;
+      selectedModelObjectId=part.id;renderModelDrawing();renderModelObjectEditor();renderManufacturingDrawings();
+    }));
   }
 
   function exportModelManufacturingReport() {
     if(!modelObjects.length){toast("لا توجد قطع لتصدير تقريرها");return;}
     const quote=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
-    const rows=[["رقم القطعة","اسم القطعة","العرض مم","الارتفاع مم","العمق مم","الخامة","القطاع","السمك مم","العدد","طول القص المقترح مم","الثقوب ومراكزها","اللحامات","نوع الوصلة","ملاحظة"]];
-    modelObjects.forEach((o,i)=>rows.push([i+1,o.label,Math.round(o.w),Math.round(o.h),Math.round(o.d),o.material||"حديد",o.profile||"",o.thickness??"",o.quantity||1,o.cutLength??Math.round(Math.max(o.w,o.h,o.d)),o.holeSpec||"غير محدد",o.weldSpec||"غير محدد",o.jointSpec||"غير محدد",o.componentSpec||"","مراجعة هندسية مطلوبة قبل التصنيع"]));
+    const rows=[["رقم القطعة","اسم القطعة","العرض مم","الارتفاع مم","العمق مم","الخامة","القطاع","السمك مم","العدد","طول القص المقترح مم","الثقوب ومراكزها","اللحامات","نوع الوصلة","مكان التركيب والقطعة المتصلة","ملاحظة"]];
+    modelObjects.forEach((o,i)=>rows.push([i+1,o.label,Math.round(o.w),Math.round(o.h),Math.round(o.d),o.material||"حديد",o.profile||"",o.thickness??"",o.quantity||1,o.cutLength??Math.round(Math.max(o.w,o.h,o.d)),o.holeSpec||"غير محدد",o.weldSpec||"غير محدد",o.jointSpec||"غير محدد",o.installLocation||"غير محدد",o.componentSpec||"","مراجعة هندسية مطلوبة قبل التصنيع"]));
     const csv="\uFEFF"+rows.map(row=>row.map(quote).join(",")).join("\r\n");
     downloadBlobFile(csv,"text/csv;charset=utf-8",(modelProjectName||"naseej")+"_تقرير_التصنيع.csv");
     toast("تم تجهيز تقرير التصنيع بصيغة CSV");
@@ -1570,7 +1574,7 @@
     if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
     modelHistoryPush();o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
     o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
-    o.holeSpec=$("modelHoleSpec").value.trim();o.mountSpec=$("modelMountSpec").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
+    o.holeSpec=$("modelHoleSpec").value.trim();o.mountSpec=$("modelMountSpec").value.trim();o.installLocation=$("modelInstallLocation").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
     renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
   }
   function exportModelObj() {
