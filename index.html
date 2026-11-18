@@ -198,8 +198,12 @@
           <label for="standModelTemplate">نوع الستاند</label>
           <select id="standModelTemplate">
             <option value="">اختار موديل من المكتبة</option>
-            <option value="single-rail">ملابس — مفرد</option><option value="double-rail">ملابس — مزدوج</option><option value="four-way">ملابس — أربع اتجاهات</option><option value="wall-rack">ملابس — جداري</option><option value="nesting-table">عرض — طاولات متداخلة</option><option value="shoe-rack">أحذية — متعدد الأرفف</option><option value="gondola">سوبر ماركت — مزدوج</option><option value="counter-display">عرض — كاونتر متعدد الطبقات</option>
+            <option value="single-rail">ملابس — مفرد</option><option value="double-rail">ملابس — مزدوج</option><option value="four-way">ملابس — أربع اتجاهات</option><option value="wall-rack">ملابس — جداري</option><option value="nesting-table">عرض — طاولات متداخلة</option><option value="shoe-rack">أحذية — متعدد الأرفف</option><option value="gondola">سوبر ماركت — مزدوج</option><option value="counter-display">عرض — كاونتر متعدد الطبقات</option><option value="bag-display">شنط — أذرع متعددة</option><option value="accessory-grid">إكسسوارات — لوحة وخطافات</option><option value="jewelry-display">مجوهرات — قلائد وخواتم</option><option value="eyewear-display">نظارات — متعدد المستويات</option><option value="cosmetics-display">مستحضرات تجميل — متدرج</option><option value="book-rack">كتب — أرفف أرضية</option><option value="magazine-rack">مجلات — جيوب أمامية</option><option value="promo-sign">دعاية — بوستر</option><option value="cafe-menu">كافيهات — منيو طاولة</option><option value="restaurant-tray">مطاعم — صواني ومستلزمات</option>
           </select>
+          <label for="standModelSize">نسخة المقاس</label><select id="standModelSize"><option value="compact">مدمج — 82%</option><option value="standard" selected>قياسي — 100%</option><option value="large">كبير — 118%</option></select>
+          <label for="standModelMaterial">الخامة الأساسية</label><select id="standModelMaterial"><option value="original">حسب خامة كل جزء</option><option value="حديد">حديد</option><option value="ستانلس ستيل">ستانلس ستيل</option><option value="ألومنيوم">ألومنيوم</option><option value="خشب">خشب</option><option value="أكريليك">أكريليك</option></select>
+          <label for="standModelFinish">التشطيب / اللون</label><select id="standModelFinish"><option value="black">أسود مطفي</option><option value="white">أبيض</option><option value="chrome">كروم / فضي</option><option value="gold">ذهبي</option><option value="wood">لون خشبي</option><option value="clear">شفاف / أكريليك</option></select>
+          <div class="model-dimension-grid"><label><input type="checkbox" id="standAddWheels"> إضافة 4 عجلات</label><label><input type="checkbox" id="standAddHooks"> إضافة خطافات</label><label><input type="checkbox" id="standAddHolder"> إضافة حامل أكريليك</label></div>
           <button type="button" id="addStandModelTemplateBtn" class="button button-primary">＋ إدخال الموديل إلى 3D</button>
         </section>
         <label for="modelPrimitive">نوع الجسم</label>
@@ -280,6 +284,6 @@
     <div class="dialog-actions"><button type="button" id="doneGroupsBtn" class="button button-primary">تم</button></div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=stand-library-v1-mwmemuso"></script>
+  <script src="app.js?v=stand-library-expanded-mwmeqsf8"></script>
 </body>
 </html>
