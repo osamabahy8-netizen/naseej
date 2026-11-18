@@ -30,3 +30,11 @@
 #network{touch-action:none;user-select:none;-webkit-user-select:none}
 .node{cursor:grab}
 .node:active{cursor:grabbing}
+
+
+/* Idea grouping controls */
+.group-select-row{display:flex;gap:8px;align-items:stretch}
+.group-select-row select{flex:1;min-width:0}
+.group-select-row .button{white-space:nowrap;padding-inline:10px}
+.group-pill{display:inline-block;margin:10px 0 0 6px;padding:5px 10px;border:1px solid #80683e;border-radius:20px;background:#292719;color:#f0d49b;font-size:11px}
+@media(max-width:420px){.group-select-row{flex-direction:column}.group-select-row .button{width:100%}}
