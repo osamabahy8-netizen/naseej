@@ -139,6 +139,25 @@
     for(let i=0;i<v.shelves;i++)parts.push({id:"shelf-"+(i+1),name:"الرف رقم "+(i+1),material:"صاج أو خشب أو شبكة",notes:"رف منفصل قابل للفك والاستبدال"});
     return parts;
   }
+  function partDimensionDefaults(id,v){
+    const post=Math.max(2.2,Math.min(4,v.width*.035))*10;
+    const w=v.width*10,d=v.depth*10,h=v.height*10;
+    if(id==="base")return {length:w,width:d,thickness:3};
+    if(id.startsWith("post-"))return {length:h-30,width:post,depth:post};
+    if(id==="top-frame")return {length:w,width:d,thickness:5};
+    if(id==="hanger-rail")return {length:w-2*post,width:24,depth:24};
+    if(id.startsWith("shelf-"))return {length:w-2*post,width:d-2*post,thickness:25};
+    return {};
+  }
+  function getPartDimensions(id,v){
+    const base=partDimensionDefaults(id,v),saved=partSpecs[id]?.dimensions||{};
+    const result={};
+    Object.keys(base).forEach(key=>{
+      const n=Number(saved[key]);
+      result[key]=Number.isFinite(n)&&n>0?Math.max(1,Math.min(3000,n)):base[key];
+    });
+    return result;
+  }
   function renderStandModel() {
     const v=standValues(), svg=$("standPreview");
     $("previewName").textContent=v.name;
@@ -163,17 +182,25 @@
       groups.push('<g class="stand-part '+(chosen?"part-selected":"")+'" data-part-id="'+id+'" transform="translate('+dx+' '+dy+')" tabindex="0" role="button" aria-label="اختيار '+(defs.find(p=>p.id===id)?.name||id)+'">'+shapes.join("")+'</g>');
     }
     const metal=v.color,dark=v.material==="wood"?"#9a7047":v.material==="aluminum"?"#aeb9c5":metal;
-    makePart("base",box=>box(0,0,0,v.width,v.depth,3,shade(metal,-12)),[0,65]);
+    const baseDim=getPartDimensions("base",v);
+    makePart("base",box=>box(0,0,0,baseDim.length/10,baseDim.width/10,baseDim.thickness/10,shade(metal,-12)),[0,65]);
     const postParts=[
       ["post-front-left",0,0,-55,0],["post-front-right",v.width-post,0,55,0],
       ["post-rear-left",0,v.depth-post,-55,20],["post-rear-right",v.width-post,v.depth-post,55,20]
     ];
-    postParts.forEach(([id,x,y,dx,dy])=>makePart(id,box=>box(x,y,3,post,post,v.height-3,dark),[dx,dy]));
-    makePart("top-frame",box=>box(0,0,v.height-5,v.width,v.depth,5,metal),[0,-75]);
-    makePart("hanger-rail",box=>box(post,v.depth*.48,v.height-20,v.width-2*post,2.4,2.4,shade(metal,35)),[0,-112]);
+    postParts.forEach(([id,x,y,dx,dy])=>{
+      const dim=getPartDimensions(id,v),pw=dim.width/10,pd=dim.depth/10;
+      const px=id.endsWith("right")?v.width-pw:x,py=id.includes("rear")?v.depth-pd:y;
+      makePart(id,box=>box(px,py,3,pw,pd,dim.length/10,dark),[dx,dy]);
+    });
+    const frameDim=getPartDimensions("top-frame",v);
+    makePart("top-frame",box=>box(0,0,v.height-frameDim.thickness/10,frameDim.length/10,frameDim.width/10,frameDim.thickness/10,metal),[0,-75]);
+    const railDim=getPartDimensions("hanger-rail",v);
+    makePart("hanger-rail",box=>box(post,v.depth*.48,v.height-20,railDim.length/10,railDim.width/10,railDim.depth/10,shade(metal,35)),[0,-112]);
     for(let i=0;i<v.shelves;i++){
       const id="shelf-"+(i+1),z=12+(v.height-28)*(i+1)/(v.shelves+1);
-      makePart(id,box=>{box(post,post,z,v.width-2*post,v.depth-2*post,2.5,v.material==="wood"?"#a8794b":shade(metal,-8));box(post,post,z+2.5,v.width-2*post,1.4,1.8,shade(metal,18));},[0,(i%2===0?1:-1)*(32+22*i)]);
+      const shelfDim=getPartDimensions(id,v);
+      makePart(id,box=>{box(post,post,z,shelfDim.length/10,shelfDim.width/10,shelfDim.thickness/10,v.material==="wood"?"#a8794b":shade(metal,-8));},[0,(i%2===0?1:-1)*(32+22*i)]);
     }
     const label='<text x="320" y="500" fill="#9aa9bd" font-size="13" text-anchor="middle" direction="rtl">العرض '+v.width+' سم  •  الارتفاع '+v.height+' سم  •  العمق '+v.depth+' سم</text>';
     svg.innerHTML='<defs><linearGradient id="stageGlow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17283c"/><stop offset="1" stop-color="#0b1422"/></linearGradient></defs><rect width="640" height="520" rx="18" fill="url(#stageGlow)"/><ellipse cx="320" cy="448" rx="210" ry="34" fill="#020711" opacity=".35"/>'+groups.join("")+label;
@@ -207,6 +234,12 @@
     $("partCustomName").value=spec.name||part.name;
     $("partCustomMaterial").value=spec.material||part.material;
     $("partCustomNotes").value=spec.notes||part.notes;
+    const dims=getPartDimensions(part.id,standValues());
+    $("partDimLength").value=Math.round(dims.length||0);
+    $("partDimWidth").value=Math.round(dims.width||0);
+    $("partDimThickness").value=Math.round(dims.thickness||dims.depth||0);
+    $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
+    $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
   }
   function saveSelectedPart(){
     const part=standPartDefinitions(standValues()).find(p=>p.id===selectedPartId);
@@ -214,7 +247,12 @@
     partSpecs[selectedPartId]={
       name:$("partCustomName").value.trim()||part.name,
       material:$("partCustomMaterial").value.trim(),
-      notes:$("partCustomNotes").value.trim()
+      notes:$("partCustomNotes").value.trim(),
+      dimensions:{
+        length:Math.max(1,Math.min(3000,Number($("partDimLength").value)||partDimensionDefaults(part.id,standValues()).length)),
+        width:Math.max(1,Math.min(3000,Number($("partDimWidth").value)||partDimensionDefaults(part.id,standValues()).width)),
+        [part.id.startsWith("post-")||part.id==="hanger-rail"?"depth":part.id==="base"||part.id.startsWith("shelf-")?"width":"thickness"]:Math.max(1,Math.min(3000,Number($("partDimThickness").value)||partDimensionDefaults(part.id,standValues()).thickness||partDimensionDefaults(part.id,standValues()).depth))
+      }
     };
     if(currentDesignId){
       const index=data.designs.findIndex(d=>d.id===currentDesignId);
