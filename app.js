@@ -890,6 +890,8 @@
   let modelCameraAngle = 35;
   let modelZoom = 1;
   let modelExplodedView = false;
+  let modelExplodeMoveMode = false;
+  let modelExplodeOffsets = {};
   let modelProjectName = "تصميم جديد";
   function modelProjectSnapshot() {
     return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
@@ -1033,7 +1035,7 @@
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
     const center=modelObjects.reduce((a,o)=>[a[0]+o.x/modelObjects.length,a[1]+(o.y+o.h/2)/modelObjects.length,a[2]+o.z/modelObjects.length],[0,0,0]);
-    const renderObjects=modelObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22));return {...o,x:o.x+dx/len*gap,y:o.y+dy/len*gap,z:o.z+dz/len*gap};});
+    const renderObjects=modelObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};return {...o,x:o.x+dx/len*gap+extra.x,y:o.y+dy/len*gap+extra.y,z:o.z+dz/len*gap+extra.z};});
     const corners=[];
     renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
@@ -1066,6 +1068,7 @@
         root.appendChild(svgEl("circle",{cx:from[0],cy:from[1],r:"4",fill:"#ffd166","pointer-events":"none"}));
       });
     }
+    if(modelExplodedView){const links=svgEl("g");renderObjects.forEach(o=>{const e=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};const p0=project(o.x-e.x,o.y-e.y+o.h/2,o.z-e.z),p1=project(o.x,o.y+o.h/2,o.z);if(Math.hypot(p1[0]-p0[0],p1[1]-p0[1])>2)links.appendChild(svgEl("line",{x1:p0[0],y1:p0[1],x2:p1[0],y2:p1[1],stroke:"#ffd166","stroke-width":"2","stroke-dasharray":"6 5","pointer-events":"none"}));});root.appendChild(links);}
     const faces=[];
     renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
@@ -1190,6 +1193,7 @@
         event.preventDefault();return;
       }
       const face=event.target.closest&&event.target.closest("[data-object-id]");
+      if(face&&modelExplodedView&&modelExplodeMoveMode){const id=face.getAttribute("data-object-id");selectedModelObjectId=id;const extra=modelExplodeOffsets[id]||{x:0,y:0,z:0};partDrag={id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:extra.x,originY:extra.y,originZ:extra.z,scale:modelDrawingFitScale(),angle:modelCameraAngle,viewOnly:true};orbitStart=null;orbitMoved=false;renderModelObjectEditor();event.preventDefault();return;}
       if(face&&!modelExplodedView){
         const object=modelObjects.find(o=>o.id===face.getAttribute("data-object-id"));
         if(object){
@@ -1208,6 +1212,7 @@
         if(pinchStartDistance>0){modelZoom=Math.max(.45,Math.min(3.5,pinchStartZoom*distance/pinchStartDistance));renderModelDrawing();}
         event.preventDefault();return;
       }
+      if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,u=dxScreen/(.62*partDrag.scale),v=dyScreen/(.34*partDrag.scale),angle=partDrag.angle*Math.PI/180;modelExplodeOffsets[partDrag.id]={x:partDrag.originX+Math.cos(angle)*u+Math.sin(angle)*v,y:partDrag.originY,z:partDrag.originZ-Math.sin(angle)*u+Math.cos(angle)*v};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;renderModelDrawing();event.preventDefault();return;}
       if(partDrag&&partDrag.pointerId===event.pointerId){
         const object=modelObjects.find(o=>o.id===partDrag.id);if(!object)return;
         const rect=drawing.getBoundingClientRect();
@@ -1228,7 +1233,7 @@
     });
     const endOrbit=event=>{
       if(event&&partDrag&&partDrag.pointerId===event.pointerId){
-        if(orbitMoved){save();renderModelObjectEditor();renderManufacturingDrawings();}
+        if(orbitMoved&&!partDrag.viewOnly){save();renderModelObjectEditor();renderManufacturingDrawings();}
         partDrag=null;
       }
       if(event)activePointers.delete(event.pointerId);
@@ -1271,7 +1276,8 @@
       modelZoom=action==="in"?Math.min(4.5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
       renderModelDrawing();
     }));
-    $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";renderModelDrawing();});
+    $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";$("modelExplodeMoveBtn").disabled=!modelExplodedView;if(!modelExplodedView){modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";$("modelExplodeHint").textContent="التفكيك بصري مؤقت ولا يغيّر إحداثيات القطع الأصلية أو ملف المشروع.";}renderModelDrawing();});
+    $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
@@ -1282,7 +1288,7 @@
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
-    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
+    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").disabled=true;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
     if(!data.modelStudioInitialized){
       modelObjects=[{id:uid(),type:"box",label:"مجسم تجريبي",x:0,y:0,z:0,w:600,h:300,d:400,color:"#c49a55",rx:0,ry:0,rz:0}];
       selectedModelObjectId=modelObjects[0].id;
