@@ -201,8 +201,14 @@
             <div><label for="modelPosY">الموقع Y (مم)</label><input id="modelPosY" type="number" min="-10000" max="10000"></div>
             <div><label for="modelPosZ">الموقع Z (مم)</label><input id="modelPosZ" type="number" min="-10000" max="10000"></div>
           </div>
+          <h4>دوران القطعة بالدرجات</h4>
+          <div class="model-dimension-grid">
+            <div><label for="modelRotX">دوران X</label><input id="modelRotX" type="number" min="-360" max="360"></div>
+            <div><label for="modelRotY">دوران Y</label><input id="modelRotY" type="number" min="-360" max="360"></div>
+            <div><label for="modelRotZ">دوران Z</label><input id="modelRotZ" type="number" min="-360" max="360"></div>
+          </div>
           <label for="modelObjectColor">اللون</label><input id="modelObjectColor" type="color" value="#c49a55">
-          <div class="design-actions"><button type="button" id="saveModelObjectBtn" class="button button-primary">حفظ تعديلات الجسم</button><button type="button" id="deleteModelObjectBtn" class="button button-quiet">حذف الجسم</button></div>
+          <div class="design-actions"><button type="button" id="saveModelObjectBtn" class="button button-primary">حفظ تعديلات الجسم</button><button type="button" id="duplicateModelObjectBtn" class="button button-quiet">نسخ القطعة</button><button type="button" id="deleteModelObjectBtn" class="button button-quiet">حذف الجسم</button></div>
         </div>
         <label for="modelCameraAngle">زاوية الرؤية</label><input id="modelCameraAngle" type="range" min="0" max="360" value="35">
         <div class="design-actions"><button type="button" id="resetModelCameraBtn" class="button button-quiet">إعادة زاوية الرؤية</button><button type="button" id="saveModelProjectBtn" class="button button-primary">حفظ المشروع</button></div>
