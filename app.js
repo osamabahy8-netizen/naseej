@@ -1617,11 +1617,42 @@
   function renderModelAssemblyGuide(){
     const panel=$("modelAssemblyGuide");if(!panel)return;
     if(!modelObjects.length){panel.innerHTML="<p>أضف قطعًا إلى المجسم أولًا لبدء دليل التجميع.</p>";return;}
-    const index=Math.max(0,Math.min(modelAssemblyStep,modelObjects.length-1)),part=modelObjects[index],safe=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\x27/g,"&#39;");
-    panel.innerHTML="<div class=\"assembly-guide-head\"><strong>الخطوة "+(index+1)+" من "+modelObjects.length+": "+safe(part.label)+"</strong><span>"+(index===modelObjects.length-1?"آخر قطعة في القائمة":"تركيب القطعة الحالية")+"</span></div><p>الخامة: "+safe(part.material||"غير محددة")+" | الأبعاد: "+Math.round(part.w)+" × "+Math.round(part.h)+" × "+Math.round(part.d)+" مم</p><p>طريقة الوصلة: "+safe(part.jointSpec||"لم تُحدد بعد")+"</p><p>اللحام: "+safe(part.weldSpec||"لم يُحدد بعد")+"</p><div class=\"assembly-guide-actions\"><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyPrevBtn\" "+(index===0?"disabled":"")+">الخطوة السابقة</button><button type=\"button\" class=\"button button-primary\" id=\"modelAssemblyNextBtn\" "+(index===modelObjects.length-1?"disabled":"")+">الخطوة التالية</button><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyExitBtn\">عرض كل القطع</button></div><p class=\"catalog-footnote\">ترتيب الخطوات يتبع ترتيب القطع في قائمة الأجسام. راجع ترتيب التركيب الفعلي ونوع الوصلات قبل التنفيذ؛ النظام لا يستنتج تسلسلًا هندسيًا تلقائيًا.</p>";
-    $("modelAssemblyPrevBtn").addEventListener("click",()=>{modelAssemblyStep=Math.max(0,modelAssemblyStep-1);selectedModelObjectId=modelObjects[modelAssemblyStep].id;renderModelDrawing();renderModelObjectEditor();});
-    $("modelAssemblyNextBtn").addEventListener("click",()=>{modelAssemblyStep=Math.min(modelObjects.length-1,modelAssemblyStep+1);selectedModelObjectId=modelObjects[modelAssemblyStep].id;renderModelDrawing();renderModelObjectEditor();});
-    $("modelAssemblyExitBtn").addEventListener("click",()=>{modelAssemblyGuideOn=false;panel.hidden=true;$("modelAssemblyStartBtn").textContent="بدء دليل التجميع";renderModelDrawing();});
+    const index=Math.max(0,Math.min(modelAssemblyStep,modelObjects.length-1));
+    modelAssemblyStep=index;
+    const part=modelObjects[index];
+    const previous=index>0?modelObjects[index-1]:null;
+    const safe=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\\x27/g,"&#39;");
+    const detail=(label,value)=>"<div class=\"assembly-guide-detail\"><strong>"+label+"</strong><span>"+safe(value||"لم تُحدد في بيانات القطعة")+"</span></div>";
+    const progress=Math.round(((index+1)/modelObjects.length)*100);
+    panel.innerHTML=
+      "<div class=\"assembly-guide-head\"><strong>الخطوة "+(index+1)+" من "+modelObjects.length+": "+safe(part.label)+"</strong><span>"+progress+"٪ مكتمل</span></div>"+
+      "<div style=\"height:7px;background:#263548;border-radius:8px;overflow:hidden;margin:10px 0 14px\"><div style=\"height:100%;width:"+progress+"%;background:#c49a55;border-radius:8px\"></div></div>"+
+      "<div class=\"assembly-guide-detail-grid\">"+
+      detail("القطعة الحالية",part.label)+detail("الخامة",part.material||"غير محددة")+
+      detail("الأبعاد (مم)",Math.round(part.w)+" × "+Math.round(part.h)+" × "+Math.round(part.d))+
+      detail("مكان التركيب والقطعة المتصلة",part.installLocation)+
+      detail("نوع الوصلة",part.jointSpec)+detail("مواصفات قاعدة التثبيت",part.mountSpec)+
+      detail("الثقوب ومراكزها",part.holeSpec)+detail("بيانات اللحام",part.weldSpec)+
+      detail("المكونات داخل القطعة",part.componentSpec)+
+      "</div>"+
+      "<div class=\"assembly-guide-visual\"><strong>تسلسل التركيب على المجسم</strong><p>"+(previous?"القطعة السابقة: "+safe(previous.label)+" ← القطعة الحالية: "+safe(part.label):"نبدأ بالقطعة الأولى: "+safe(part.label))+"</p><p class=\"catalog-footnote\">المجسم يعرض القطع حتى هذه الخطوة؛ راجع مواضع التلامس والوصلات الفعلية قبل التثبيت.</p></div>"+
+      "<div class=\"assembly-guide-actions\"><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyPrevBtn\" "+(index===0?"disabled":"")+">الخطوة السابقة</button><button type=\"button\" class=\"button button-primary\" id=\"modelAssemblyNextBtn\" "+(index===modelObjects.length-1?"disabled":"")+">"+(index===modelObjects.length-1?"وصلنا لآخر قطعة":"الخطوة التالية")+"</button><button type=\"button\" class=\"button button-quiet\" id=\"modelAssemblyExitBtn\">عرض كل القطع</button></div>"+
+      "<p class=\"catalog-footnote\">ترتيب الخطوات يتبع ترتيب القطع في قائمة الأجسام. أي معلومة غير مدخلة ستظهر بوضوح على أنها غير محددة؛ لا يفترض نسيج مقاسات مسامير أو لحامات من تلقاء نفسه.</p>";
+    $("modelAssemblyPrevBtn").addEventListener("click",()=>{
+      modelAssemblyStep=Math.max(0,modelAssemblyStep-1);
+      selectedModelObjectId=modelObjects[modelAssemblyStep].id;
+      renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();
+    });
+    $("modelAssemblyNextBtn").addEventListener("click",()=>{
+      modelAssemblyStep=Math.min(modelObjects.length-1,modelAssemblyStep+1);
+      selectedModelObjectId=modelObjects[modelAssemblyStep].id;
+      renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();
+    });
+    $("modelAssemblyExitBtn").addEventListener("click",()=>{
+      modelAssemblyGuideOn=false;panel.hidden=true;
+      $("modelAssemblyStartBtn").textContent="بدء دليل التجميع";
+      renderModelDrawing();
+    });
   }
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
