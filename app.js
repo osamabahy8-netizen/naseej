@@ -889,6 +889,7 @@
   let selectedModelObjectId = null;
   let modelCameraAngle = 35;
   let modelZoom = 1;
+  let modelExplodedView = false;
   let modelProjectName = "تصميم جديد";
   function modelProjectSnapshot() {
     return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
@@ -1022,8 +1023,10 @@
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
+    const center=modelObjects.reduce((a,o)=>[a[0]+o.x/modelObjects.length,a[1]+(o.y+o.h/2)/modelObjects.length,a[2]+o.z/modelObjects.length],[0,0,0]);
+    const renderObjects=modelObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22));return {...o,x:o.x+dx/len*gap,y:o.y+dy/len*gap,z:o.z+dz/len*gap};});
     const corners=[];
-    modelObjects.forEach(o=>{
+    renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
       [[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1]].forEach(c=>{
         corners.push(transformModelVertex([x+c[0]*w/2,y+c[1]*h,z+c[2]*d/2],o));
@@ -1046,7 +1049,7 @@
     const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
     axes.forEach(axis=>{const p=project(...axis.a),q=project(...axis.b);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+5,y:q[1]-5,fill:axis.c,"font-size":"14"});t.textContent=axis.t;root.appendChild(t);});
     const faces=[];
-    modelObjects.forEach(o=>{
+    renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
       if(o.type==="cylinder"){
         const sides=24,bottom=[],top=[];
@@ -1062,7 +1065,7 @@
     });
     faces.sort((a,b)=>a.depth-b.depth);
     faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
-    const selected=modelObjects.find(o=>o.id===selectedModelObjectId);
+    const selected=renderObjects.find(o=>o.id===selectedModelObjectId);
     const dimensions=svgEl("g");
     if(selected){
       const c={
@@ -1086,7 +1089,7 @@
     }
     root.appendChild(dimensions);
     const labels=svgEl("g");
-    modelObjects.forEach(o=>{const p=project(o.x,o.y+o.h+35,o.z),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"11","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});
+    renderObjects.forEach(o=>{const p=project(o.x,o.y+o.h+35,o.z),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"11","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});
     root.appendChild(labels);
     const summary=$("modelDimensionSummary");
     if(summary){
@@ -1211,6 +1214,7 @@
       modelZoom=action==="in"?Math.min(4.5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
       renderModelDrawing();
     }));
+    $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";renderModelDrawing();});
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
