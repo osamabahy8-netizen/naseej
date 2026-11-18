@@ -946,10 +946,11 @@
   function renderModelCutList() {
     const host=$("modelCutList");if(!host)return;
     if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";return;}
+    const safeText=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
     const rows=modelObjects.map(o=>{
       const length=Math.round(o.cutLength??Math.max(o.w,o.h,o.d));
       const quantity=Math.max(1,Number(o.quantity)||1);
-      return "<tr><td>"+escapeHtml(o.label)+"</td><td>"+escapeHtml(o.material||"حديد")+"</td><td>"+escapeHtml(o.profile||"غير محدد")+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
+      return "<tr><td>"+safeText(o.label)+"</td><td>"+safeText(o.material||"حديد")+"</td><td>"+safeText(o.profile||"غير محدد")+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
     }).join("");
     host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
   }
