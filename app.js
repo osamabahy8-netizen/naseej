@@ -1076,6 +1076,22 @@
     };
     drawing.addEventListener("pointerup",endOrbit);
     drawing.addEventListener("pointercancel",endOrbit);
+    let touchPinchStart=0,touchZoomStart=1;
+    drawing.addEventListener("touchstart",event=>{
+      if(event.touches.length===2){
+        touchPinchStart=Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
+        touchZoomStart=modelZoom;orbitStart=null;orbitMoved=true;event.preventDefault();
+      }
+    },{passive:false});
+    drawing.addEventListener("touchmove",event=>{
+      if(event.touches.length!==2||!touchPinchStart)return;
+      const distance=Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
+      modelZoom=Math.max(.35,Math.min(4.5,touchZoomStart*distance/touchPinchStart));
+      renderModelDrawing();event.preventDefault();
+    },{passive:false});
+    const endTouchPinch=()=>{touchPinchStart=0;};
+    drawing.addEventListener("touchend",endTouchPinch,{passive:true});
+    drawing.addEventListener("touchcancel",endTouchPinch,{passive:true});
     drawing.addEventListener("wheel",event=>{
       event.preventDefault();
       modelZoom=Math.max(.45,Math.min(3.5,modelZoom*(event.deltaY<0?1.12:.89)));
@@ -1088,6 +1104,11 @@
       if(!face)return;
       selectedModelObjectId=face.getAttribute("data-object-id");renderModelDrawing();renderModelObjectEditor();
     });
+    document.querySelectorAll("[data-model-zoom]").forEach(button=>button.addEventListener("click",()=>{
+      const action=button.dataset.modelZoom;
+      modelZoom=action==="in"?Math.min(4.5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
+      renderModelDrawing();
+    }));
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
