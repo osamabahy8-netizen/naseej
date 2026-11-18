@@ -70,7 +70,7 @@
 .design-heading{margin-bottom:16px}.design-heading h2{font-size:24px;margin:6px 0}.design-heading p,.preview-hint{font-size:12px;color:var(--muted);line-height:1.8}
 .design-layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:16px}
 .design-controls label,.part-editor label{display:block;color:#b8c5d6;font-size:12px;margin:13px 0 7px}
-.design-controls input,.design-controls select,.design-controls textarea,.part-editor input,.part-editor textarea{width:100%;border:1px solid #30445d;border-radius:9px;background:#0b1523;color:#edf2f8;padding:10px;font:inherit;font-size:13px}
+.design-controls input,.design-controls select,.design-controls textarea,.part-editor input,.part-editor textarea,.part-editor select{width:100%;border:1px solid #30445d;border-radius:9px;background:#0b1523;color:#edf2f8;padding:10px;font:inherit;font-size:13px}
 .dimension-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .design-controls h3,.design-preview-panel h3{margin:0 0 12px;font-size:17px}
 .design-actions,.preview-actions{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
