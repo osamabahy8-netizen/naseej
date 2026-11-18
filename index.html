@@ -133,6 +133,24 @@
         <div id="referenceImageBox" class="reference-image-box" hidden><h4>الصورة المرجعية</h4><img id="savedReferenceImage" alt="الصورة المرجعية المحفوظة"></div>
       </section>
     </div>
+
+    <section class="panel fabrication-sheet">
+      <div class="catalog-heading"><span class="eyebrow">مرحلة التصنيع</span><h3>رسومات الورشة وحصر الخامات</h3><p>حصر مبدئي قابل للتعديل مبني على أبعاد التصميم الحالية. راجع المقاسات والوصلات قبل القص.</p></div>
+      <div class="drawing-grid">
+        <div class="drawing-card"><h4>المسقط الأمامي</h4><svg id="frontDrawing" viewBox="0 0 320 260" role="img" aria-label="رسم أمامي للاستاند"></svg></div>
+        <div class="drawing-card"><h4>المسقط الجانبي</h4><svg id="sideDrawing" viewBox="0 0 320 260" role="img" aria-label="رسم جانبي للاستاند"></svg></div>
+        <div class="drawing-card"><h4>المسقط العلوي</h4><svg id="topDrawing" viewBox="0 0 320 260" role="img" aria-label="رسم علوي للاستاند"></svg></div>
+      </div>
+      <div class="cost-inputs">
+        <div><label for="tubePrice">سعر متر الماسورة (جنيه)</label><input id="tubePrice" type="number" min="0" step="1" value="120"></div>
+        <div><label for="sheetPrice">سعر متر مربع الصاج (جنيه)</label><input id="sheetPrice" type="number" min="0" step="1" value="450"></div>
+        <div><label for="wastePercent">نسبة الهالك (%)</label><input id="wastePercent" type="number" min="0" max="100" step="1" value="10"></div>
+      </div>
+      <div id="materialSummary" class="material-summary" aria-live="polite"></div>
+      <div class="table-scroll"><table class="cut-table"><thead><tr><th>القطعة</th><th>العدد</th><th>الطول/المقاس</th><th>الخامة</th></tr></thead><tbody id="cutListBody"></tbody></table></div>
+      <div class="design-actions"><button type="button" id="exportCutListBtn" class="button button-primary">تصدير جدول القص CSV</button></div>
+      <p class="catalog-footnote">تنبيه: الحصر الحالي تقديري لهيكل استانْد نموذجي؛ لا يشمل تفاصيل صفائح التثبيت والبراغي واللحام والكسوة، ولا يمثل اعتمادًا إنشائيًا أو حساب حمولة.</p>
+    </section>
     <p class="design-disclaimer">المعاينة داخل نسيج منظور مجسم مبسط. ويمكن تصدير القطع كملف OBJ منفصلة وفتحها في برنامج مثل Blender لتحريكها وتعديلها. الملف المبدئي لا يغني عن مراجعة الوصلات والتفاوتات وتحمل الأحمال قبل التصنيع.</p>
   </section>
   <dialog id="nodeDialog">
