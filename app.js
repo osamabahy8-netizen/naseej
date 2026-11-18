@@ -405,7 +405,7 @@
   function exportCutList(){
     if(!latestCutRows.length)renderManufacturingSheet();
     const rows=[["القطعة","العدد","طول القطعة مم","إجمالي الطول مم","الخامة"],...latestCutRows.map(r=>[r.name,r.qty,r.length,r.total,r.material])];
-    const csv="\\uFEFF"+rows.map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(",")).join("\\r\\n");
+    const csv="\uFEFF"+rows.map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(",")).join("\r\n");
     const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
     a.href=url;a.download="naseej-cut-list.csv";a.click();URL.revokeObjectURL(url);toast("تم تصدير جدول القص");
   }
