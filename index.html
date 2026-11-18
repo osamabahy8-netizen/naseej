@@ -47,6 +47,11 @@
       <input type="hidden" id="nodeId">
       <label for="nodeTitle">الاسم</label><input id="nodeTitle" name="title" maxlength="80" required placeholder="مثال: تطوير منتج جديد">
       <label for="nodeType">النوع</label><select id="nodeType" name="type"><option value="idea">فكرة</option><option value="project">مشروع</option></select>
+      <label for="nodeGroup">المجموعة</label>
+      <div class="group-select-row">
+        <select id="nodeGroup" name="group"></select>
+        <button type="button" id="addGroupBtn" class="button button-quiet">＋ مجموعة جديدة</button>
+      </div>
       <label for="nodeDescription">الوصف</label><textarea id="nodeDescription" name="description" rows="4" maxlength="1000" placeholder="اكتب تفاصيل الفكرة أو المشروع..."></textarea>
       <div class="dialog-actions"><button type="button" id="cancelBtn" class="button button-quiet">إلغاء</button><button type="submit" class="button button-primary">حفظ</button></div>
     </form>
