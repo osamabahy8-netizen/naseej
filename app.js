@@ -888,6 +888,7 @@
   let modelObjects = [];
   let selectedModelObjectId = null;
   let modelCameraAngle = 35;
+  let modelZoom = 1;
   let modelProjectName = "تصميم جديد";
   function modelProjectSnapshot() {
     return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
@@ -965,7 +966,7 @@
     const minX=Math.min(...raw.map(p=>p[0])),maxX=Math.max(...raw.map(p=>p[0]));
     const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
     const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
-    const scale=Math.min(.8,500/spanX,420/spanY);
+    const scale=Math.min(.8,500/spanX,420/spanY)*modelZoom;
     const cx=450-(minX+maxX)*scale/2,cy=315-(minY+maxY)*scale/2;
     const project=(x,y,z)=>projectModelPoint(x,y,z,modelCameraAngle,scale,cx,cy);
     const grid=document.createElementNS(NS,"g");
@@ -1038,19 +1039,49 @@
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
     const drawing=$("modelDrawing");
+    const activePointers=new Map();
+    let pinchStartDistance=0,pinchStartZoom=1;
+    drawing.style.touchAction="none";
+    const pointerDistance=()=>{
+      const points=[...activePointers.values()];
+      return points.length<2?0:Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
+    };
     drawing.addEventListener("pointerdown",event=>{
-      orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;
+      activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(drawing.setPointerCapture)drawing.setPointerCapture(event.pointerId);
+      if(activePointers.size===2){
+        orbitStart=null;pinchStartDistance=Math.max(1,pointerDistance());pinchStartZoom=modelZoom;orbitMoved=true;
+        event.preventDefault();return;
+      }
+      if(activePointers.size===1){orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;}
     });
     drawing.addEventListener("pointermove",event=>{
+      if(!activePointers.has(event.pointerId))return;
+      activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(activePointers.size>=2){
+        const distance=pointerDistance();
+        if(pinchStartDistance>0){modelZoom=Math.max(.45,Math.min(3.5,pinchStartZoom*distance/pinchStartDistance));renderModelDrawing();}
+        event.preventDefault();return;
+      }
       if(!orbitStart)return;
       const delta=event.clientX-orbitStart.x;
       if(Math.abs(delta)>3)orbitMoved=true;
       if(orbitMoved){modelCameraAngle=(orbitStart.angle+delta*.55+360)%360;$("modelCameraAngle").value=Math.round(modelCameraAngle);renderModelDrawing();}
     });
-    const endOrbit=()=>{orbitStart=null;};
+    const endOrbit=event=>{
+      if(event)activePointers.delete(event.pointerId);
+      if(activePointers.size<2)pinchStartDistance=0;
+      if(activePointers.size===0)orbitStart=null;
+      else if(activePointers.size===1){const p=[...activePointers.values()][0];orbitStart={x:p.x,angle:modelCameraAngle};}
+    };
     drawing.addEventListener("pointerup",endOrbit);
     drawing.addEventListener("pointercancel",endOrbit);
+    drawing.addEventListener("wheel",event=>{
+      event.preventDefault();
+      modelZoom=Math.max(.45,Math.min(3.5,modelZoom*(event.deltaY<0?1.12:.89)));
+      renderModelDrawing();
+    },{passive:false});
+    drawing.addEventListener("dblclick",()=>{modelZoom=1;renderModelDrawing();});
     drawing.addEventListener("click",event=>{
       if(orbitMoved){orbitMoved=false;return;}
       const face=event.target.closest&&event.target.closest("[data-object-id]");
@@ -1062,7 +1093,7 @@
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
     $("duplicateModelObjectBtn").addEventListener("click",duplicateModelObject);
     $("modelCameraAngle").addEventListener("input",e=>{modelCameraAngle=Number(e.target.value);renderModelDrawing();});
-    $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;renderModelDrawing();});
+    $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;modelZoom=1;renderModelDrawing();});
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
