@@ -241,7 +241,8 @@
     $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
     $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
     const joint=spec.joint||{};
-    renderConnectionLibrary();\n    renderJointPartnerOptions(part.id);
+    renderConnectionLibrary();
+    renderJointPartnerOptions(part.id);
     $("partJointType").value=joint.type||"bolt";
     $("partJointQty").value=joint.quantity??2;
     $("partJointDiameter").value=joint.diameter??6;
