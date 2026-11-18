@@ -34,6 +34,7 @@
         <select id="groupFilter" aria-label="تصفية الأفكار حسب المجموعة">
           <option value="all">عرض كل المجموعات</option>
         </select>
+        <button id="manageGroupsBtn" class="button button-quiet" type="button">إدارة المجموعات</button>
       </div>
       <div class="canvas-wrap">
         <svg id="network" role="img" aria-label="خريطة الأفكار المترابطة"></svg>
@@ -67,6 +68,15 @@
       <label for="nodeDescription">الوصف</label><textarea id="nodeDescription" name="description" rows="4" maxlength="1000" placeholder="اكتب تفاصيل الفكرة أو المشروع..."></textarea>
       <div class="dialog-actions"><button type="button" id="cancelBtn" class="button button-quiet">إلغاء</button><button type="submit" class="button button-primary">حفظ</button></div>
     </form>
+  </dialog>
+  <dialog id="groupsDialog">
+    <div class="dialog-heading">
+      <div><span class="eyebrow">تنظيم نسيج</span><h2>إدارة المجموعات</h2></div>
+      <button type="button" id="closeGroupsBtn" class="icon-button" aria-label="إغلاق">×</button>
+    </div>
+    <p class="groups-note">غيّر اسم المجموعة أو احذفها. حذف المجموعة لا يحذف الأفكار والمشروعات الموجودة بداخلها.</p>
+    <div id="groupsList" class="groups-list"></div>
+    <div class="dialog-actions"><button type="button" id="doneGroupsBtn" class="button button-primary">تم</button></div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>
