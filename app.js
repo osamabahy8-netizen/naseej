@@ -240,7 +240,7 @@
     $("partDimThickness").value=Math.round(dims.thickness||dims.depth||0);
     $("partDimWidthLabel").textContent=part.id==="base"||part.id.startsWith("shelf-")?"العرض / العمق (مم)":"عرض القطاع (مم)";
     $("partDimThicknessLabel").textContent=part.id.startsWith("post-")||part.id==="hanger-rail"?"عمق القطاع (مم)":"السُمك (مم)";
-    const joint=spec.joint||{};\n    renderConnectionLibrary();
+    const joint=spec.joint||{};\n    renderConnectionLibrary();\n    renderJointPartnerOptions(part.id);
     $("partJointType").value=joint.type||"bolt";
     $("partJointQty").value=joint.quantity??2;
     $("partJointDiameter").value=joint.diameter??6;
@@ -272,6 +272,16 @@
     try{save();renderConnectionLibrary();$("connectionLibrarySelect").value=item.id;toast("اتحفظت الوصلة في المكتبة لإعادة استخدامها");}
     catch(error){data.connectionLibrary.pop();toast("تعذر حفظ الوصلة في مساحة التخزين");}
   }
+  function renderJointPartnerOptions(currentId){
+    const select=$("partJointPartner");if(!select)return;
+    select.replaceChildren();
+    const none=document.createElement("option");none.value="";none.textContent="غير محدد — وصلة عامة";select.appendChild(none);
+    standPartDefinitions(standValues()).filter(part=>part.id!==currentId).forEach(part=>{
+      const option=document.createElement("option");option.value=part.id;
+      const spec=partSpecs[part.id]||{};option.textContent=spec.name||part.name;select.appendChild(option);
+    });
+    select.value=partSpecs[currentId]?.joint?.partnerId||"";
+  }
   function saveSelectedPart(){
     const part=standPartDefinitions(standValues()).find(p=>p.id===selectedPartId);
     if(!part)return;
@@ -284,7 +294,8 @@
         quantity:Math.max(0,Math.min(100,Number($("partJointQty").value)||0)),
         diameter:Math.max(0,Math.min(30,Number($("partJointDiameter").value)||0)),
         length:Math.max(0,Math.min(200,Number($("partJointLength").value)||0)),
-        position:$("partJointPosition").value.trim().slice(0,120)
+        position:$("partJointPosition").value.trim().slice(0,120),
+        partnerId:$("partJointPartner").value||null
       },
       dimensions:{
         length:Math.max(1,Math.min(3000,Number($("partDimLength").value)||partDimensionDefaults(part.id,standValues()).length)),
@@ -400,10 +411,10 @@
     const parts=standPartDefinitions(v).map(part=>{
       const spec=partSpecs[part.id]||{},dimensions=getPartDimensions(part.id,v);
       const joint=spec.joint||{type:"bolt",quantity:2,diameter:6,length:20,position:"عند طرفي القطعة"};
-      return {name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes,dimensions,joint};
+      return {id:part.id,name:spec.name||part.name,material:spec.material||part.material,notes:spec.notes||part.notes,dimensions,joint,connectedPartName:joint.partnerId?(standPartDefinitions(v).find(p=>p.id===joint.partnerId)?.name||joint.partnerId):"غير محدد"};
     });
     const esc=value=>String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.joint.type+" — عدد "+p.joint.quantity+" — قطر "+p.joint.diameter+" مم — طول "+p.joint.length+" مم — "+p.joint.position)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
+    const partRows=parts.map(p=>"<tr><td>"+esc(p.name)+"</td><td>"+esc(p.material)+"</td><td>"+esc(Object.entries(p.dimensions).map(([key,value])=>key+": "+value+" مم").join(" — "))+"</td><td>"+esc(p.joint.type+" — عدد "+p.joint.quantity+" — قطر "+p.joint.diameter+" مم — طول "+p.joint.length+" مم — "+p.joint.position+" — متصلة بـ: "+p.connectedPartName)+"</td><td>"+esc(p.notes)+"</td></tr>").join("");
     const cutRows=(latestCutRows||[]).map(row=>"<tr><td>"+esc(row.name)+"</td><td>"+esc(row.qty)+"</td><td>"+esc(row.length)+"</td><td>"+esc(row.total)+"</td><td>"+esc(row.material)+"</td></tr>").join("");
     const image=v.image?'<section><h2>الصورة المرجعية</h2><img class="reference" src="'+v.image+'" alt="الصورة المرجعية"></section>':"";
     const page=[
