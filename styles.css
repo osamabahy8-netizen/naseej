@@ -159,3 +159,6 @@
 #modelDrawing{width:100%;height:auto;display:block;min-height:340px;touch-action:pan-y}
 .model-object-face{cursor:pointer}
 @media(max-width:850px){.model-layout{grid-template-columns:1fr}.model-view{padding:0 12px}}
+
+.model-object-editor h4{font-size:12px;color:#d7e0eb;margin:14px 0 7px}
+.model-object-editor .design-actions{display:flex;flex-wrap:wrap;gap:6px}
