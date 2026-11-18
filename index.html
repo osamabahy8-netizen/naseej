@@ -236,7 +236,7 @@
             <div><label for="modelPartQuantity">العدد</label><input id="modelPartQuantity" type="number" min="1" max="10000" step="1" value="1"></div>
             <div><label for="modelPartCutLength">طول القص (مم)</label><input id="modelPartCutLength" type="number" min="0" max="100000" step="1" placeholder="يُحسب من أكبر بُعد"></div>
           </div>
-          <div><label for="modelComponentSpec">تفاصيل المكونات الإلكترونية والميكانيكية</label><textarea id="modelComponentSpec" rows="3" maxlength="500" placeholder="مثال: محرك، ESC، متحكم، جيروسكوب IMU، حساس ارتفاع، مستقبل ريموت، بطارية، ومتطلبات التوافق"></textarea></div><div class="model-dimension-grid"><div><label for="modelHoleSpec">الثقوب ومراكزها</label><input id="modelHoleSpec" maxlength="180" placeholder="مثال: 2 ثقب قطر 8 مم، من الحافة 25 مم"></div><div><label for="modelMountSpec">قاعدة المحرك / نمط المسامير</label><input id="modelMountSpec" maxlength="220" placeholder="مثال: قاعدة 30×30 مم، 4 مسامير M3، المسافات بين المراكز 20×20 مم"></div><div><label for="modelWeldSpec">بيانات اللحام</label><input id="modelWeldSpec" maxlength="180" placeholder="مثال: لحام فيليه 20 مم على الجانبين"></div><div><label for="modelJointSpec">نوع الوصلة والتجميع</label><input id="modelJointSpec" maxlength="180" placeholder="مثال: عاشق ومعشوق + مسمار M8"></div></div>
+          <div><label for="modelComponentSpec">تفاصيل المكونات الإلكترونية والميكانيكية</label><textarea id="modelComponentSpec" rows="3" maxlength="500" placeholder="مثال: محرك، ESC، متحكم، جيروسكوب IMU، حساس ارتفاع، مستقبل ريموت، بطارية، ومتطلبات التوافق"></textarea></div><div class="model-dimension-grid"><div><label for="modelHoleSpec">الثقوب ومراكزها</label><input id="modelHoleSpec" maxlength="180" placeholder="مثال: 2 ثقب قطر 8 مم، من الحافة 25 مم"></div><div><label for="modelMountSpec">قاعدة المحرك / نمط المسامير</label><input id="modelMountSpec" maxlength="220" placeholder="مثال: قاعدة 30×30 مم، 4 مسامير M3، المسافات بين المراكز 20×20 مم"></div><div><label for="modelInstallLocation">مكان التركيب والقطعة المتصلة</label><input id="modelInstallLocation" maxlength="220" placeholder="مثال: يثبت أسفل الذراع الأيمن، ويتصل بالهيكل الرئيسي — قطعة رقم 1"></div><div><label for="modelWeldSpec">بيانات اللحام</label><input id="modelWeldSpec" maxlength="180" placeholder="مثال: لحام فيليه 20 مم على الجانبين"></div><div><label for="modelJointSpec">نوع الوصلة والتجميع</label><input id="modelJointSpec" maxlength="180" placeholder="مثال: عاشق ومعشوق + مسمار M8"></div></div>
           <p class="catalog-footnote">أدخل مواصفات الثقوب واللحام والوصلة يدويًا لكل قطعة؛ لا تعتمد قيمًا افتراضية قبل تحديد التصميم.</p>
           <p class="catalog-footnote">طول القص المقترح يُحسب من أكبر بُعد للقطعة، ويجب مراجعته حسب طريقة التجميع والتشغيل.</p>
           <label for="modelObjectColor">اللون</label><input id="modelObjectColor" type="color" value="#c49a55">
@@ -284,6 +284,6 @@
     <div class="dialog-actions"><button type="button" id="doneGroupsBtn" class="button button-primary">تم</button></div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=orthographic-mounts-20261118"></script>
+  <script src="app.js?v=assembly-linking-20261118"></script>
 </body>
 </html>
