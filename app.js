@@ -207,6 +207,73 @@
     data.groups.push(group); save(); renderGroupOptions(group.id);
     toast("تم إنشاء المجموعة؛ احفظ العنصر لإضافته إليها");
   }
+  function renderGroupsManager() {
+    const host = $("groupsList");
+    host.replaceChildren();
+    if (!data.groups.length) {
+      const empty = document.createElement("p");
+      empty.className = "groups-empty";
+      empty.textContent = "لسه ما أنشأتش أي مجموعات. تقدر تنشئ مجموعة من نموذج إضافة فكرة.";
+      host.appendChild(empty);
+      return;
+    }
+    data.groups.forEach(group => {
+      const count = data.nodes.filter(node => node.groupId === group.id).length;
+      const row = document.createElement("div");
+      row.className = "managed-group";
+      const info = document.createElement("div");
+      info.className = "managed-group-info";
+      const name = document.createElement("strong");
+      name.textContent = group.name;
+      const total = document.createElement("span");
+      total.textContent = count + " عنصر";
+      info.append(name,total);
+      const actions = document.createElement("div");
+      actions.className = "managed-group-actions";
+      actions.append(
+        actionButton("تغيير الاسم","button button-quiet",() => renameGroup(group.id)),
+        actionButton("حذف","button button-quiet group-delete",() => deleteGroup(group.id))
+      );
+      row.append(info,actions);
+      host.appendChild(row);
+    });
+  }
+  function openGroupsManager() {
+    renderGroupsManager();
+    $("groupsDialog").showModal();
+  }
+  function renameGroup(id) {
+    const group = data.groups.find(item => item.id === id);
+    if (!group) return;
+    const name = prompt("اكتب الاسم الجديد للمجموعة:", group.name);
+    if (name === null) return;
+    const clean = name.trim();
+    if (!clean) { toast("اسم المجموعة لا يمكن أن يكون فارغًا"); return; }
+    if (data.groups.some(item => item.id !== id && item.name.toLowerCase() === clean.toLowerCase())) {
+      toast("فيه مجموعة تانية بنفس الاسم"); return;
+    }
+    group.name = clean;
+    save();
+    render();
+    renderGroupsManager();
+    toast("تم تغيير اسم المجموعة");
+  }
+  function deleteGroup(id) {
+    const group = data.groups.find(item => item.id === id);
+    if (!group) return;
+    const count = data.nodes.filter(node => node.groupId === id).length;
+    const message = "هل تريد حذف مجموعة «" + group.name + "»؟\\n" +
+      "سيتم الاحتفاظ بـ " + count + " عنصر ونقلها إلى «بدون مجموعة».";
+    if (!confirm(message)) return;
+    data.groups = data.groups.filter(item => item.id !== id);
+    data.nodes.forEach(node => { if (node.groupId === id) node.groupId = null; });
+    if (activeGroupFilter === id) activeGroupFilter = "all";
+    save();
+    render();
+    renderGroupsManager();
+    toast("تم حذف المجموعة مع الاحتفاظ بعناصرها");
+  }
+
   function openDialog(node = null) {
     $("nodeForm").reset();
     $("nodeId").value = node ? node.id : "";
@@ -250,6 +317,9 @@
     render();
   });
   $("addGroupBtn").addEventListener("click", createGroup);
+  $("manageGroupsBtn").addEventListener("click", openGroupsManager);
+  $("closeGroupsBtn").addEventListener("click", () => $("groupsDialog").close());
+  $("doneGroupsBtn").addEventListener("click", () => $("groupsDialog").close());
   $("addBtn").addEventListener("click", () => openDialog());
   $("emptyAddBtn").addEventListener("click", () => openDialog());
   $("cancelBtn").addEventListener("click", () => $("nodeDialog").close());
