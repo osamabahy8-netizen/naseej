@@ -81,6 +81,7 @@
           <option value="water">مسدسات وألعاب المياه</option>
         </select>
       </div>
+      <div id="catalogCategoryLaunchers" class="catalog-category-launchers" aria-label="فتح أقسام الكتالوج مباشرة في الرسم ثلاثي الأبعاد"></div>
       <div id="catalogGrid" class="catalog-grid"></div>
       <p class="catalog-footnote">المقاسات المعروضة نقطة بداية للتصميم وليست مواصفة إلزامية. المقاس النهائي يتحدد من الموقع والمنتج ومسارات الحركة والأحمال والاشتراطات المحلية.</p>
     </section>
@@ -97,6 +98,11 @@
         </div>
         <label for="standMaterial">الخامة الأساسية</label>
         <select id="standMaterial"><option value="steel">مواسير حديد</option><option value="aluminum">ألومنيوم</option><option value="wood">خشب مع معدن</option></select>
+        <div class="material-3d-launchers" aria-label="فتح معاينة كل خامة في الرسم ثلاثي الأبعاد">
+          <button type="button" class="button button-quiet" data-material-3d="steel">رسم مواسير الحديد 3D</button>
+          <button type="button" class="button button-quiet" data-material-3d="aluminum">رسم الألومنيوم 3D</button>
+          <button type="button" class="button button-quiet" data-material-3d="wood">رسم الخشب مع المعدن 3D</button>
+        </div>
         <label for="standColor">لون الهيكل</label><input id="standColor" type="color" value="#c49a55">
         <label for="standNotes">ملاحظات التصنيع</label>
         <textarea id="standNotes" rows="3" placeholder="مثال: ماسورة 3×3 سم، سمك 1 مم، قاعدة قابلة للفك..."></textarea>
