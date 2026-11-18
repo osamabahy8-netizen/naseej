@@ -31,9 +31,43 @@
     const cx = w / 2, cy = h / 2, radius = Math.max(75, Math.min(w, h) * .34);
     return data.nodes.map((node, i) => {
       const angle = -Math.PI / 2 + (Math.PI * 2 * i / Math.max(data.nodes.length, 1));
-      return { ...node, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+      const xRatio = Number.isFinite(node.xRatio) ? node.xRatio : (cx + Math.cos(angle) * radius) / w;
+      const yRatio = Number.isFinite(node.yRatio) ? node.yRatio : (cy + Math.sin(angle) * radius) / h;
+      return { ...node, x: xRatio * w, y: yRatio * h };
     });
   }
+  let activeDrag = null;
+  let suppressNodeClickUntil = 0;
+  svg.addEventListener("pointerdown", event => {
+    if (linking || event.button !== 0) return;
+    const group = event.target.closest && event.target.closest("g.node");
+    if (!group) return;
+    const node = data.nodes.find(item => item.id === group.dataset.nodeId);
+    if (!node) return;
+    activeDrag = { id: node.id, startX: event.clientX, startY: event.clientY, moved: false };
+    svg.setPointerCapture(event.pointerId);
+  });
+  svg.addEventListener("pointermove", event => {
+    if (!activeDrag) return;
+    const dx = event.clientX - activeDrag.startX, dy = event.clientY - activeDrag.startY;
+    if (!activeDrag.moved && Math.hypot(dx,dy) < 5) return;
+    activeDrag.moved = true;
+    const rect = svg.getBoundingClientRect();
+    const node = data.nodes.find(item => item.id === activeDrag.id);
+    if (!node) return;
+    node.xRatio = Math.max(.07, Math.min(.93, (event.clientX - rect.left) / rect.width));
+    node.yRatio = Math.max(.09, Math.min(.91, (event.clientY - rect.top) / rect.height));
+    suppressNodeClickUntil = Date.now() + 350;
+    render();
+  });
+  function finishDrag() {
+    if (!activeDrag) return;
+    if (activeDrag.moved) { save(); toast("تم حفظ مكان الفكرة"); }
+    activeDrag = null;
+  }
+  svg.addEventListener("pointerup", finishDrag);
+  svg.addEventListener("pointercancel", finishDrag);
+
   function render() {
     svg.replaceChildren();
     const points = positions(), byId = new Map(points.map(p => [p.id,p]));
@@ -47,7 +81,9 @@
       const label = svgEl("text", {y:45});
       const title = node.title.length > 18 ? node.title.slice(0,17) + "…" : node.title;
       label.textContent = title; g.appendChild(label);
+      g.dataset.nodeId = node.id;
       g.addEventListener("click", () => {
+        if (Date.now() < suppressNodeClickUntil) return;
         if (linking && selectedId && selectedId !== node.id) { connect(selectedId,node.id); return; }
         selectedId = node.id; render();
       });
