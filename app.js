@@ -988,7 +988,7 @@
         g.appendChild(svgEl("circle",{cx,cy,r:11,fill:"#ffd166",stroke:"#182536","stroke-width":"1"}));
         addText(g,cx,cy+4,String(i+1),11,"middle","700");
       });
-      addText(g,v.x+v.w/2,v.y+v.h-9,"المقياس تلقائي — راجع الأبعاد الرقمية",10);
+      addText(g,v.x+v.w/2,v.y+v.h-9,""+Math.round(hmax-hmin)+" مم × "+Math.round(vmax-vmin)+" مم",11,"middle","700");
     });
     const panel=svgEl("g");root.appendChild(panel);
     panel.appendChild(svgEl("rect",{x:465,y:385,width:410,height:285,rx:8,fill:"#101d2c",stroke:"#53677d","stroke-width":"1.2"}));
