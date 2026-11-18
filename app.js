@@ -13,7 +13,7 @@
   function loadData() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"nodes":[],"edges":[]}');
-      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [], connectionLibrary: Array.isArray(saved.connectionLibrary) ? saved.connectionLibrary : [] };
+      return { nodes: Array.isArray(saved.nodes) ? saved.nodes : [], edges: Array.isArray(saved.edges) ? saved.edges : [], groups: Array.isArray(saved.groups) ? saved.groups : [], designs: Array.isArray(saved.designs) ? saved.designs : [], connectionLibrary: Array.isArray(saved.connectionLibrary) ? saved.connectionLibrary : [], modelProjects: Array.isArray(saved.modelProjects) ? saved.modelProjects : [] };
     } catch { return { nodes: [], edges: [] }; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -628,6 +628,118 @@
     a.href=url;a.download="naseej-cut-list.csv";a.click();URL.revokeObjectURL(url);toast("تم تصدير جدول القص");
   }
 
+
+  // Standalone 3D sketch workspace: parametric primitives in an isometric SVG view.
+  let modelObjects = [];
+  let selectedModelObjectId = null;
+  let modelCameraAngle = 35;
+  let modelProjectName = "تصميم جديد";
+  function modelProjectSnapshot() {
+    return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
+  }
+  function projectModelSave() {
+    const name=$("modelName").value.trim()||"تصميم جديد";
+    modelProjectName=name;
+    const index=data.modelProjects.findIndex(p=>p.id===window.activeModelProjectId);
+    if(index>=0) data.modelProjects[index]={...data.modelProjects[index],name,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
+    else { const p=modelProjectSnapshot(); data.modelProjects.push(p); window.activeModelProjectId=p.id; }
+    save(); renderModelProjectOptions(); toast("تم حفظ مشروع الرسم ثلاثي الأبعاد");
+  }
+  function renderModelProjectOptions() {
+    const select=$("savedModelProjects"); if(!select)return;
+    const current=select.value; select.innerHTML='<option value="">اختر مشروعًا محفوظًا</option>';
+    data.modelProjects.forEach(p=>{const option=document.createElement("option");option.value=p.id;option.textContent=p.name;select.appendChild(option);});
+    if(data.modelProjects.some(p=>p.id===current))select.value=current;
+  }
+  function modelProjectLoad() {
+    const p=data.modelProjects.find(item=>item.id===$("savedModelProjects").value);
+    if(!p){toast("اختار مشروع محفوظ الأول");return;}
+    modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number(p.cameraAngle)||35;window.activeModelProjectId=p.id;
+    $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();toast("تم فتح مشروع الرسم");
+  }
+  function modelProjectAddObject() {
+    const type=$("modelPrimitive").value;
+    const labels={box:"كتلة",plate:"لوح",beam:"عارضة",cylinder:"أسطوانة"};
+    const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55"};
+    modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
+  }
+  function modelProjectDeleteObject() {
+    modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();toast("تم حذف الجسم");
+  }
+  function renderModelObjectEditor() {
+    const object=modelObjects.find(o=>o.id===selectedModelObjectId), editor=$("modelObjectEditor");
+    editor.hidden=!object;
+    if(!object)return;
+    $("modelSelectedTitle").textContent=object.label;
+    $("modelObjectLabel").value=object.label;
+    $("modelDimX").value=object.w;$("modelDimY").value=object.h;$("modelDimZ").value=object.d;
+    $("modelPosX").value=object.x;$("modelPosY").value=object.y;$("modelPosZ").value=object.z;
+    $("modelObjectColor").value=object.color||"#c49a55";
+  }
+  function projectModelPoint(x,y,z,angle,scale,cx,cy) {
+    const a=angle*Math.PI/180, rx=x*Math.cos(a)-z*Math.sin(a), rz=x*Math.sin(a)+z*Math.cos(a);
+    return [cx+(rx-rz)*.62*scale,cy+(rx+rz)*.34*scale-y*.78*scale];
+  }
+  function renderModelDrawing() {
+    const root=$("modelDrawing");if(!root)return;
+    root.innerHTML="";
+    const grid=document.createElementNS(NS,"g");
+    for(let n=-8;n<=8;n++){
+      const p1=projectModelPoint(n*500,0,-4000,modelCameraAngle,.075,450,360),p2=projectModelPoint(n*500,0,4000,modelCameraAngle,.075,450,360);
+      const p3=projectModelPoint(-4000,0,n*500,modelCameraAngle,.075,450,360),p4=projectModelPoint(4000,0,n*500,modelCameraAngle,.075,450,360);
+      [ [p1,p2],[p3,p4] ].forEach(pair=>{const line=svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#263b52","stroke-width":"1"});grid.appendChild(line);});
+    }
+    root.appendChild(grid);
+    const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
+    axes.forEach(axis=>{const p=projectModelPoint(...axis.a,modelCameraAngle,.075,450,360),q=projectModelPoint(...axis.b,modelCameraAngle,.075,450,360);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+6,y:q[1]-5,fill:axis.c,"font-size":"15"});t.textContent=axis.t;root.appendChild(t);});
+    const faces=[];
+    modelObjects.forEach(o=>{
+      const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
+      const faceDefs=[{ids:[4,5,6,7],shade:1.12},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}];
+      faceDefs.forEach((f,i)=>{const projected=f.ids.map(k=>projectModelPoint(...pts[k],modelCameraAngle,.075,450,360));const depth=f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4;faces.push({o,projected,depth,shade:f.shade,face:i});});
+    });
+    faces.sort((a,b)=>a.depth-b.depth);
+    faces.forEach(f=>{const poly=svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,"stroke":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":f.o.id===selectedModelObjectId?"3":"1.5","data-object-id":f.o.id,class:"model-object-face"});root.appendChild(poly);});
+    const labels=svgEl("g");modelObjects.forEach(o=>{const p=projectModelPoint(o.x,o.y+o.h+70,o.z,modelCameraAngle,.075,450,360),t=svgEl("text",{x:p[0],y:p[1],fill:"#e8edf5","font-size":"13","text-anchor":"middle","pointer-events":"none"});t.textContent=o.label;labels.appendChild(t);});root.appendChild(labels);
+    const list=$("modelObjectList");list.innerHTML="";
+    modelObjects.forEach(o=>{const b=document.createElement("button");b.type="button";b.className="model-object-choice"+(o.id===selectedModelObjectId?" active":"");b.textContent=o.label;b.addEventListener("click",()=>{selectedModelObjectId=o.id;renderModelDrawing();renderModelObjectEditor();});list.appendChild(b);});
+    $("modelPreviewName").textContent=modelProjectName;
+  }
+  function saveModelObjectEdits() {
+    const o=modelObjects.find(item=>item.id===selectedModelObjectId);if(!o)return;
+    const num=id=>Number($(id).value);
+    const dims=[num("modelDimX"),num("modelDimY"),num("modelDimZ")],pos=[num("modelPosX"),num("modelPosY"),num("modelPosZ")];
+    if(dims.some(v=>!Number.isFinite(v)||v<=0)||pos.some(v=>!Number.isFinite(v))){toast("راجع الأبعاد والمواقع المدخلة");return;}
+    o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;o.color=$("modelObjectColor").value;
+    renderModelDrawing();renderModelObjectEditor();save();
+  }
+  function exportModelObj() {
+    if(!modelObjects.length){toast("لوحة الرسم فاضية");return;}
+    let out="# Naseej 3D sketch - dimensions in millimeters\n",offset=1;
+    modelObjects.forEach(o=>{
+      out+="o "+o.label.replace(/[^\w\u0600-\u06FF-]/g,"_")+"\n";
+      const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
+      const v=[[-w/2,0,-d/2],[w/2,0,-d/2],[w/2,0,d/2],[-w/2,0,d/2],[-w/2,h,-d/2],[w/2,h,-d/2],[w/2,h,d/2],[-w/2,h,d/2]];
+      v.forEach(p=>{out+="v "+(x+p[0])+" "+(y+p[1])+" "+(z+p[2])+"\n";});
+      [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]].forEach(f=>{out+="f "+f.map(i=>i+offset-1).join(" ")+"\n";});
+      offset+=8;
+    });
+    downloadBlobFile(out,"text/plain;charset=utf-8",(modelProjectName||"naseej-3d")+".obj");toast("تم تجهيز ملف OBJ");
+  }
+  function setupModelStudio() {
+    $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
+    $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
+    $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
+    $("modelCameraAngle").addEventListener("input",e=>{modelCameraAngle=Number(e.target.value);renderModelDrawing();});
+    $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;renderModelDrawing();});
+    $("saveModelProjectBtn").addEventListener("click",projectModelSave);
+    $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
+    $("exportModelObjBtn").addEventListener("click",exportModelObj);
+    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelObjects=[];selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();});
+    renderModelProjectOptions();renderModelDrawing();
+  }
+
   function setupDesignStudio() {
     $("catalogSearch").addEventListener("input",renderFabricationCatalog);
     $("catalogCategory").addEventListener("change",renderFabricationCatalog);
@@ -636,7 +748,9 @@
       document.querySelectorAll(".main-tab").forEach(t=>t.classList.toggle("active",t===tab));
       $("ideasView").hidden=tab.dataset.view!=="ideasView";
       $("designView").hidden=tab.dataset.view!=="designView";
+      $("modelView").hidden=tab.dataset.view!=="modelView";
       if(tab.dataset.view==="designView")renderStandModel();
+      if(tab.dataset.view==="modelView")renderModelDrawing();
     }));
     ["designName","standWidth","standHeight","standDepth","shelfCount","standMaterial","standColor"].forEach(id=>$(id).addEventListener("input",renderStandModel));
     $("standNotes").addEventListener("input",()=>{});
@@ -934,7 +1048,7 @@
     try {
       const parsed = JSON.parse(await file.text());
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) throw new Error("invalid");
-      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : [],designs:Array.isArray(parsed.designs) ? parsed.designs : [],connectionLibrary:Array.isArray(parsed.connectionLibrary) ? parsed.connectionLibrary : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
+      data = {nodes:parsed.nodes,edges:parsed.edges,groups:Array.isArray(parsed.groups) ? parsed.groups : [],designs:Array.isArray(parsed.designs) ? parsed.designs : [],connectionLibrary:Array.isArray(parsed.connectionLibrary) ? parsed.connectionLibrary : [],modelProjects:Array.isArray(parsed.modelProjects) ? parsed.modelProjects : []}; selectedId = null; linking = false; save(); render(); toast("تم استيراد البيانات");
     } catch { toast("ملف النسخة الاحتياطية غير صالح"); }
     event.target.value = "";
   });
@@ -947,5 +1061,6 @@
     });
   }
   setupDesignStudio();
+  setupModelStudio();
   render();
 })();
