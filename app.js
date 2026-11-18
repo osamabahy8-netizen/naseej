@@ -895,6 +895,50 @@
   let modelAssemblyGuideOn = false;
   let modelAssemblyStep = 0;
   let modelProjectName = "تصميم جديد";
+  let modelUndoStack = [];
+  let modelRedoStack = [];
+  const MODEL_HISTORY_LIMIT = 80;
+  function modelHistoryState() {
+    return JSON.stringify({objects:modelObjects,selectedId:selectedModelObjectId,explodeOffsets:modelExplodeOffsets,explodedView:modelExplodedView});
+  }
+  function modelHistoryPush() {
+    const state=modelHistoryState();
+    if(modelUndoStack[modelUndoStack.length-1]===state)return;
+    modelUndoStack.push(state);
+    if(modelUndoStack.length>MODEL_HISTORY_LIMIT)modelUndoStack.shift();
+    modelRedoStack=[];
+    updateModelHistoryButtons();
+  }
+  function updateModelHistoryButtons() {
+    const undo=$("modelUndoBtn"),redo=$("modelRedoBtn");
+    if(undo){undo.disabled=!modelUndoStack.length;undo.title=modelUndoStack.length?"تراجع عن آخر تعديل":"لا توجد خطوات للتراجع";}
+    if(redo){redo.disabled=!modelRedoStack.length;redo.title=modelRedoStack.length?"إعادة آخر تعديل تم التراجع عنه":"لا توجد خطوات للإعادة";}
+  }
+  function restoreModelHistory(state) {
+    const snapshot=JSON.parse(state);
+    modelObjects=snapshot.objects||[];
+    selectedModelObjectId=snapshot.selectedId||null;
+    modelExplodeOffsets=snapshot.explodeOffsets||{};
+    modelExplodedView=!!snapshot.explodedView;
+    modelExplodeMoveMode=false;
+    $("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";
+    $("modelExplodeMoveBtn").disabled=!modelExplodedView;
+    $("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";
+    renderModelDrawing();renderModelObjectEditor();save();
+    updateModelHistoryButtons();
+  }
+  function undoModelAction() {
+    if(!modelUndoStack.length)return;
+    modelRedoStack.push(modelHistoryState());
+    restoreModelHistory(modelUndoStack.pop());
+    toast("تم التراجع عن آخر خطوة");
+  }
+  function redoModelAction() {
+    if(!modelRedoStack.length)return;
+    modelUndoStack.push(modelHistoryState());
+    restoreModelHistory(modelRedoStack.pop());
+    toast("تمت إعادة الخطوة");
+  }
   function modelProjectSnapshot() {
     return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
   }
@@ -922,7 +966,7 @@
     const type=$("modelPrimitive").value;
     const labels={box:"كتلة",plate:"لوح",beam:"عارضة",cylinder:"أسطوانة"};
     const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55",rx:0,ry:0,rz:0};
-    modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
+    modelHistoryPush();modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
   }
   const standModelLibrary = [
     {id:"single-rail",name:"استاند ملابس مفرد",category:"ملابس",description:"قاعدة وأربع قوائم علوية مع ماسورة تعليق",parts:[
@@ -1046,7 +1090,7 @@
       for(let n=0;n<4;n++)addAccessory("خطاف إضافي "+(n+1),150,12,12,-220+n*145,850,45,"سيخ دائري مثني","حديد");
     }
     if($("standAddHolder").checked)addAccessory("حامل أكريليك أمامي",260,160,8,0,300,150,"جيب/حامل شفاف","أكريليك","#a9d5df");
-    modelObjects.push(...added);
+    modelHistoryPush();modelObjects.push(...added);
     modelProjectName=template.name+" — "+(size==="compact"?"صغير":size==="large"?"كبير":"قياسي");
     $("modelName").value=modelProjectName;selectedModelObjectId=added[0].id;
     modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
@@ -1056,10 +1100,10 @@
   function duplicateModelObject() {
     const source=modelObjects.find(o=>o.id===selectedModelObjectId);if(!source)return;
     const copy={...source,id:uid(),label:source.label+" - نسخة",x:source.x+Math.max(100,source.w/2),z:source.z+Math.max(100,source.d/2)};
-    modelObjects.push(copy);selectedModelObjectId=copy.id;renderModelDrawing();renderModelObjectEditor();save();toast("تم نسخ القطعة");
+    modelHistoryPush();modelObjects.push(copy);selectedModelObjectId=copy.id;renderModelDrawing();renderModelObjectEditor();save();toast("تم نسخ القطعة");
   }
   function modelProjectDeleteObject() {
-    modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();toast("تم حذف الجسم");
+    modelHistoryPush();modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();toast("تم حذف الجسم");
   }
   function renderModelObjectEditor() {
     const object=modelObjects.find(o=>o.id===selectedModelObjectId), editor=$("modelObjectEditor");
@@ -1265,7 +1309,7 @@
     if(rotations.some(v=>!Number.isFinite(v)||Math.abs(v)>360)){toast("زاوية الدوران لازم تكون بين -360 و360");return;}
     const thickness=Number($("modelPartThickness").value||0),quantity=Number($("modelPartQuantity").value||1),cutLength=Number($("modelPartCutLength").value||Math.max(...dims));
     if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
-    o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
+    modelHistoryPush();o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
     o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
     o.holeSpec=$("modelHoleSpec").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();
     renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
@@ -1335,11 +1379,11 @@
         event.preventDefault();return;
       }
       const face=event.target.closest&&event.target.closest("[data-object-id]");
-      if(face&&modelExplodedView&&modelExplodeMoveMode){const id=face.getAttribute("data-object-id");selectedModelObjectId=id;const extra=modelExplodeOffsets[id]||{x:0,y:0,z:0};partDrag={id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:extra.x,originY:extra.y,originZ:extra.z,scale:modelDrawingFitScale(),angle:modelCameraAngle,viewOnly:true};orbitStart=null;orbitMoved=false;renderModelObjectEditor();event.preventDefault();return;}
+      if(face&&modelExplodedView&&modelExplodeMoveMode){modelHistoryPush();const id=face.getAttribute("data-object-id");selectedModelObjectId=id;const extra=modelExplodeOffsets[id]||{x:0,y:0,z:0};partDrag={id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:extra.x,originY:extra.y,originZ:extra.z,scale:modelDrawingFitScale(),angle:modelCameraAngle,viewOnly:true};orbitStart=null;orbitMoved=false;renderModelObjectEditor();event.preventDefault();return;}
       if(face&&!modelExplodedView){
         const object=modelObjects.find(o=>o.id===face.getAttribute("data-object-id"));
         if(object){
-          selectedModelObjectId=object.id;renderModelObjectEditor();
+          modelHistoryPush();selectedModelObjectId=object.id;renderModelObjectEditor();
           partDrag={id:object.id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:object.x,originZ:object.z,scale:modelDrawingFitScale(),angle:modelCameraAngle};
           orbitStart=null;orbitMoved=false;event.preventDefault();return;
         }
@@ -1418,7 +1462,10 @@
       modelZoom=action==="in"?Math.min(4.5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
       renderModelDrawing();
     }));
-    $("modelExplodeToggleBtn").addEventListener("click",()=>{modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";$("modelExplodeMoveBtn").disabled=!modelExplodedView;if(!modelExplodedView){modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";$("modelExplodeHint").textContent="التفكيك بصري مؤقت ولا يغيّر إحداثيات القطع الأصلية أو ملف المشروع.";}renderModelDrawing();});
+    $("modelUndoBtn").addEventListener("click",undoModelAction);
+    $("modelRedoBtn").addEventListener("click",redoModelAction);
+    updateModelHistoryButtons();
+    $("modelExplodeToggleBtn").addEventListener("click",()=>{modelHistoryPush();modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";$("modelExplodeMoveBtn").disabled=!modelExplodedView;if(!modelExplodedView){modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";$("modelExplodeHint").textContent="التفكيك بصري مؤقت ولا يغيّر إحداثيات القطع الأصلية أو ملف المشروع.";}renderModelDrawing();});
     $("modelAssemblyStartBtn").addEventListener("click",()=>{if(!modelObjects.length){toast("أضف قطعًا أولًا");return;}modelAssemblyGuideOn=true;modelAssemblyStep=0;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeToggleBtn").textContent="عرض التفكيك";$("modelExplodeMoveBtn").disabled=true;$("modelAssemblyGuide").hidden=false;$("modelAssemblyStartBtn").textContent="دليل التجميع نشط";selectedModelObjectId=modelObjects[0].id;renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();});
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
