@@ -228,5 +228,12 @@
     event.target.value = "";
   });
   window.addEventListener("resize", render);
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js").catch(error => {
+        console.warn("تعذر تفعيل وضع العمل دون إنترنت:", error);
+      });
+    });
+  }
   render();
 })();
