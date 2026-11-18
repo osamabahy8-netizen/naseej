@@ -765,7 +765,27 @@
     downloadBlobFile(out,"text/plain;charset=utf-8",(modelProjectName||"naseej-3d")+".obj");toast("تم تجهيز ملف OBJ");
   }
   function setupModelStudio() {
-    $("modelDrawing").addEventListener("click",event=>{const face=event.target.closest&&event.target.closest("[data-object-id]");if(!face)return;selectedModelObjectId=face.getAttribute("data-object-id");renderModelDrawing();renderModelObjectEditor();});
+    let orbitStart=null,orbitMoved=false;
+    const drawing=$("modelDrawing");
+    drawing.addEventListener("pointerdown",event=>{
+      orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;
+      if(drawing.setPointerCapture)drawing.setPointerCapture(event.pointerId);
+    });
+    drawing.addEventListener("pointermove",event=>{
+      if(!orbitStart)return;
+      const delta=event.clientX-orbitStart.x;
+      if(Math.abs(delta)>3)orbitMoved=true;
+      if(orbitMoved){modelCameraAngle=(orbitStart.angle+delta*.55+360)%360;$("modelCameraAngle").value=Math.round(modelCameraAngle);renderModelDrawing();}
+    });
+    const endOrbit=()=>{orbitStart=null;};
+    drawing.addEventListener("pointerup",endOrbit);
+    drawing.addEventListener("pointercancel",endOrbit);
+    drawing.addEventListener("click",event=>{
+      if(orbitMoved){orbitMoved=false;return;}
+      const face=event.target.closest&&event.target.closest("[data-object-id]");
+      if(!face)return;
+      selectedModelObjectId=face.getAttribute("data-object-id");renderModelDrawing();renderModelObjectEditor();
+    });
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
