@@ -38,3 +38,9 @@
 .group-select-row .button{white-space:nowrap;padding-inline:10px}
 .group-pill{display:inline-block;margin:10px 0 0 6px;padding:5px 10px;border:1px solid #80683e;border-radius:20px;background:#292719;color:#f0d49b;font-size:11px}
 @media(max-width:420px){.group-select-row{flex-direction:column}.group-select-row .button{width:100%}}
+
+
+/* Filter the map by group */
+.map-filter{display:flex;align-items:center;gap:10px;margin:0 0 14px;color:var(--muted);font-size:12px}
+.map-filter select{max-width:100%;min-width:190px;border:1px solid #30445d;border-radius:9px;background:#0b1523;color:#edf2f8;padding:10px;font:inherit}
+@media(max-width:540px){.map-filter{align-items:stretch;flex-direction:column;gap:6px}.map-filter select{width:100%;min-width:0}}
