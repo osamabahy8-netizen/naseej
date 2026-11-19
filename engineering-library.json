@@ -1,0 +1,234 @@
+{
+  "version": "1.0.0",
+  "title": "مكتبة المنتجات الهندسية الأصلية",
+  "policy": "المصدر يثبت وجود المنتج أو بياناته المنشورة فقط. لا يُعد رابط الكتالوج تصريحًا بإعادة توزيع ملفات الشركة أو استخدامها تجاريًا. راجع شروط كل ملف قبل إدخاله في مشروع تصنيع.",
+  "regions": [
+    {
+      "id": "china",
+      "label": "الصين",
+      "priority": 1
+    },
+    {
+      "id": "usa",
+      "label": "الولايات المتحدة",
+      "priority": 2
+    },
+    {
+      "id": "russia",
+      "label": "روسيا",
+      "priority": 3
+    },
+    {
+      "id": "global",
+      "label": "مصادر هندسية دولية",
+      "priority": 4
+    }
+  ],
+  "sources": [
+    {
+      "id": "imei-display",
+      "region": "china",
+      "company": "IMEI DISPLAY",
+      "category": "تجهيز المحلات",
+      "products": [
+        "ستاندات الملابس",
+        "حوامل المجوهرات",
+        "رفوف العرض"
+      ],
+      "formats": [
+        "PDF كتالوج",
+        "CAD عند الطلب"
+      ],
+      "access": "request",
+      "url": "https://www.weisourcing.com/imeidisplay/downloads.html",
+      "evidence": "الكتالوجات المنشورة تغطي المنتجات الحالية؛ ملفات CAD غير منشورة للتنزيل العام وتُطلب من الشركة.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "fixform",
+      "region": "china",
+      "company": "Fixform",
+      "category": "تجهيزات معدنية ورفوف",
+      "products": [
+        "رفوف سلكية",
+        "جندولا",
+        "وحدات POP",
+        "ستاندات مخصصة"
+      ],
+      "formats": [
+        "تصميم حسب الرسم",
+        "CAD بالتنسيق مع المصنع"
+      ],
+      "access": "request",
+      "url": "https://fixformdisplays.com/",
+      "evidence": "مصنع في فوشان يذكر التصنيع حسب الرسم أو الفكرة، مع تشكيل أسلاك وصاج ولحام ودهان وتجميع.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "tp-display",
+      "region": "china",
+      "company": "TP Display",
+      "category": "تجهيز المحلات والدعاية",
+      "products": [
+        "ستاندات أرضية",
+        "وحدات POS",
+        "رفوف عرض",
+        "ستاندات حسب الطلب"
+      ],
+      "formats": [
+        "كتالوج ويب",
+        "رسومات حسب المشروع"
+      ],
+      "access": "request",
+      "url": "https://www.tp-display.com/",
+      "evidence": "يعرض عائلات منتجات حسب الصناعة والخامة، ويطلب الرسم أو الصورة المرجعية لتصنيع الطلبات الخاصة.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "madix",
+      "region": "usa",
+      "company": "Madix",
+      "category": "رفوف وتجهيزات المتاجر",
+      "products": [
+        "رفوف حائطية",
+        "وحدات حرة",
+        "رفوف تخزين",
+        "غرف قياس",
+        "وحدات صيدليات"
+      ],
+      "formats": [
+        "AutoCAD",
+        "Revit",
+        "PDF"
+      ],
+      "access": "download",
+      "url": "https://www.madixinc.com/resources/models/",
+      "evidence": "الشركة تنشر ملفات AutoCAD وRevit لمنتجات كثيرة من كتالوجها لتخطيط المتاجر.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "lozier",
+      "region": "usa",
+      "company": "Lozier",
+      "category": "رفوف وتجهيزات المتاجر",
+      "products": [
+        "أنظمة جندولا",
+        "وحدات حائطية",
+        "وحدات جزيرة",
+        "عروض حرة",
+        "تخزين"
+      ],
+      "formats": [
+        "2D CAD",
+        "3D models"
+      ],
+      "access": "download",
+      "url": "https://www.lozier.com/design-tools/",
+      "evidence": "مكتبة رسمية لكتل CAD ثنائية الأبعاد ونماذج ثلاثية الأبعاد لمنتجات مختارة.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "misumi",
+      "region": "global",
+      "company": "MISUMI",
+      "category": "مكونات ميكانيكية قياسية",
+      "products": [
+        "مسامير",
+        "أعمدة",
+        "قواعد",
+        "مكونات قوالب",
+        "عناصر تثبيت"
+      ],
+      "formats": [
+        "STEP",
+        "IGES",
+        "DXF",
+        "DWG",
+        "صيغ CAD أصلية"
+      ],
+      "access": "account",
+      "url": "https://us.misumi-ec.com/maker/misumi/cad/",
+      "evidence": "تنزيلات CAD لمنتجات قياسية؛ بعض التنزيلات تتطلب تسجيل الدخول أو تكوين المنتج أولًا.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "stauff",
+      "region": "global",
+      "company": "STAUFF",
+      "category": "وصلات ومكونات صناعية",
+      "products": [
+        "مشابك مواسير",
+        "وصلات",
+        "صمامات",
+        "قوابض سريعة"
+      ],
+      "formats": [
+        "STEP",
+        "IGES",
+        "DWG",
+        "DXF",
+        "SAT"
+      ],
+      "access": "account",
+      "url": "https://stauff.com.cn/en/products-and-services/digital-resources/cad/online-cad-database",
+      "evidence": "قاعدة CAD رسمية؛ التنزيل يتطلب حسابًا مجانيًا، والملفات إرشادية وتحتاج مراجعة تطبيقية.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "marathon-aviation",
+      "region": "global",
+      "company": "Marathon OS — Aviation Library",
+      "category": "الطائرات والدرون",
+      "products": [
+        "هياكل طائرات ريموت",
+        "مراوح",
+        "درون",
+        "تجميعات طيران"
+      ],
+      "formats": [
+        "STEP",
+        "STL"
+      ],
+      "access": "mixed",
+      "url": "https://marathon-os.com/library/aviation",
+      "evidence": "مكتبة نماذج هندسية للطيران؛ حالة كل ملف وترخيصه ودقته تُراجع منفردة قبل الاعتماد.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "marathon-rc-aircraft",
+      "region": "global",
+      "company": "Marathon OS — RC Aircraft",
+      "category": "الطائرات والدرون",
+      "products": [
+        "تجميع طائرة ريموت"
+      ],
+      "formats": [
+        "STEP"
+      ],
+      "access": "mixed",
+      "url": "https://marathon-os.com/library/rc-aircraft-downloadable-cad-680e5b5f4366ea6baf6e920c",
+      "evidence": "صفحة تعرض ملف STEP وتجميعة متعددة الأجسام؛ الصفحة نفسها تحذر من أن بعض الملفات قد لا تكون جاهزة للإنتاج ويجب التحقق من الأبعاد.",
+      "verified": "2026-11-19"
+    },
+    {
+      "id": "3dcadbrowser-heli",
+      "region": "global",
+      "company": "3D CAD Browser",
+      "category": "الهليكوبتر والمركبات",
+      "products": [
+        "نموذج هليكوبتر ريموت"
+      ],
+      "formats": [
+        "STEP",
+        "IGES",
+        "OBJ",
+        "FBX",
+        "BLEND"
+      ],
+      "access": "license",
+      "url": "https://www.3dcadbrowser.com/3d-model/rc-helicopter",
+      "evidence": "نموذج هليكوبتر منشور بصيغ CAD وصيغ مضلعات؛ الاستخدام التجاري وإعادة توزيع المصدر يخضعان لشروط الترخيص.",
+      "verified": "2026-11-19"
+    }
+  ]
+}
