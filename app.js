@@ -1390,8 +1390,10 @@
     const canvas=document.getElementById("model3DCanvas");
     if(window.Naseej3D&&window.Naseej3D.available&&canvas){
       root.style.display="none";
-      window.Naseej3D.render({objects:modelObjects,angle:modelCameraAngle,pitch:modelCameraPitch,panX:modelCameraPanX,panY:modelCameraPanY,zoom:modelZoom,selectedId:selectedModelObjectId,explodedView:modelExplodedView,explodeOffsets:modelExplodeOffsets,assemblyGuideOn:modelAssemblyGuideOn,assemblyStep:modelAssemblyStep});
-      return;
+      try{
+        window.Naseej3D.render({objects:modelObjects,angle:modelCameraAngle,pitch:modelCameraPitch,panX:modelCameraPanX,panY:modelCameraPanY,zoom:modelZoom,selectedId:selectedModelObjectId,explodedView:modelExplodedView,explodeOffsets:modelExplodeOffsets,assemblyGuideOn:modelAssemblyGuideOn,assemblyStep:modelAssemblyStep});
+        return;
+      }catch(error){console.warn("3D viewport failed; switching to the safe drawing view.",error);window.Naseej3D.available=false;canvas.style.display="none";root.style.display="";}
     }
     root.style.display="";
     root.innerHTML="";
