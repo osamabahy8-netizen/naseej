@@ -1409,12 +1409,13 @@
       });
     });
     if(!corners.length)corners.push([-500,0,-300],[500,900,300]);
-    const raw=corners.map(p=>projectModelPoint(p[0],p[1],p[2],modelCameraAngle,1,0,0));
-    const minX=Math.min(...raw.map(p=>p[0])),maxX=Math.max(...raw.map(p=>p[0]));
-    const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
-    const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
-    const scale=Math.min(.8,500/spanX,420/spanY)*modelZoom;
-    const cx=450-(minX+maxX)*scale/2+modelCameraPanX,cy=315-(minY+maxY)*scale/2+modelCameraPanY;
+    const worldMin=[0,1,2].map(k=>Math.min(...corners.map(p=>p[k])));
+    const worldMax=[0,1,2].map(k=>Math.max(...corners.map(p=>p[k])));
+    const worldCenter=worldMin.map((value,k)=>(value+worldMax[k])/2);
+    const radius=Math.max(1,...corners.map(p=>Math.hypot(p[0]-worldCenter[0],p[1]-worldCenter[1],p[2]-worldCenter[2])));
+    const scale=Math.min(.8,250/radius,210/radius)*modelZoom;
+    const projectedCenter=projectModelPoint(worldCenter[0],worldCenter[1],worldCenter[2],modelCameraAngle,1,0,0);
+    const cx=450-projectedCenter[0]*scale+modelCameraPanX,cy=315-projectedCenter[1]*scale+modelCameraPanY;
     const project=(x,y,z)=>projectModelPoint(x,y,z,modelCameraAngle,scale,cx,cy);
     const grid=document.createElementNS(NS,"g");
     for(let n=-8;n<=8;n++){
