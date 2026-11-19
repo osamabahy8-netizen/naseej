@@ -80,6 +80,33 @@
   function roundedPanel(width,height,depth,radius){
     return new THREE.BoxGeometry(width,height,depth,2,2,1);
   }
+  function addHeliPart(o,add,w,h,d,x,y,z,partMaterial){
+    const label=String(o.label||"");
+    const shell=partMaterial(o.color||"#176db2",.58,.24),glass=partMaterial("#79c9ef",.3,.14,true,.72),dark=partMaterial("#172737",.38,.3),metal=partMaterial("#aebdca",.88,.2),blade=partMaterial("#202b38",.62,.3);
+    if(/جسم الهليكوبتر/.test(label)){
+      const hull=vehicleLoftGeometry(w,d,h,[[0,.12,.2],[.1,.62,.72],[.28,.92,.94],[.5,1,1],[.76,.9,.92],[.92,.62,.7],[1,.08,.12]]);
+      add(hull,shell,x,y+h*.42,z);
+      add(new THREE.SphereGeometry(h*.39,28,18),glass,x,y+h*.72,z-d*.16);
+      add(new THREE.BoxGeometry(w*.72,h*.06,d*.32),dark,x,y+h*.17,z);
+      return true;
+    }
+    if(/عمود الدوار/.test(label)){
+      add(new THREE.CylinderGeometry(Math.max(4,w*.22),Math.max(4,w*.22),h,24),metal,x,y+h/2,z);return true;
+    }
+    if(/ريشة دوار/.test(label)){
+      const shape=new THREE.Shape();shape.moveTo(-w/2,-d*.12);shape.quadraticCurveTo(-w*.12,-d*.22,w/2,-d*.1);shape.lineTo(w/2,d*.1);shape.quadraticCurveTo(0,d*.2,-w/2,d*.12);shape.closePath();
+      const geo=new THREE.ExtrudeGeometry(shape,{depth:Math.max(4,h),bevelEnabled:true,bevelSegments:2,bevelSize:2,bevelThickness:2});geo.translate(0,0,-Math.max(4,h)/2);add(geo,blade,x,y+h/2,z);return true;
+    }
+    if(/ذراع ذيل/.test(label)){
+      add(new THREE.CylinderGeometry(Math.max(8,h*.42),Math.max(10,h*.62),w,20),shell,x,y+h/2,z,Math.PI/2,0,0);return true;
+    }
+    if(/دوار ذيل/.test(label)){
+      add(new THREE.CylinderGeometry(Math.max(5,h*.55),Math.max(5,h*.55),d,20),metal,x,y+h/2,z,0,0,Math.PI/2);
+      for(let n=0;n<4;n++){const angle=n*Math.PI/2;add(new THREE.BoxGeometry(w*.42,Math.max(4,h*.22),Math.max(4,d*.18)),blade,x+Math.cos(angle)*w*.2,y+h/2+Math.sin(angle)*h*.2,z,0,0,angle);}
+      return true;
+    }
+    return false;
+  }
   function buildPart(o){
     const group=new THREE.Group(),label=String(o.label||""),profile=String(o.profile||"");
     const w=Math.max(2,Number(o.w)||20),h=Math.max(2,Number(o.h)||20),d=Math.max(2,Number(o.d)||20);
@@ -96,7 +123,7 @@
       const mesh=new THREE.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.rotation.set(rx,ry,rz);
       mesh.userData.objectId=o.id;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);api.meshes.push(mesh);return mesh;
     };
-    if(fuselage){
+    if(/هليكوبتر|دوار|ريشة دوار|عمود الدوار|ذراع ذيل/.test(label)&&addHeliPart(o,add,w,h,d,x,y,z,partMaterial)){}else if(fuselage){
       const length=Math.max(w,d),radius=Math.max(8,Math.min(h,d)*.48);
       const points=[new THREE.Vector2(2,-length/2),new THREE.Vector2(radius*.42,-length*.44),new THREE.Vector2(radius*.82,-length*.30),new THREE.Vector2(radius,-length*.08),new THREE.Vector2(radius*.94,length*.22),new THREE.Vector2(radius*.62,length*.40),new THREE.Vector2(2,length/2)];
       const g=new THREE.LatheGeometry(points,32);g.rotateX(Math.PI/2);
