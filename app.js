@@ -1692,6 +1692,15 @@
     });
   }
   function setupModelStudio() {
+    const inspector=$("modelInspector");
+    if(inspector&&!inspector.dataset.organized){
+      const editor=$("modelObjectEditor"),stats=$("modelDimensionSummary");
+      const cutPanel=document.querySelector(".model-stage-panel > .model-cut-list-panel");
+      if(editor)$("modelInspectorEditor").appendChild(editor);
+      if(stats)$("modelInspectorStats").appendChild(stats);
+      if(cutPanel)$("modelInspectorCutList").appendChild(cutPanel);
+      inspector.dataset.organized="true";
+    }
     let orbitStart=null,orbitMoved=false;
     const svgDrawing=$("modelDrawing");
     svgDrawing.style.pointerEvents="all";
