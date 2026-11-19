@@ -248,3 +248,23 @@
   #modelView .model-stage-panel>.model-assembly-panel,
   #modelView .model-stage-panel>.preview-actions{flex-shrink:0}
 }
+
+
+/* NASEEJ Concept Cockpit — precision automotive workspace */
+.model-view .design-heading{border-bottom:1px solid rgba(75,153,219,.24);padding-bottom:14px}
+.model-view .design-heading h2{letter-spacing:.02em;color:#e6f5ff}
+.model-layout{display:grid;grid-template-columns:minmax(230px,275px) minmax(420px,1fr) minmax(250px,305px);gap:12px}
+.model-tools,.model-inspector{background:linear-gradient(180deg,#0b1728 0%,#07111f 100%);border:1px solid #24496c;box-shadow:0 12px 34px #0005,inset 0 1px #ffffff08}
+.model-tools h3,.model-inspector-heading h3{letter-spacing:.035em}
+.model-library-panel{background:linear-gradient(145deg,#0a1b2d,#071321);border:1px solid #1e4d76!important;box-shadow:inset 0 0 24px #0b6bb51a}
+.model-library-panel select,.model-tools input,.model-tools select{border-color:#315778;background:#0a1a2b;color:#dceeff}
+.model-stage{border:1px solid #3479ad;border-radius:15px;background:radial-gradient(ellipse at 50% 38%,#12395b 0%,#071421 54%,#040a12 100%);box-shadow:inset 0 0 70px #087bd21c,0 18px 45px #0008}
+.model-stage:after{content:"NASEEJ  /  3D ENGINEERING COCKPIT";position:absolute;top:12px;left:14px;z-index:3;pointer-events:none;font:600 9px/1.2 system-ui,sans-serif;letter-spacing:.18em;color:#68b9f4;text-shadow:0 0 12px #1688dc}
+.model-stage-panel>.preview-title{border-color:#28577e;background:linear-gradient(90deg,#0b1b2c,#102a43);color:#e5f4ff}
+.model-camera-help{border-color:#244969;background:#081727;color:#a9cce9}
+.model-inspector-heading{background:linear-gradient(90deg,#0b1a2b,#102942);border-color:#254c6e}
+.model-dimension-summary{box-shadow:inset 0 0 18px #1689df16}
+.model-tools button,.model-inspector button{transition:transform .16s,border-color .16s,filter .16s}
+.model-tools button:hover,.model-inspector button:hover{filter:brightness(1.12);border-color:#55a9e7;transform:translateY(-1px)}
+@media(max-width:1100px){.model-layout{grid-template-columns:minmax(190px,230px) minmax(0,1fr) minmax(205px,245px);gap:8px}}
+@media(max-width:850px){.model-layout{grid-template-columns:minmax(0,1fr)}.model-stage{min-height:clamp(390px,64svh,720px)}.model-stage:after{font-size:8px}.model-tools,.model-inspector{position:relative;top:auto;max-height:none}}
