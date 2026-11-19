@@ -3,7 +3,7 @@
   const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:null,lastState:null,bounds:null,objectCenter:null,maxDim:600};
   if(typeof THREE==="undefined"||!THREE.WebGLRenderer){window.Naseej3D=api;return;}
   function makeMaterial(color,selected){
-    return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.34,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected ? .55 : 0});
+    return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.27,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected ? .55 : 0});
   }
   function clearGroup(group){
     while(group.children.length){
@@ -16,8 +16,8 @@
     try{
       api.canvas=canvas;
       const mobile=window.matchMedia&&window.matchMedia("(max-width: 900px)").matches;
-      api.renderer=new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:"high-performance",depth:true,stencil:false});
-      api.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1:1.5));
+      api.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance",depth:true,stencil:false});
+      api.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.75:2));
       api.renderer.setClearColor("#07111e",1);
       api.renderer.outputColorSpace=THREE.SRGBColorSpace;
       api.renderer.toneMapping=THREE.ACESFilmicToneMapping;
