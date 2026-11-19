@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:null,lastState:null};
+  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:null,lastState:null,bounds:null,objectCenter:null,maxDim:600};
   if(typeof THREE==="undefined"||!THREE.WebGLRenderer){window.Naseej3D=api;return;}
   function makeMaterial(color,selected){
     return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.34,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected ? .55 : 0});
@@ -15,8 +15,9 @@
   function init(canvas){
     try{
       api.canvas=canvas;
-      api.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"high-performance"});
-      api.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+      const mobile=window.matchMedia&&window.matchMedia("(max-width: 900px)").matches;
+      api.renderer=new THREE.WebGLRenderer({canvas,antialias:!mobile,alpha:false,powerPreference:"high-performance",depth:true,stencil:false});
+      api.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1:1.5));
       api.renderer.setClearColor("#07111e",1);
       api.renderer.outputColorSpace=THREE.SRGBColorSpace;
       api.renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -76,10 +77,13 @@
       edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);
     });
     if(rebuild)api.geometrySignature=signature;
-    const bounds=new THREE.Box3().setFromObject(api.root);
-    const size=bounds.isEmpty()?new THREE.Vector3(600,300,400):bounds.getSize(new THREE.Vector3());
-    const objectCenter=bounds.isEmpty()?new THREE.Vector3(0,150,0):bounds.getCenter(new THREE.Vector3());
-    const maxDim=Math.max(size.x,size.y,size.z,300);
+    if(rebuild||!api.bounds){
+      api.bounds=new THREE.Box3().setFromObject(api.root);
+      const size=api.bounds.isEmpty()?new THREE.Vector3(600,300,400):api.bounds.getSize(new THREE.Vector3());
+      api.objectCenter=api.bounds.isEmpty()?new THREE.Vector3(0,150,0):api.bounds.getCenter(new THREE.Vector3());
+      api.maxDim=Math.max(size.x,size.y,size.z,300);
+    }
+    const objectCenter=api.objectCenter,maxDim=api.maxDim;
     const target=new THREE.Vector3(objectCenter.x-(Number(state.panX)||0)*maxDim/500,objectCenter.y+(Number(state.panY)||0)*maxDim/500,objectCenter.z);
     api.target.copy(target);
     const angle=(Number(state.angle)||35)*Math.PI/180;
