@@ -26,6 +26,7 @@
       api.scene.background=new THREE.Color("#07111e");
       api.scene.fog=new THREE.Fog("#07111e",5000,18000);
       api.camera=new THREE.PerspectiveCamera(38,1,1,50000);
+      api.target=new THREE.Vector3();
       api.root=new THREE.Group();api.scene.add(api.root);
       api.raycaster=new THREE.Raycaster();api.pointer=new THREE.Vector2();
       api.scene.add(new THREE.HemisphereLight("#d9ecff","#182638",2.0));
@@ -45,7 +46,7 @@
     if(!api.available||!api.renderer)return false;
     api.lastState=state;
     const objects=Array.isArray(state.objects)?state.objects:[];
-    const signature=JSON.stringify({objects,explodedView:!!state.explodedView,explodeOffsets:state.explodeOffsets||{},assemblyGuideOn:!!state.assemblyGuideOn,assemblyStep:state.assemblyStep||0,selectedId:state.selectedId||null});
+    const signature=JSON.stringify({objects,explodedView:!!state.explodedView,explodeOffsets:state.explodeOffsets||{},assemblyGuideOn:!!state.assemblyGuideOn,assemblyStep:state.assemblyStep||0});
     const rebuild=signature!==api.geometrySignature;
     if(rebuild){clearGroup(api.root);api.meshes=[];}
     const center=objects.length?objects.reduce((v,o)=>[v[0]+Number(o.x||0)/objects.length,v[1]+(Number(o.y||0)+Number(o.h||0)/2)/objects.length,v[2]+Number(o.z||0)/objects.length],[0,0,0]):[0,0,0];
@@ -74,9 +75,10 @@
       mesh.castShadow=true;mesh.receiveShadow=true;
       api.root.add(mesh);api.meshes.push(mesh);
       const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:selected?"#8bdcff":"#a9c9e7",transparent:true,opacity:selected ? .95 : .55}));
-      edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);
+      edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);mesh.userData.edge=edge;
     });
     if(rebuild)api.geometrySignature=signature;
+    api.meshes.forEach(mesh=>{const selected=mesh.userData.objectId===state.selectedId;mesh.material.emissive.set(selected?"#123c58":"#000000");mesh.material.emissiveIntensity=selected?.55:0;const edge=mesh.userData.edge;if(edge){edge.material.color.set(selected?"#8bdcff":"#a9c9e7");edge.material.opacity=selected?.95:.55;}});
     if(rebuild||!api.bounds){
       api.bounds=new THREE.Box3().setFromObject(api.root);
       const size=api.bounds.isEmpty()?new THREE.Vector3(600,300,400):api.bounds.getSize(new THREE.Vector3());
