@@ -893,6 +893,7 @@
   let modelZoom = 1;
   let modelExplodedView = false;
   let modelExplodeMoveMode = false;
+  let modelPartMoveMode = false;
   let modelExplodeOffsets = {};
   let modelAssemblyGuideOn = false;
   let modelAssemblyStep = 0;
@@ -1702,9 +1703,16 @@
       if(face&&!modelExplodedView){
         const object=modelObjects.find(o=>o.id===face.getAttribute("data-object-id"));
         if(object){
-          modelHistoryPush();selectedModelObjectId=object.id;renderModelObjectEditor();
-          partDrag={id:object.id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:object.x,originZ:object.z,scale:modelDrawingFitScale(),angle:modelCameraAngle};
-          orbitStart=null;orbitMoved=false;event.preventDefault();return;
+          selectedModelObjectId=object.id;renderModelObjectEditor();
+          if(modelPartMoveMode){
+            modelHistoryPush();
+            partDrag={id:object.id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:object.x,originZ:object.z,scale:modelDrawingFitScale(),angle:modelCameraAngle};
+            orbitStart=null;orbitMoved=false;event.preventDefault();return;
+          }
+          partDrag=null;orbitMoved=false;
+          orbitStart={x:event.clientX,y:event.clientY,angle:modelCameraAngle,pitch:modelCameraPitch};
+          cameraPanStart=null;
+          event.preventDefault();return;
         }
       }
       if(activePointers.size===1){
@@ -1794,6 +1802,7 @@
     $("modelExplodeToggleBtn").addEventListener("click",()=>{modelHistoryPush();modelExplodedView=!modelExplodedView;$("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";$("modelExplodeMoveBtn").disabled=!modelExplodedView;if(!modelExplodedView){modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";$("modelExplodeHint").textContent="التفكيك بصري مؤقت ولا يغيّر إحداثيات القطع الأصلية أو ملف المشروع.";}renderModelDrawing();});
     $("modelAssemblyStartBtn").addEventListener("click",()=>{if(!modelObjects.length){toast("أضف قطعًا أولًا");return;}modelAssemblyGuideOn=true;modelAssemblyStep=0;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeToggleBtn").textContent="عرض التفكيك";$("modelExplodeMoveBtn").disabled=true;$("modelAssemblyGuide").hidden=false;$("modelAssemblyStartBtn").textContent="دليل التجميع نشط";selectedModelObjectId=modelObjects[0].id;renderModelAssemblyGuide();renderModelDrawing();renderModelObjectEditor();});
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
+    $("modelPartMoveModeBtn").addEventListener("click",()=>{modelPartMoveMode=!modelPartMoveMode;$("modelPartMoveModeBtn").textContent=modelPartMoveMode?"إيقاف تحريك القطع":"تفعيل تحريك القطع";$("modelPartMoveModeBtn").classList.toggle("button-primary",modelPartMoveMode);$("modelPartMoveModeBtn").classList.toggle("button-quiet",!modelPartMoveMode);toast(modelPartMoveMode?"وضع تحريك القطع نشط؛ السحب على القطعة يحركها":"تم إيقاف تحريك القطع؛ السحب على المجسم يدير الكاميرا");});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addStandModelTemplateBtn").addEventListener("click",addStandModelTemplate);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
