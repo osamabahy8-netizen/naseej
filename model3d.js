@@ -42,6 +42,92 @@
       return true;
     }catch(error){console.warn("Naseej 3D renderer unavailable; using the drawing fallback.",error);api.available=false;return false;}
   }
+
+  function roundedPlanform(width,depth,corner){
+    const s=new THREE.Shape(),x=width/2,z=depth/2,r=Math.min(corner,x,z);
+    s.moveTo(-x+r,-z);s.lineTo(x-r,-z);s.quadraticCurveTo(x,-z,x,-z+r);
+    s.lineTo(x,z-r);s.quadraticCurveTo(x,z,x-r,z);s.lineTo(-x+r,z);
+    s.quadraticCurveTo(-x,z,-x,z-r);s.lineTo(-x,-z+r);s.quadraticCurveTo(-x,-z,-x+r,-z);
+    return s;
+  }
+  function extrudedPlanform(width,depth,thickness,sweep=0){
+    const s=new THREE.Shape(),x=width/2,z=depth/2;
+    s.moveTo(-x*.82,-z);s.lineTo(x*.82,-z);s.lineTo(x-sweep,z*.72);s.lineTo(-x+sweep,z*.72);s.closePath();
+    const g=new THREE.ExtrudeGeometry(s,{depth:Math.max(2,thickness),bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:Math.min(4,thickness*.16),bevelThickness:Math.min(3,thickness*.14),curveSegments:10});
+    g.translate(0,0,-thickness/2);g.rotateX(Math.PI/2);g.computeVertexNormals();return g;
+  }
+  function roundedBodyGeometry(width,depth,height){
+    const g=new THREE.ExtrudeGeometry(roundedPlanform(width,depth,Math.min(width,depth)*.13),{depth:height,bevelEnabled:true,bevelSegments:4,steps:1,bevelSize:Math.min(12,height*.12),bevelThickness:Math.min(8,height*.1),curveSegments:12});
+    g.translate(0,0,-height/2);g.rotateX(Math.PI/2);g.computeVertexNormals();return g;
+  }
+  function partMaterial(color,metalness=.45,roughness=.3,transparent=false,opacity=1){
+    return new THREE.MeshStandardMaterial({color,metalness,roughness,transparent,opacity});
+  }
+  function buildPart(o){
+    const group=new THREE.Group(),label=String(o.label||""),profile=String(o.profile||"");
+    const w=Math.max(2,Number(o.w)||20),h=Math.max(2,Number(o.h)||20),d=Math.max(2,Number(o.d)||20);
+    const x=Number(o.x)||0,y=Number(o.y)||0,z=Number(o.z)||0;
+    const car=/(سيارة|بودي|هيكل خارجي|شاسيه|دريفت|إطار|عجلة)/.test(label);
+    const plane=/(طائرة|جناح|ذيل أفقي|ذيل رأسي|جسم الطائرة|مروحة أمامية|مروحة دافعة)/.test(label);
+    const body=/بودي|هيكل خارجي/.test(label)&&car;
+    const tire=/(عجلة|إطار|إطارات)/.test(label)&&car;
+    const fuselage=/جسم الطائرة/.test(label);
+    const wing=/جناح/.test(label)||/ذيل أفقي/.test(label);
+    const fin=/ذيل رأسي/.test(label);
+    const prop=/مروحة/.test(label)&&plane;
+    const add=(geometry,material,px=x,py=y+h/2,pz=z,rx=0,ry=0,rz=0)=>{
+      const mesh=new THREE.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.rotation.set(rx,ry,rz);
+      mesh.userData.objectId=o.id;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);api.meshes.push(mesh);return mesh;
+    };
+    if(fuselage){
+      const length=Math.max(w,d),radius=Math.max(8,Math.min(h,d)*.48);
+      const points=[new THREE.Vector2(2,-length/2),new THREE.Vector2(radius*.42,-length*.44),new THREE.Vector2(radius*.82,-length*.30),new THREE.Vector2(radius,-length*.08),new THREE.Vector2(radius*.94,length*.22),new THREE.Vector2(radius*.62,length*.40),new THREE.Vector2(2,length/2)];
+      const g=new THREE.LatheGeometry(points,32);g.rotateX(Math.PI/2);
+      add(g,partMaterial(o.color||"#e7edf2",.18,.48));
+      const canopy=new THREE.SphereGeometry(radius*.62,24,12,0,Math.PI*2,0,Math.PI*.5);
+      canopy.scale(.9,.55,Math.max(1,length*.19/radius));add(canopy,partMaterial("#3c7898",.32,.2,.25,.88),x,y+h*.78,z-length*.08);
+    }else if(wing){
+      add(extrudedPlanform(w,d,h,Math.min(w*.12,d*.28)),partMaterial(o.color||"#e7edf2",.16,.42));
+      if(/جناح/.test(label)){
+        const ribMat=partMaterial("#b8c7d3",.12,.6);
+        for(let n=-2;n<=2;n++)add(new THREE.BoxGeometry(Math.max(2,w*.006),Math.max(2,h*.22),Math.max(3,d*.78)),ribMat,x+n*w*.16,y+h*.53,z);
+      }
+    }else if(fin){
+      const s=new THREE.Shape();s.moveTo(-w/2,-h/2);s.lineTo(w*.38,-h/2);s.lineTo(w*.18,h*.48);s.lineTo(-w*.12,h/2);s.closePath();
+      const g=new THREE.ExtrudeGeometry(s,{depth:d,bevelEnabled:true,bevelSegments:2,bevelSize:2,bevelThickness:2});g.translate(0,0,-d/2);
+      add(g,partMaterial(o.color||"#e7edf2",.15,.42));
+    }else if(prop){
+      const hub=add(new THREE.CylinderGeometry(Math.max(4,h*.55),Math.max(4,h*.55),d,24),partMaterial("#aeb9c5",.72,.22),x,y+h/2,z);
+      const bladeMat=partMaterial("#202a36",.35,.25);
+      for(let n=0;n<2;n++){const blade=new THREE.BoxGeometry(Math.max(4,w*.46),Math.max(3,h*.32),Math.max(5,d*.22));add(blade,bladeMat,x+(n===0?-w*.23:w*.23),y+h/2,z,0,0,n===0?-.18:.18);}
+    }else if(body){
+      let paint=o.color||"#176db2";if(paint==="#252a31")paint="#176db2";
+      add(roundedBodyGeometry(w,d,h),partMaterial(paint,.72,.22));
+      const roofW=w*.56,roofD=d*.46,roofH=h*.5;
+      add(roundedBodyGeometry(roofW,roofD,roofH),partMaterial("#102d45",.42,.18,.18,.92),x,y+h*.72,z+d*.015);
+      const glass=partMaterial("#8dc6e4",.48,.16,true,.48);
+      add(new THREE.BoxGeometry(roofW*.86,roofH*.52,roofD*.82),glass,x,y+h*.78,z+d*.015);
+      const bumperMat=partMaterial("#aab5c0",.78,.24);
+      add(new THREE.BoxGeometry(w*.72,h*.16,Math.max(8,d*.08)),bumperMat,x,y+h*.18,z-d*.48);
+      add(new THREE.BoxGeometry(w*.72,h*.16,Math.max(8,d*.08)),bumperMat,x,y+h*.18,z+d*.48);
+      const lampMat=partMaterial("#f7e9ba",.25,.18);
+      for(const side of [-1,1])add(new THREE.BoxGeometry(w*.12,h*.12,Math.max(4,d*.035)),lampMat,x+side*w*.31,y+h*.47,z-d*.43);
+    }else if(tire){
+      const radius=Math.max(5,Math.min(w,d)*.49),width=Math.max(5,h);
+      const rubber=partMaterial("#171d25",.08,.88);
+      add(new THREE.CylinderGeometry(radius,radius,width,48,1,false),rubber,x,y+h/2,z,0,0,Math.PI/2);
+      const rimMat=partMaterial("#b8c5d1",.82,.22);
+      add(new THREE.CylinderGeometry(radius*.64,radius*.64,width*1.04,40),rimMat,x,y+h/2,z,0,0,Math.PI/2);
+      add(new THREE.CylinderGeometry(radius*.23,radius*.23,width*1.1,32),partMaterial("#46596a",.8,.2),x,y+h/2,z,0,0,Math.PI/2);
+      const ring=new THREE.TorusGeometry(radius*.79,Math.max(1,radius*.045),8,40);add(ring,partMaterial("#303b47",.12,.78),x,y+h/2,z,0,Math.PI/2,0);
+    }else{
+      let geometry;
+      if(o.type==="cylinder")geometry=new THREE.CylinderGeometry(Math.max(1,Math.min(w,d)/2),Math.max(1,Math.min(w,d)/2),h,48,1,false);
+      else geometry=new THREE.BoxGeometry(w,h,d,1,1,1);
+      add(geometry,partMaterial(o.color||"#c49a55",.58,.27),x,y+h/2,z,(Number(o.rx)||0)*Math.PI/180,(Number(o.ry)||0)*Math.PI/180,(Number(o.rz)||0)*Math.PI/180);
+    }
+    group.userData.objectId=o.id;return group;
+  }
   function render(state){
     if(!api.available||!api.renderer)return false;
     api.lastState=state;
@@ -58,27 +144,9 @@
       const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=state.explodeOffsets?.[o.id]||{x:0,y:0,z:0};
       return {...o,x:o.x+dx/len*gap+(extra.x||0),y:o.y+dy/len*gap+(extra.y||0),z:o.z+dz/len*gap+(extra.z||0)};
     });
-    if(rebuild)rendered.forEach(o=>{
-      const w=Math.max(1,Number(o.w)||1),h=Math.max(1,Number(o.h)||1),d=Math.max(1,Number(o.d)||1);
-      let geometry;
-      if(o.type==="cylinder"){
-        const radius=Math.max(1,Math.min(w,d)/2);
-        geometry=new THREE.CylinderGeometry(radius,radius,h,64,1,false);
-      }else{
-        geometry=new THREE.BoxGeometry(w,h,d,1,1,1);
-      }
-      const selected=o.id===state.selectedId;
-      const mesh=new THREE.Mesh(geometry,makeMaterial(o.color,selected));
-      mesh.position.set(Number(o.x)||0,(Number(o.y)||0)+h/2,Number(o.z)||0);
-      mesh.rotation.set((Number(o.rx)||0)*Math.PI/180,(Number(o.ry)||0)*Math.PI/180,(Number(o.rz)||0)*Math.PI/180,"XYZ");
-      mesh.userData.objectId=o.id;
-      mesh.castShadow=true;mesh.receiveShadow=true;
-      api.root.add(mesh);api.meshes.push(mesh);
-      const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:selected?"#8bdcff":"#a9c9e7",transparent:true,opacity:selected ? .95 : .55}));
-      edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);mesh.userData.edge=edge;
-    });
+    if(rebuild)rendered.forEach(o=>{buildPart(o);});
     if(rebuild)api.geometrySignature=signature;
-    api.meshes.forEach(mesh=>{const selected=mesh.userData.objectId===state.selectedId;mesh.material.emissive.set(selected?"#123c58":"#000000");mesh.material.emissiveIntensity=selected?.55:0;const edge=mesh.userData.edge;if(edge){edge.material.color.set(selected?"#8bdcff":"#a9c9e7");edge.material.opacity=selected?.95:.55;}});
+    api.meshes.forEach(mesh=>{const selected=mesh.userData.objectId===state.selectedId;if(mesh.material&&mesh.material.emissive){mesh.material.emissive.set(selected?"#123c58":"#000000");mesh.material.emissiveIntensity=selected?.38:0;}});
     if(rebuild||!api.bounds){
       api.bounds=new THREE.Box3().setFromObject(api.root);
       const size=api.bounds.isEmpty()?new THREE.Vector3(600,300,400):api.bounds.getSize(new THREE.Vector3());
