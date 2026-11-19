@@ -63,6 +63,23 @@
   function partMaterial(color,metalness=.45,roughness=.3,transparent=false,opacity=1){
     return new THREE.MeshStandardMaterial({color,metalness,roughness,transparent,opacity});
   }
+  function vehicleLoftGeometry(width,length,height,stations){
+    const vertices=[],indices=[],segments=32;
+    stations.forEach(([t,scale,roof],ring)=>{
+      const z=(t-.5)*length;
+      for(let j=0;j<segments;j++){
+        const a=j/segments*Math.PI*2, c=Math.cos(a), sn=Math.sin(a);
+        const halfW=width*.5*scale;
+        const y=height*.5+(sn>=0?sn*(height*.5*roof):sn*(height*.5));
+        vertices.push(c*halfW,y,z);
+      }
+      if(ring>0){const prev=(ring-1)*segments,cur=ring*segments;for(let j=0;j<segments;j++){const n=(j+1)%segments;indices.push(prev+j,cur+j,cur+n,prev+j,cur+n,prev+n);}}
+    });
+    const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return g;
+  }
+  function roundedPanel(width,height,depth,radius){
+    return new THREE.BoxGeometry(width,height,depth,2,2,1);
+  }
   function buildPart(o){
     const group=new THREE.Group(),label=String(o.label||""),profile=String(o.profile||"");
     const w=Math.max(2,Number(o.w)||20),h=Math.max(2,Number(o.h)||20),d=Math.max(2,Number(o.d)||20);
@@ -101,17 +118,54 @@
       const bladeMat=partMaterial("#202a36",.35,.25);
       for(let n=0;n<2;n++){const blade=new THREE.BoxGeometry(Math.max(4,w*.46),Math.max(3,h*.32),Math.max(5,d*.22));add(blade,bladeMat,x+(n===0?-w*.23:w*.23),y+h/2,z,0,0,n===0?-.18:.18);}
     }else if(body){
-      let paint=o.color||"#176db2";if(paint==="#252a31")paint="#176db2";
-      add(roundedBodyGeometry(w,d,h),partMaterial(paint,.72,.22));
-      const roofW=w*.56,roofD=d*.46,roofH=h*.5;
-      add(roundedBodyGeometry(roofW,roofD,roofH),partMaterial("#102d45",.42,.18,.18,.92),x,y+h*.72,z+d*.015);
-      const glass=partMaterial("#8dc6e4",.48,.16,true,.48);
-      add(new THREE.BoxGeometry(roofW*.86,roofH*.52,roofD*.82),glass,x,y+h*.78,z+d*.015);
-      const bumperMat=partMaterial("#aab5c0",.78,.24);
-      add(new THREE.BoxGeometry(w*.72,h*.16,Math.max(8,d*.08)),bumperMat,x,y+h*.18,z-d*.48);
-      add(new THREE.BoxGeometry(w*.72,h*.16,Math.max(8,d*.08)),bumperMat,x,y+h*.18,z+d*.48);
-      const lampMat=partMaterial("#f7e9ba",.25,.18);
-      for(const side of [-1,1])add(new THREE.BoxGeometry(w*.12,h*.12,Math.max(4,d*.035)),lampMat,x+side*w*.31,y+h*.47,z-d*.43);
+      let paint=o.color||"#176db2";if(paint==="#252a31")paint="#087bd2";
+      const bodyMat=partMaterial(paint,.68,.2),glass=partMaterial("#78c8f4",.52,.13,true,.52),darkGlass=partMaterial("#102c43",.48,.16,.1,.94),trim=partMaterial("#111b27",.42,.28),chrome=partMaterial("#aebdca",.86,.2),lamp=partMaterial("#e9f5ff",.25,.12,true,.92),red=partMaterial("#d52e42",.3,.18);
+      const lower=vehicleLoftGeometry(w,d,h,[[0,.72,.72],[.08,.9,.88],[.2,.98,.96],[.5,1,1],[.8,.98,.96],[.94,.88,.88],[1,.7,.7]]);
+      add(lower,bodyMat,x,y+h*.48,z);
+      const cabinW=w*.67,cabinD=d*.47,cabinH=h*.57;
+      const cabin=vehicleLoftGeometry(cabinW,cabinD,cabinH,[[0,.78,.7],[.12,.94,.9],[.35,1,1],[.72,.94,.98],[.9,.8,.78],[1,.68,.65]]);
+      add(cabin,darkGlass,x,y+h*.86,z-d*.015);
+      // Panoramic windshield and rear glass, inset against the cabin shell.
+      add(new THREE.BoxGeometry(cabinW*.78,cabinH*.48,Math.max(3,d*.018)),glass,x,y+h*1.02,z-d*.17,-.18,0,0);
+      add(new THREE.BoxGeometry(cabinW*.72,cabinH*.4,Math.max(3,d*.016)),glass,x,y+h*.98,z+d*.18,.18,0,0);
+      // Side glazing, pillars, door seams and handles on both sides.
+      for(const side of [-1,1]){
+        const sx=x+side*cabinW*.49;
+        add(new THREE.BoxGeometry(3,cabinH*.38,cabinD*.31),glass,sx,y+h*.99,z-d*.085,0,0,0);
+        add(new THREE.BoxGeometry(3,cabinH*.38,cabinD*.27),glass,sx,y+h*.99,z+d*.105,0,0,0);
+        add(new THREE.BoxGeometry(5,cabinH*.49,5),trim,x+side*cabinW*.49,y+h*.96,z,0,0,0);
+        add(new THREE.BoxGeometry(2,h*.7,2),chrome,x+side*w*.495,y+h*.47,z-d*.01,0,0,.06);
+        add(new THREE.BoxGeometry(4,5,d*.24),trim,x+side*w*.49,y+h*.28,z-d*.01);
+        add(new THREE.BoxGeometry(w*.012,2,d*.37),trim,x+side*w*.492,y+h*.29,z+d*.015);
+        // sculpted wheel-arch lips
+        for(const axleZ of [-d*.34,d*.34]){
+          const pts=[];for(let n=0;n<=20;n++){const a=Math.PI*(.08+n/20*.84);pts.push(new THREE.Vector3(x+side*(w*.475),y+h*.17+Math.sin(a)*h*.48,z+axleZ+Math.cos(a)*d*.105));}
+          const curve=new THREE.CatmullRomCurve3(pts);add(new THREE.TubeGeometry(curve,28,Math.max(2,h*.025),8,false),bodyMat,x,y,z);
+        }
+        // mirror housing
+        add(new THREE.SphereGeometry(Math.max(5,h*.075),16,10),bodyMat,x+side*w*.51,y+h*.78,z-d*.19);
+        add(new THREE.BoxGeometry(w*.014,h*.035,Math.max(7,d*.055)),lamp,x+side*w*.503,y+h*.79,z-d*.19);
+      }
+      // Front fascia: grille, lower intake, chrome surround and split LED headlamps.
+      add(new THREE.BoxGeometry(w*.42,h*.22,Math.max(5,d*.025)),trim,x,y+h*.34,z-d*.492);
+      add(new THREE.BoxGeometry(w*.32,h*.12,Math.max(3,d*.012)),chrome,x,y+h*.35,z-d*.507);
+      for(let n=0;n<5;n++)add(new THREE.BoxGeometry(w*.27,h*.012,2),chrome,x,y+h*(.30+n*.022),z-d*.515);
+      for(const side of [-1,1]){
+        add(new THREE.BoxGeometry(w*.17,h*.105,Math.max(5,d*.025)),lamp,x+side*w*.34,y+h*.57,z-d*.48,-.12,0,side*.12);
+        add(new THREE.BoxGeometry(w*.12,h*.07,Math.max(4,d*.018)),red,x+side*w*.35,y+h*.43,z+d*.48);
+        add(new THREE.BoxGeometry(w*.12,h*.06,Math.max(4,d*.018)),lamp,x+side*w*.35,y+h*.36,z+d*.48);
+        add(new THREE.BoxGeometry(w*.11,h*.035,Math.max(3,d*.014)),trim,x+side*w*.34,y+h*.22,z-d*.49);
+      }
+      add(new THREE.BoxGeometry(w*.76,h*.13,Math.max(8,d*.04)),trim,x,y+h*.18,z-d*.49);
+      add(new THREE.BoxGeometry(w*.76,h*.13,Math.max(8,d*.04)),trim,x,y+h*.18,z+d*.49);
+      add(new THREE.BoxGeometry(w*.16,h*.045,3),chrome,x,y+h*.22,z-d*.515);
+      // Roof rails and subtle bonnet / shoulder creases.
+      for(const side of [-1,1]){
+        add(new THREE.BoxGeometry(4,4,d*.29),chrome,x+side*cabinW*.39,y+h*1.16,z);
+        add(new THREE.BoxGeometry(2,2,d*.31),chrome,x+side*w*.37,y+h*.56,z-d*.015);
+      }
+      // Wheel-arch shadow inserts are separate from the tire parts.
+      add(new THREE.BoxGeometry(w*.92,4,d*.76),trim,x,y+h*.035,z);
     }else if(tire){
       const radius=Math.max(5,Math.min(w,d)*.49),width=Math.max(5,h);
       const rubber=partMaterial("#171d25",.08,.88);
