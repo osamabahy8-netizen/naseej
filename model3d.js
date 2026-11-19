@@ -83,14 +83,20 @@
       api.objectCenter=api.bounds.isEmpty()?new THREE.Vector3(0,150,0):api.bounds.getCenter(new THREE.Vector3());
       api.maxDim=Math.max(size.x,size.y,size.z,300);
     }
+    return renderView(state);
+  }
+  function renderView(state){
+    if(!api.available||!api.renderer||!api.camera||!api.objectCenter)return false;
     const objectCenter=api.objectCenter,maxDim=api.maxDim;
-    const target=new THREE.Vector3(objectCenter.x-(Number(state.panX)||0)*maxDim/500,objectCenter.y+(Number(state.panY)||0)*maxDim/500,objectCenter.z);
+    const panX=Number(state.panX)||0,panY=Number(state.panY)||0;
+    const target=new THREE.Vector3(objectCenter.x-panX*maxDim/500,objectCenter.y+panY*maxDim/500,objectCenter.z);
     api.target.copy(target);
-    const angle=(Number(state.angle)||35)*Math.PI/180;
-    const pitch=Math.max(5,Math.min(85,Number(state.pitch)||24))*Math.PI/180;
-    const distance=maxDim*2.25/Math.max(.35,Math.min(5,Number(state.zoom)||1));
+    const angle=(Number.isFinite(Number(state.angle))?Number(state.angle):35)*Math.PI/180;
+    const pitch=Math.max(5,Math.min(85,Number.isFinite(Number(state.pitch))?Number(state.pitch):24))*Math.PI/180;
+    const zoom=Math.max(.35,Math.min(5,Number.isFinite(Number(state.zoom))?Number(state.zoom):1));
+    const distance=maxDim*2.25/zoom;
     api.camera.position.set(target.x+Math.cos(angle)*Math.cos(pitch)*distance,target.y+Math.sin(pitch)*distance,target.z+Math.sin(angle)*Math.cos(pitch)*distance);
-    api.camera.lookAt(target);api.camera.updateProjectionMatrix();
+    api.camera.lookAt(target);
     api.renderer.render(api.scene,api.camera);
     return true;
   }
@@ -104,6 +110,6 @@
     const id=hits[0].object.userData.objectId;
     return {getAttribute:name=>name==="data-object-id"?id:null};
   }
-  api.init=init;api.render=render;api.pickTarget=pickTarget;
+  api.init=init;api.render=render;api.renderView=renderView;api.pickTarget=pickTarget;
   window.Naseej3D=api;
 })();
