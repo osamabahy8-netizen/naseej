@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:null,lastState:null,bounds:null,objectCenter:null,maxDim:600};
+  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],externalRoot:null,externalMeshes:[],target:null,lastState:null,bounds:null,objectCenter:null,maxDim:600};
   if(typeof THREE==="undefined"||!THREE.WebGLRenderer){window.Naseej3D=api;return;}
   function makeMaterial(color,selected){
     return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.27,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected ? .55 : 0});
@@ -27,7 +27,7 @@
       api.scene.fog=new THREE.Fog("#07111e",5000,18000);
       api.camera=new THREE.PerspectiveCamera(38,1,1,50000);
       api.target=new THREE.Vector3();
-      api.root=new THREE.Group();api.scene.add(api.root);
+      api.root=new THREE.Group();api.scene.add(api.root);api.externalRoot=new THREE.Group();api.scene.add(api.externalRoot);
       api.raycaster=new THREE.Raycaster();api.pointer=new THREE.Vector2();
       api.scene.add(new THREE.HemisphereLight("#d9ecff","#182638",2.0));
       const key=new THREE.DirectionalLight("#fff0d4",3.2);key.position.set(1800,2600,1800);api.scene.add(key);
@@ -232,7 +232,7 @@
     if(rebuild)api.geometrySignature=signature;
     api.meshes.forEach(mesh=>{const selected=mesh.userData.objectId===state.selectedId;if(mesh.material&&mesh.material.emissive){mesh.material.emissive.set(selected?"#123c58":"#000000");mesh.material.emissiveIntensity=selected?.38:0;}});
     if(rebuild||!api.bounds){
-      api.bounds=new THREE.Box3().setFromObject(api.root);
+      api.bounds=new THREE.Box3().setFromObject(api.root);if(api.externalRoot)api.bounds.union(new THREE.Box3().setFromObject(api.externalRoot));
       const size=api.bounds.isEmpty()?new THREE.Vector3(600,300,400):api.bounds.getSize(new THREE.Vector3());
       api.objectCenter=api.bounds.isEmpty()?new THREE.Vector3(0,150,0):api.bounds.getCenter(new THREE.Vector3());
       api.maxDim=Math.max(size.x,size.y,size.z,300);
@@ -264,6 +264,29 @@
     const id=hits[0].object.userData.objectId;
     return {getAttribute:name=>name==="data-object-id"?id:null};
   }
-  api.init=init;api.render=render;api.renderView=renderView;api.pickTarget=pickTarget;
+  function addExternalModel(group){
+    if(!api.available||!api.scene||!group)return false;
+    if(api.externalRoot)clearGroup(api.externalRoot);
+    api.externalRoot.add(group);
+    api.externalMeshes=[];
+    group.traverse(node=>{if(node.isMesh)api.externalMeshes.push(node);});
+    api.bounds=new THREE.Box3().setFromObject(api.root);
+    api.bounds.union(new THREE.Box3().setFromObject(api.externalRoot));
+    if(api.bounds.isEmpty()){api.objectCenter.set(0,150,0);api.maxDim=600;}
+    else{const size=api.bounds.getSize(new THREE.Vector3());api.objectCenter=api.bounds.getCenter(new THREE.Vector3());api.maxDim=Math.max(size.x,size.y,size.z,300);}
+    const state=api.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0};
+    renderView({...state,zoom:Math.min(5,Math.max(.35,Math.min(Number(state.zoom)||1,1.15)))});
+    return true;
+  }
+  function clearExternalModel(){
+    if(api.externalRoot)clearGroup(api.externalRoot);
+    api.externalMeshes=[];
+    api.bounds=new THREE.Box3().setFromObject(api.root);
+    const size=api.bounds.isEmpty()?new THREE.Vector3(600,300,400):api.bounds.getSize(new THREE.Vector3());
+    api.objectCenter=api.bounds.isEmpty()?new THREE.Vector3(0,150,0):api.bounds.getCenter(new THREE.Vector3());
+    api.maxDim=Math.max(size.x,size.y,size.z,300);
+    if(api.lastState)renderView(api.lastState);
+  }
+  api.init=init;api.render=render;api.renderView=renderView;api.pickTarget=pickTarget;api.addExternalModel=addExternalModel;api.clearExternalModel=clearExternalModel;
   window.Naseej3D=api;
 })();
