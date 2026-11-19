@@ -7,7 +7,8 @@
   }
   function clearGroup(group){
     while(group.children.length){
-      const child=group.children.pop();
+      const child=group.children[group.children.length-1];
+      group.remove(child);
       child.traverse?.(node=>{if(node.geometry)node.geometry.dispose();if(node.material){if(Array.isArray(node.material))node.material.forEach(m=>m.dispose());else node.material.dispose();}});
     }
   }
@@ -42,8 +43,10 @@
   function render(state){
     if(!api.available||!api.renderer)return false;
     api.lastState=state;
-    clearGroup(api.root);api.meshes=[];
     const objects=Array.isArray(state.objects)?state.objects:[];
+    const signature=JSON.stringify({objects,explodedView:!!state.explodedView,explodeOffsets:state.explodeOffsets||{},assemblyGuideOn:!!state.assemblyGuideOn,assemblyStep:state.assemblyStep||0,selectedId:state.selectedId||null});
+    const rebuild=signature!==api.geometrySignature;
+    if(rebuild){clearGroup(api.root);api.meshes=[];}
     const center=objects.length?objects.reduce((v,o)=>[v[0]+Number(o.x||0)/objects.length,v[1]+(Number(o.y||0)+Number(o.h||0)/2)/objects.length,v[2]+Number(o.z||0)/objects.length],[0,0,0]):[0,0,0];
     const visible=state.assemblyGuideOn?objects.slice(0,Math.max(1,Math.min(objects.length,state.assemblyStep+1))):objects;
     const rendered=visible.map((o,index)=>{
@@ -53,7 +56,7 @@
       const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=state.explodeOffsets?.[o.id]||{x:0,y:0,z:0};
       return {...o,x:o.x+dx/len*gap+(extra.x||0),y:o.y+dy/len*gap+(extra.y||0),z:o.z+dz/len*gap+(extra.z||0)};
     });
-    rendered.forEach(o=>{
+    if(rebuild)rendered.forEach(o=>{
       const w=Math.max(1,Number(o.w)||1),h=Math.max(1,Number(o.h)||1),d=Math.max(1,Number(o.d)||1);
       let geometry;
       if(o.type==="cylinder"){
@@ -72,6 +75,7 @@
       const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:selected?"#8bdcff":"#a9c9e7",transparent:true,opacity:selected ? .95 : .55}));
       edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);
     });
+    if(rebuild)api.geometrySignature=signature;
     const bounds=new THREE.Box3().setFromObject(api.root);
     const size=bounds.isEmpty()?new THREE.Vector3(600,300,400):bounds.getSize(new THREE.Vector3());
     const objectCenter=bounds.isEmpty()?new THREE.Vector3(0,150,0):bounds.getCenter(new THREE.Vector3());
