@@ -1,11 +1,14 @@
 "use strict";
-const CACHE_NAME = "naseej-shell-v19";
+const CACHE_NAME = "naseej-shell-v20";
 const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./model3d.js",
+  "./engineering-library.js",
+  "./engineering-library.css",
+  "./engineering-library.json",
   "./manifest.json",
   "./icons/naseej.svg"
 ];
