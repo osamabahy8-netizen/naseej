@@ -49,7 +49,7 @@
   function renderTree(records,host,depth=0){
     records.forEach(record=>{
       const row=document.createElement("div");row.className="cad-tree-row";row.style.marginRight=(depth*8)+"px";
-      const choose=document.createElement("button");choose.type="button";choose.className="cad-tree-node";choose.textContent=record.name+(record.meshCount?" · "+record.meshCount+" سطح":"");choose.title=record.name;
+      const choose=document.createElement("button");choose.type="button";choose.className="cad-tree-node";choose.textContent=record.name+(record.meshCount?" · "+record.meshCount+" مجسم":"");choose.title=record.name;
       choose.addEventListener("click",()=>selectRecord(record,choose,host));
       const toggle=document.createElement("button");toggle.type="button";toggle.className="cad-tree-toggle";toggle.textContent=record.group.visible?"إخفاء":"إظهار";
       toggle.addEventListener("click",()=>{record.group.visible=!record.group.visible;toggle.textContent=record.group.visible?"إخفاء":"إظهار";row.classList.toggle("cad-tree-muted",!record.group.visible);});
@@ -81,7 +81,7 @@
     return treeNodes.map((r,index)=>{const d=dimensions(r.group);return {number:index+1,name:r.name,parent:r.parentPath||"الجذر",meshCount:r.meshCount,children:r.children.length,width:d.x,height:d.y,depth:d.z};});
   }
   function exportBOM(){
-    const rows=collectBOM(),head=["رقم","اسم الجزء","التجميعة الأم","عدد الأسطح","عدد التجميعات الفرعية","العرض مم","الارتفاع مم","العمق مم"];
+    const rows=collectBOM(),head=["رقم","اسم الجزء","التجميعة الأم","عدد المجسمات","عدد التجميعات الفرعية","العرض مم","الارتفاع مم","العمق مم"];
     const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
     const csv="\uFEFF"+[head,...rows.map(r=>[r.number,r.name,r.parent,r.meshCount,r.children,r.width.toFixed(2),r.height.toFixed(2),r.depth.toFixed(2)])].map(row=>row.map(quote).join(",")).join("\r\n");
     downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),safeName(activeProject&&activeProject.name)+ "-BOM.csv");
@@ -99,7 +99,7 @@
     if(name===null)return;
     const clean=name.trim();if(!clean){status("اكتب اسمًا للمشروع قبل الحفظ.","error");return;}
     const id=activeProject&&activeProject.id||uid(),details=projectData();details.project.id=id;details.project.name=clean;const record={id,name:clean,fileName:sourceFile.name,fileType:sourceFile.name.split(".").pop().toLowerCase(),blob:sourceFile,lastModified:sourceFile.lastModified,size:sourceFile.size,savedAt:new Date().toISOString(),project:details};
-    try{await dbPut(record);activeProject={id,name:clean};status("تم حفظ المشروع وملف CAD الأصلي محليًا على هذا الجهاز. يمكنك إغلاق الصفحة والعودة إليه لاحقًا.","success");}
+    try{await dbPut(record);activeProject={id,name:clean};status("تم حفظ المشروع وملف CAD الأصلي محليًا على هذا الجهاز. يمكنك إغلاق الصفحة والعودة إليه لاحقًا.","success");await refreshProjectList();}
     catch(error){status("تعذر حفظ المشروع: "+(error.message||error)+" — قد تكون مساحة الجهاز غير كافية.","error");}
   }
   async function restoreProject(record){
@@ -147,7 +147,7 @@
   function init(){
     const input=$("cadImportInput");if(!input)return;
     input.addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];importFile(file);event.target.value="";});
-    $("cadClearBtn").addEventListener("click",clear);$("cadSaveProjectBtn").addEventListener("click",saveProject);
+    $("cadClearBtn").addEventListener("click",clear);$("cadSaveProjectBtn").addEventListener("click",saveProject);$("cadRestoreProjectBtn").addEventListener("click",restoreSelectedProject);
     $("cadDownloadSourceBtn").addEventListener("click",downloadSource);$("cadExportBomBtn").addEventListener("click",exportBOM);$("cadExportProjectBtn").addEventListener("click",exportProject);
     $("cadFitBtn").addEventListener("click",()=>{if(!importedRoot)return;const d=dimensions(importedRoot),api=window.Naseej3D;api.objectCenter.copy(d.center);api.maxDim=Math.max(d.x,d.y,d.z,300);api.renderView(api.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});});
     $("cadExplodeRange").addEventListener("input",event=>applyExplode(event.target.value));
