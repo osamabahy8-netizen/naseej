@@ -85,7 +85,7 @@
     const shell=partMaterial(o.color||"#176db2",.58,.24),glass=partMaterial("#79c9ef",.3,.14,true,.72),dark=partMaterial("#172737",.38,.3),metal=partMaterial("#aebdca",.88,.2),blade=partMaterial("#202b38",.62,.3);
     if(/جسم الهليكوبتر/.test(label)){
       const hull=vehicleLoftGeometry(w,d,h,[[0,.12,.2],[.1,.62,.72],[.28,.92,.94],[.5,1,1],[.76,.9,.92],[.92,.62,.7],[1,.08,.12]]);
-      add(hull,shell,x,y+h*.42,z);
+      add(hull,shell,x,y,z);
       add(new THREE.SphereGeometry(h*.39,28,18),glass,x,y+h*.72,z-d*.16);
       add(new THREE.BoxGeometry(w*.72,h*.06,d*.32),dark,x,y+h*.17,z);
       return true;
@@ -148,10 +148,10 @@
       let paint=o.color||"#176db2";if(paint==="#252a31")paint="#087bd2";
       const bodyMat=partMaterial(paint,.68,.2),glass=partMaterial("#78c8f4",.52,.13,true,.52),darkGlass=partMaterial("#102c43",.48,.16,.1,.94),trim=partMaterial("#111b27",.42,.28),chrome=partMaterial("#aebdca",.86,.2),lamp=partMaterial("#e9f5ff",.25,.12,true,.92),red=partMaterial("#d52e42",.3,.18);
       const lower=vehicleLoftGeometry(w,d,h,[[0,.72,.72],[.08,.9,.88],[.2,.98,.96],[.5,1,1],[.8,.98,.96],[.94,.88,.88],[1,.7,.7]]);
-      add(lower,bodyMat,x,y+h*.48,z);
+      add(lower,bodyMat,x,y,z);
       const cabinW=w*.67,cabinD=d*.47,cabinH=h*.57;
       const cabin=vehicleLoftGeometry(cabinW,cabinD,cabinH,[[0,.78,.7],[.12,.94,.9],[.35,1,1],[.72,.94,.98],[.9,.8,.78],[1,.68,.65]]);
-      add(cabin,darkGlass,x,y+h*.86,z-d*.015);
+      add(cabin,darkGlass,x,y+h*.48,z-d*.015);
       // Panoramic windshield and rear glass, inset against the cabin shell.
       add(new THREE.BoxGeometry(cabinW*.78,cabinH*.48,Math.max(3,d*.018)),glass,x,y+h*1.02,z-d*.17,-.18,0,0);
       add(new THREE.BoxGeometry(cabinW*.72,cabinH*.4,Math.max(3,d*.016)),glass,x,y+h*.98,z+d*.18,.18,0,0);
