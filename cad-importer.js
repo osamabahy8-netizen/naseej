@@ -62,7 +62,7 @@
       if(record.children.length){const children=document.createElement("div");children.className="cad-tree-children";host.appendChild(children);renderTree(record.children,children,depth+1);}
     });
   }
-  function setActionState(on){["cadFitBtn","cadSaveProjectBtn","cadDownloadSourceBtn","cadExportBomBtn","cadExportProjectBtn","cadExportObjBtn","cadMeasureModeBtn","cadClearMeasureBtn","cadClearBtn","cadExplodeRange","cadResetExplodeBtn"].forEach(id=>{const el=$(id);if(el)el.disabled=!on;});}
+  function setActionState(on){["cadFitBtn","cadSaveProjectBtn","cadDownloadSourceBtn","cadExportBomBtn","cadExportProjectBtn","cadExportObjBtn","cadExportGlbBtn","cadMeasureModeBtn","cadClearMeasureBtn","cadClearBtn","cadExplodeRange","cadResetExplodeBtn"].forEach(id=>{const el=$(id);if(el)el.disabled=!on;});}
   function applyExplode(amount){
     if(!importedRoot)return;explodeAmount=Math.max(0,Math.min(100,Number(amount)||0));
     const rootBox=boxFor(importedRoot),center=assemblyCenter||rootBox.getCenter(new THREE.Vector3());
@@ -95,6 +95,56 @@
       vertexOffset+=position.count;
     });
     downloadBlob(new Blob([output],{type:"text/plain;charset=utf-8"}),safeName(activeProject&&activeProject.name)+".obj");
+  }
+  function exportGLB(){
+    if(!importedRoot)return;
+    importedRoot.updateMatrixWorld(true);
+    const chunks=[],views=[],accessors=[],materials=[],meshes=[],nodes=[];
+    let byteOffset=0;
+    const append=(typed,target)=>{
+      const pad=(4-byteOffset%4)%4;if(pad){chunks.push(new Uint8Array(pad));byteOffset+=pad;}
+      const bytes=new Uint8Array(typed.buffer,typed.byteOffset,typed.byteLength),offset=byteOffset;
+      chunks.push(new Uint8Array(bytes));byteOffset+=bytes.byteLength;
+      const view={buffer:0,byteOffset:offset,byteLength:bytes.byteLength};if(target)view.target=target;
+      views.push(view);return views.length-1;
+    };
+    const addAccessor=(view,componentType,type,count,min,max)=>{
+      const item={bufferView:view,componentType,type,count};if(min)item.min=min;if(max)item.max=max;
+      accessors.push(item);return accessors.length-1;
+    };
+    importedRoot.traverse(mesh=>{
+      if(!mesh.isMesh||!mesh.visible)return;
+      const source=mesh.geometry,position=source.attributes.position;if(!position)return;
+      const world=mesh.matrixWorld,normalMatrix=new THREE.Matrix3().getNormalMatrix(world);
+      const positions=[],normals=[],bounds=new THREE.Box3();
+      for(let i=0;i<position.count;i++){
+        const v=new THREE.Vector3().fromBufferAttribute(position,i).applyMatrix4(world);
+        positions.push(v.x,v.y,v.z);bounds.expandByPoint(v);
+      }
+      const normal=source.attributes.normal;
+      if(normal){for(let i=0;i<normal.count;i++){const n=new THREE.Vector3().fromBufferAttribute(normal,i).applyMatrix3(normalMatrix).normalize();normals.push(n.x,n.y,n.z);}}
+      else{const temp=source.clone();temp.computeVertexNormals();const nAttr=temp.attributes.normal;for(let i=0;i<nAttr.count;i++){const n=new THREE.Vector3().fromBufferAttribute(nAttr,i).applyMatrix3(normalMatrix).normalize();normals.push(n.x,n.y,n.z);}temp.dispose();}
+      const indices=source.index?Array.from(source.index.array):Array.from({length:position.count},(_,i)=>i);
+      const pView=append(new Float32Array(positions),34962),nView=append(new Float32Array(normals),34962),iView=append(new Uint32Array(indices),34963);
+      const min=bounds.min.toArray(),max=bounds.max.toArray();
+      const pAcc=addAccessor(pView,5126,"VEC3",position.count,min,max),nAcc=addAccessor(nView,5126,"VEC3",position.count),iAcc=addAccessor(iView,5125,"SCALAR",indices.length);
+      const material=Array.isArray(mesh.material)?mesh.material[0]:mesh.material;
+      const color=material&&material.color?material.color:new THREE.Color(.72,.76,.8);
+      const matIndex=materials.length;
+      materials.push({name:(material&&material.name)||"CAD Material",pbrMetallicRoughness:{baseColorFactor:[color.r,color.g,color.b,1],metallicFactor:material&&Number.isFinite(material.metalness)?material.metalness:.25,roughnessFactor:material&&Number.isFinite(material.roughness)?material.roughness:.45},doubleSided:true});
+      meshes.push({name:mesh.name||"CAD Part",primitives:[{attributes:{POSITION:pAcc,NORMAL:nAcc},indices:iAcc,material:matIndex,mode:4}]});
+      nodes.push({name:mesh.name||"CAD Part",mesh:meshes.length-1});
+    });
+    if(!meshes.length){status("لا توجد أسطح ظاهرة لتصديرها.","error");return;}
+    const binaryLength=byteOffset,padBin=(4-binaryLength%4)%4;if(padBin){chunks.push(new Uint8Array(padBin));byteOffset+=padBin;}
+    const binary=new Uint8Array(byteOffset);let cursor=0;chunks.forEach(chunk=>{binary.set(chunk,cursor);cursor+=chunk.length;});
+    const gltf={asset:{version:"2.0",generator:"Naseej CAD Exporter"},scene:0,scenes:[{nodes:nodes.map((_,i)=>i)}],nodes,meshes,materials,accessors,bufferViews:views,buffers:[{byteLength:binaryLength}]};
+    let jsonBytes=new TextEncoder().encode(JSON.stringify(gltf));const jsonPad=(4-jsonBytes.length%4)%4;if(jsonPad){const padded=new Uint8Array(jsonBytes.length+jsonPad);padded.fill(0x20);padded.set(jsonBytes);jsonBytes=padded;}
+    const total=12+8+jsonBytes.length+8+binary.length,glb=new ArrayBuffer(total),dv=new DataView(glb);
+    dv.setUint32(0,0x46546c67,true);dv.setUint32(4,2,true);dv.setUint32(8,total,true);
+    dv.setUint32(12,jsonBytes.length,true);dv.setUint32(16,0x4e4f534a,true);new Uint8Array(glb,20,jsonBytes.length).set(jsonBytes);
+    const binHeader=20+jsonBytes.length;dv.setUint32(binHeader,binary.length,true);dv.setUint32(binHeader+4,0x004e4942,true);new Uint8Array(glb,binHeader+8,binary.length).set(binary);
+    downloadBlob(new Blob([glb],{type:"model/gltf-binary"}),safeName(activeProject&&activeProject.name)+".glb");
   }
   function clearMeasure(){
     measureObjects.forEach(object=>{if(object.parent)object.parent.remove(object);object.geometry&&object.geometry.dispose();if(object.material)object.material.dispose();});
@@ -227,7 +277,7 @@
     const input=$("cadImportInput");if(!input)return;
     input.addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];importFile(file);event.target.value="";});
     $("cadClearBtn").addEventListener("click",clear);$("cadSaveProjectBtn").addEventListener("click",saveProject);$("cadRestoreProjectBtn").addEventListener("click",restoreSelectedProject);
-    $("cadDownloadSourceBtn").addEventListener("click",downloadSource);$("cadExportObjBtn").addEventListener("click",exportOBJ);$("cadMeasureModeBtn").addEventListener("click",()=>{measureMode=!measureMode;measurePoints=[];$("cadMeasureModeBtn").textContent=measureMode?"إلغاء وضع القياس":"قياس بين نقطتين";$("cadSelectedMeasure").textContent=measureMode?"المس النقطة الأولى على المجسم ثم النقطة الثانية.":"تم إيقاف وضع القياس."});$("cadClearMeasureBtn").addEventListener("click",clearMeasure);$("cadExportBomBtn").addEventListener("click",exportBOM);$("cadExportProjectBtn").addEventListener("click",exportProject);
+    $("cadDownloadSourceBtn").addEventListener("click",downloadSource);$("cadExportObjBtn").addEventListener("click",exportOBJ);$("cadExportGlbBtn").addEventListener("click",exportGLB);$("cadMeasureModeBtn").addEventListener("click",()=>{measureMode=!measureMode;measurePoints=[];$("cadMeasureModeBtn").textContent=measureMode?"إلغاء وضع القياس":"قياس بين نقطتين";$("cadSelectedMeasure").textContent=measureMode?"المس النقطة الأولى على المجسم ثم النقطة الثانية.":"تم إيقاف وضع القياس."});$("cadClearMeasureBtn").addEventListener("click",clearMeasure);$("cadExportBomBtn").addEventListener("click",exportBOM);$("cadExportProjectBtn").addEventListener("click",exportProject);
     $("cadFitBtn").addEventListener("click",()=>{if(!importedRoot)return;const d=dimensions(importedRoot),api=window.Naseej3D;api.objectCenter.copy(d.center);api.maxDim=Math.max(d.x,d.y,d.z,300);api.renderView(api.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});});
     $("cadExplodeRange").addEventListener("input",event=>applyExplode(event.target.value));
     $("cadResetExplodeBtn").addEventListener("click",()=>{$("cadExplodeRange").value="0";applyExplode(0);});
