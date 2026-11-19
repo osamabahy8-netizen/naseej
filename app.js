@@ -943,13 +943,13 @@
     toast("تمت إعادة الخطوة");
   }
   function modelProjectSnapshot() {
-    return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
+    return {id:uid(),name:modelProjectName,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,cameraPitch:modelCameraPitch,cameraPanX:modelCameraPanX,cameraPanY:modelCameraPanY,zoom:modelZoom,updatedAt:new Date().toISOString()};
   }
   function projectModelSave() {
     const name=$("modelName").value.trim()||"تصميم جديد";
     modelProjectName=name;
     const index=data.modelProjects.findIndex(p=>p.id===window.activeModelProjectId);
-    if(index>=0) data.modelProjects[index]={...data.modelProjects[index],name,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,updatedAt:new Date().toISOString()};
+    if(index>=0) data.modelProjects[index]={...data.modelProjects[index],name,objects:modelObjects.map(o=>({...o})),cameraAngle:modelCameraAngle,cameraPitch:modelCameraPitch,cameraPanX:modelCameraPanX,cameraPanY:modelCameraPanY,zoom:modelZoom,updatedAt:new Date().toISOString()};
     else { const p=modelProjectSnapshot(); data.modelProjects.push(p); window.activeModelProjectId=p.id; }
     save(); renderModelProjectOptions(); toast("تم حفظ مشروع الرسم ثلاثي الأبعاد");
   }
@@ -962,8 +962,8 @@
   function modelProjectLoad() {
     const p=data.modelProjects.find(item=>item.id===$("savedModelProjects").value);
     if(!p){toast("اختار مشروع محفوظ الأول");return;}
-    modelHistoryPush();modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number(p.cameraAngle)||35;window.activeModelProjectId=p.id;
-    $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();toast("تم فتح مشروع الرسم");
+    modelHistoryPush();modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number.isFinite(Number(p.cameraAngle))?Number(p.cameraAngle):35;modelCameraPitch=Number.isFinite(Number(p.cameraPitch))?Math.max(5,Math.min(85,Number(p.cameraPitch))):24;modelCameraPanX=Number.isFinite(Number(p.cameraPanX))?Number(p.cameraPanX):0;modelCameraPanY=Number.isFinite(Number(p.cameraPanY))?Number(p.cameraPanY):0;modelZoom=Number.isFinite(Number(p.zoom))?Math.max(.35,Math.min(5,Number(p.zoom))):1;window.activeModelProjectId=p.id;
+    $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();toast("تم فتح المشروع بنفس زاوية الكاميرا والتكبير ومركز العرض المحفوظ");
   }
   function modelProjectAddObject() {
     const type=$("modelPrimitive").value;
