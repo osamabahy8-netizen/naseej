@@ -1387,6 +1387,13 @@
   }
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
+    const canvas=document.getElementById("model3DCanvas");
+    if(window.Naseej3D&&window.Naseej3D.available&&canvas){
+      root.style.display="none";
+      window.Naseej3D.render({objects:modelObjects,angle:modelCameraAngle,pitch:modelCameraPitch,panX:modelCameraPanX,panY:modelCameraPanY,zoom:modelZoom,selectedId:selectedModelObjectId,explodedView:modelExplodedView,explodeOffsets:modelExplodeOffsets,assemblyGuideOn:modelAssemblyGuideOn,assemblyStep:modelAssemblyStep});
+      return;
+    }
+    root.style.display="";
     root.innerHTML="";
     root.setAttribute("shape-rendering","geometricPrecision");
     root.setAttribute("text-rendering","geometricPrecision");
@@ -1684,7 +1691,14 @@
   }
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
-    const drawing=$("modelDrawing");
+    const svgDrawing=$("modelDrawing");
+    const stage=svgDrawing.closest(".model-stage");
+    const canvas=document.createElement("canvas");canvas.id="model3DCanvas";canvas.setAttribute("aria-label","مرسم نسيج ثلاثي الأبعاد حقيقي");
+    canvas.style.cssText="position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;";
+    stage.appendChild(canvas);
+    const webglReady=!!(window.Naseej3D&&window.Naseej3D.init(canvas));
+    if(webglReady)svgDrawing.style.display="none";else canvas.remove();
+    const drawing=webglReady?canvas:svgDrawing;
     const activePointers=new Map();
     let pinchStartDistance=0,pinchStartZoom=1,pinchStartCenter=null,pinchStartPan=null;
     let cameraPanStart=null;
@@ -1710,7 +1724,7 @@
         cameraPanStart={x:event.clientX,y:event.clientY,panX:modelCameraPanX,panY:modelCameraPanY};
         event.preventDefault();return;
       }
-      const face=event.target.closest&&event.target.closest("[data-object-id]");
+      const face=(window.Naseej3D&&window.Naseej3D.available?window.Naseej3D.pickTarget(event,drawing):null)||(event.target.closest&&event.target.closest("[data-object-id]"));
       if(face&&modelExplodedView&&modelExplodeMoveMode){modelHistoryPush();const id=face.getAttribute("data-object-id");selectedModelObjectId=id;const extra=modelExplodeOffsets[id]||{x:0,y:0,z:0};partDrag={id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:extra.x,originY:extra.y,originZ:extra.z,scale:modelDrawingFitScale(),angle:modelCameraAngle,viewOnly:true};orbitStart=null;orbitMoved=false;renderModelObjectEditor();event.preventDefault();return;}
       if(face&&!modelExplodedView){
         const object=modelObjects.find(o=>o.id===face.getAttribute("data-object-id"));
@@ -1799,7 +1813,7 @@
     drawing.addEventListener("dblclick",()=>{modelZoom=1;renderModelDrawing();});
     drawing.addEventListener("click",event=>{
       if(orbitMoved){orbitMoved=false;return;}
-      const face=event.target.closest&&event.target.closest("[data-object-id]");
+      const face=(window.Naseej3D&&window.Naseej3D.available?window.Naseej3D.pickTarget(event,drawing):null)||(event.target.closest&&event.target.closest("[data-object-id]"));
       if(!face)return;
       selectedModelObjectId=face.getAttribute("data-object-id");renderModelDrawing();renderModelObjectEditor();
     });
