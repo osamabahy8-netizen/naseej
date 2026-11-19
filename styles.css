@@ -183,3 +183,45 @@
 #model3DCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 #model3DCanvas:active{cursor:grabbing}
 @media(max-width:850px){.model-stage{min-height:380px}}
+
+/* NASEEJ 3D engineering cockpit */
+.model-layout{grid-template-columns:minmax(220px,270px) minmax(0,1fr) minmax(245px,300px);gap:10px;align-items:start}
+.model-tools,.model-inspector{min-width:0;max-height:calc(100dvh - 150px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.model-tools{position:sticky;top:10px}
+.model-inspector{position:sticky;top:10px;padding:14px;background:linear-gradient(180deg,#0b1727,#08111e);border:1px solid #284666}
+.model-inspector-heading{position:sticky;top:-14px;z-index:3;margin:-14px -14px 12px;padding:14px;background:#0b1727;border-bottom:1px solid #294563}
+.model-inspector-heading h3{margin:4px 0 0;font-size:16px;color:#e5f3ff}
+.model-inspector #modelObjectEditor{display:block}
+.model-inspector #modelObjectEditor[hidden]{display:none}
+.model-inspector #modelDimensionSummary{margin:0 0 12px;padding:10px;font-size:12px}
+.model-inspector .model-cut-list-panel{margin-top:12px;padding:10px}
+.model-inspector .model-cut-list-panel h4{margin-top:0}
+.model-stage-panel{min-width:0;display:flex;flex-direction:column;gap:10px}
+.model-stage{min-height:clamp(420px,62vh,820px);border-radius:12px}
+.model-stage-panel>.preview-title{position:sticky;top:0;z-index:2;background:#091625;padding:10px 12px;border:1px solid #294563;border-radius:10px}
+.model-stage-panel>.preview-hint{font-size:11px;line-height:1.5;margin:0}
+.model-stage-panel .model-zoom-controls{gap:6px;align-items:center}
+.model-stage-panel .model-camera-help{font-size:11px}
+.model-tools h3,.model-library-panel h4{color:#9bd6ff}
+.model-tools .model-library-panel{border:1px solid #294563;border-radius:10px;padding:10px;background:#091625}
+.model-inspector input,.model-inspector select,.model-inspector textarea{font-size:12px}
+.model-inspector .model-dimension-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.model-view .design-heading{margin-bottom:10px}
+@media(max-width:1100px) and (orientation:landscape){
+ .model-layout{grid-template-columns:174px minmax(270px,1fr) 190px;gap:7px}
+ .model-tools,.model-inspector{max-height:calc(100dvh - 105px);padding:9px}
+ .model-stage{min-height:calc(100dvh - 235px);height:calc(100dvh - 235px)}
+ .model-inspector-heading{margin:-9px -9px 9px;padding:9px}
+ .model-tools label,.model-inspector label{font-size:10px}
+ .model-tools input,.model-tools select,.model-inspector input,.model-inspector select,.model-inspector textarea{padding:7px;font-size:11px}
+ .model-tools .catalog-footnote,.model-inspector .catalog-footnote{font-size:9px}
+ .model-stage-panel>.preview-hint{display:none}
+ .model-stage-panel>.preview-title{padding:7px}
+ .model-stage-panel .model-zoom-controls .button{padding:6px 8px;font-size:10px}
+}
+@media(max-width:850px) and (orientation:portrait){
+ .model-layout{grid-template-columns:1fr}
+ .model-tools,.model-inspector{position:static;max-height:none;overflow:visible}
+ .model-stage{min-height:52vh}
+}
+@media(min-width:1101px){.model-stage{min-height:min(68vh,850px)}}
