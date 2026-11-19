@@ -13,6 +13,7 @@
   <title>نسيج | شبكة الأفكار والمشروعات</title>
   <link rel="stylesheet" href="styles.css?v=cockpit-20261119">
   <link rel="stylesheet" href="engineering-library.css?v=library-20261119b">
+  <link rel="stylesheet" href="cad-importer.css?v=cad-import-20261119a">
 </head>
 <body>
   <header class="topbar">
@@ -207,6 +208,16 @@
           <div class="model-dimension-grid"><label><input type="checkbox" id="standAddWheels"> إضافة 4 عجلات</label><label><input type="checkbox" id="standAddHooks"> إضافة خطافات</label><label><input type="checkbox" id="standAddHolder"> إضافة حامل أكريليك</label></div>
           <button type="button" id="addStandModelTemplateBtn" class="button button-primary">＋ إدخال الموديل إلى 3D</button>
         </section>
+        <section class="cad-import-panel">
+          <h4>استيراد ملف هندسي أصلي</h4>
+          <p class="catalog-footnote">استورد STEP / STP أو IGES / IGS أو BREP. تتم المعالجة داخل المتصفح، وتُعرض الأجزاء في شجرة مستقلة عن أجسام الرسم المعتادة.</p>
+          <label class="button button-primary cad-file-label" for="cadImportInput">＋ اختيار ملف CAD من الجهاز</label>
+          <input id="cadImportInput" type="file" accept=".step,.stp,.iges,.igs,.brep,model/step,application/step" hidden>
+          <div id="cadImportStatus" class="cad-import-status" role="status" aria-live="polite">لم يتم استيراد ملف بعد.</div>
+          <div class="cad-import-actions"><button type="button" id="cadFitBtn" class="button button-quiet" disabled>ملاءمة المجسم</button><button type="button" id="cadClearBtn" class="button button-quiet" disabled>إزالة الملف المستورد</button></div>
+          <div id="cadModelInfo" class="cad-model-info"></div>
+          <div id="cadAssemblyTree" class="cad-assembly-tree"><span class="catalog-footnote">شجرة الأجزاء ستظهر هنا بعد الاستيراد.</span></div>
+        </section>
         <label for="modelPrimitive">نوع الجسم</label>
         <select id="modelPrimitive"><option value="box">صندوق / كتلة</option><option value="plate">لوح / صاج</option><option value="beam">عارضة / ماسورة مستطيلة</option><option value="cylinder">أسطوانة</option></select>
         <button type="button" id="addModelObjectBtn" class="button button-primary">＋ إضافة جسم للرسم</button>
@@ -295,5 +306,7 @@
   <script src="model3d.js?v=vehicle-alignment-20261119d"></script>
   <script src="app.js?v=vehicle-isolation-20261119d"></script>
   <script src="engineering-library.js?v=library-20261119b"></script>
+  <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.js"></script>
+  <script src="cad-importer.js?v=cad-import-20261119a"></script>
 </body>
 </html>
