@@ -176,3 +176,10 @@
 .model-stage-panel{min-width:0}
 .model-dimension-summary{border-color:#28527a;background:linear-gradient(110deg,#0c2034,#102b45);color:#d8ecff}
 @media(max-width:850px){#modelDrawing{min-height:380px}}
+
+
+/* True WebGL model viewport */
+.model-stage{position:relative;min-height:480px}
+#model3DCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
+#model3DCanvas:active{cursor:grabbing}
+@media(max-width:850px){.model-stage{min-height:380px}}
