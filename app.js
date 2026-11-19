@@ -1389,11 +1389,11 @@
     const root=$("modelDrawing");if(!root)return;
     const canvas=document.getElementById("model3DCanvas");
     if(window.Naseej3D&&window.Naseej3D.available&&canvas){
-      root.style.display="none";
+      root.style.display="";root.style.opacity="0";
       try{
         window.Naseej3D.render({objects:modelObjects,angle:modelCameraAngle,pitch:modelCameraPitch,panX:modelCameraPanX,panY:modelCameraPanY,zoom:modelZoom,selectedId:selectedModelObjectId,explodedView:modelExplodedView,explodeOffsets:modelExplodeOffsets,assemblyGuideOn:modelAssemblyGuideOn,assemblyStep:modelAssemblyStep});
         return;
-      }catch(error){console.warn("3D viewport failed; switching to the safe drawing view.",error);window.Naseej3D.available=false;canvas.style.display="none";root.style.display="";}
+      }catch(error){console.warn("3D viewport failed; switching to the safe drawing view.",error);window.Naseej3D.available=false;canvas.style.display="none";root.style.display="";root.style.opacity="1";}
     }
     root.style.display="";
     root.innerHTML="";
@@ -1696,11 +1696,11 @@
     const svgDrawing=$("modelDrawing");
     const stage=svgDrawing.closest(".model-stage");
     const canvas=document.createElement("canvas");canvas.id="model3DCanvas";canvas.setAttribute("aria-label","مرسم نسيج ثلاثي الأبعاد حقيقي");
-    canvas.style.cssText="position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;";
+    canvas.style.cssText="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:none;";
     stage.appendChild(canvas);
     const webglReady=!!(window.Naseej3D&&window.Naseej3D.init(canvas));
-    if(webglReady)svgDrawing.style.display="none";else canvas.remove();
-    const drawing=webglReady?canvas:svgDrawing;
+    if(webglReady)svgDrawing.style.opacity="0";else canvas.remove();
+    const drawing=svgDrawing;
     const activePointers=new Map();
     let pinchStartDistance=0,pinchStartZoom=1,pinchStartCenter=null,pinchStartPan=null;
     let cameraPanStart=null;
