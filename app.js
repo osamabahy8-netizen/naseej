@@ -1760,8 +1760,22 @@
         }else{cameraPanStart=null;orbitStart={x:event.clientX,y:event.clientY,angle:modelCameraAngle,pitch:modelCameraPitch};}
       }
     });
-    let modelRenderFrame=0;
-    const scheduleModelDrawingRender=()=>{if(modelRenderFrame)return;modelRenderFrame=requestAnimationFrame(()=>{modelRenderFrame=0;renderModelDrawing();});};
+    let modelRenderFrame=0,modelRenderMode="view";
+    const renderModelCameraOnly=()=>{
+      const canvas=document.getElementById("model3DCanvas");
+      if(window.Naseej3D&&window.Naseej3D.available&&canvas){
+        window.Naseej3D.renderView({angle:modelCameraAngle,pitch:modelCameraPitch,panX:modelCameraPanX,panY:modelCameraPanY,zoom:modelZoom});
+      }else renderModelDrawing();
+    };
+    const scheduleModelDrawingRender=(mode="view")=>{
+      if(mode==="full")modelRenderMode="full";
+      if(modelRenderFrame)return;
+      modelRenderFrame=requestAnimationFrame(()=>{
+        modelRenderFrame=0;
+        const full=modelRenderMode==="full";modelRenderMode="view";
+        if(full)renderModelDrawing();else renderModelCameraOnly();
+      });
+    };
     drawing.addEventListener("pointermove",event=>{
       if(!activePointers.has(event.pointerId))return;
       activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
@@ -1775,7 +1789,7 @@
         }
         event.preventDefault();return;
       }
-      if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,angle=partDrag.angle*Math.PI/180,pitch=modelCameraPitch*Math.PI/180,A=Math.cos(angle),B=-Math.sin(angle),C=(Math.cos(angle)+Math.sin(angle))*.707*Math.sin(pitch),D=(-Math.sin(angle)+Math.cos(angle))*.707*Math.sin(pitch),det=A*D-B*C||.001,dxWorld=(D*dxScreen-B*dyScreen)/(det*partDrag.scale),dzWorld=(-C*dxScreen+A*dyScreen)/(det*partDrag.scale);modelExplodeOffsets[partDrag.id]={x:partDrag.originX+dxWorld,y:partDrag.originY,z:partDrag.originZ+dzWorld};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;scheduleModelDrawingRender();event.preventDefault();return;}
+      if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,angle=partDrag.angle*Math.PI/180,pitch=modelCameraPitch*Math.PI/180,A=Math.cos(angle),B=-Math.sin(angle),C=(Math.cos(angle)+Math.sin(angle))*.707*Math.sin(pitch),D=(-Math.sin(angle)+Math.cos(angle))*.707*Math.sin(pitch),det=A*D-B*C||.001,dxWorld=(D*dxScreen-B*dyScreen)/(det*partDrag.scale),dzWorld=(-C*dxScreen+A*dyScreen)/(det*partDrag.scale);modelExplodeOffsets[partDrag.id]={x:partDrag.originX+dxWorld,y:partDrag.originY,z:partDrag.originZ+dzWorld};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;scheduleModelDrawingRender("full");event.preventDefault();return;}
       if(partDrag&&partDrag.pointerId===event.pointerId){
         const object=modelObjects.find(o=>o.id===partDrag.id);if(!object)return;
         const rect=drawing.getBoundingClientRect();
@@ -1821,10 +1835,10 @@
     drawing.addEventListener("contextmenu",event=>event.preventDefault());
     drawing.addEventListener("wheel",event=>{
       event.preventDefault();
-      modelZoom=Math.max(.45,Math.min(3.5,modelZoom*(event.deltaY<0?1.12:.89)));
-      renderModelDrawing();
+      modelZoom=Math.max(.35,Math.min(5,modelZoom*(event.deltaY<0?1.12:.89)));
+      renderModelCameraOnly();
     },{passive:false});
-    drawing.addEventListener("dblclick",()=>{modelZoom=1;renderModelDrawing();});
+    drawing.addEventListener("dblclick",()=>{modelZoom=1;renderModelCameraOnly();});
     drawing.addEventListener("click",event=>{
       if(orbitMoved){orbitMoved=false;return;}
       const face=(window.Naseej3D&&window.Naseej3D.available?window.Naseej3D.pickTarget(event,drawing):null)||(event.target.closest&&event.target.closest("[data-object-id]"));
@@ -1833,8 +1847,8 @@
     });
     document.querySelectorAll("[data-model-zoom]").forEach(button=>button.addEventListener("click",()=>{
       const action=button.dataset.modelZoom;
-      modelZoom=action==="in"?Math.min(4.5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
-      renderModelDrawing();
+      modelZoom=action==="in"?Math.min(5,modelZoom*1.25):action==="out"?Math.max(.35,modelZoom/1.25):1;
+      renderModelCameraOnly();
     }));
     $("modelUndoBtn").addEventListener("click",undoModelAction);
     $("modelRedoBtn").addEventListener("click",redoModelAction);
