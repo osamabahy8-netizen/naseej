@@ -1681,6 +1681,11 @@
         pinchStartPan={x:modelCameraPanX,y:modelCameraPanY};orbitMoved=true;
         event.preventDefault();return;
       }
+      if(activePointers.size===1&&(event.button===2||event.button===1||event.shiftKey)){
+        partDrag=null;orbitStart=null;orbitMoved=false;
+        cameraPanStart={x:event.clientX,y:event.clientY,panX:modelCameraPanX,panY:modelCameraPanY};
+        event.preventDefault();return;
+      }
       const face=event.target.closest&&event.target.closest("[data-object-id]");
       if(face&&modelExplodedView&&modelExplodeMoveMode){modelHistoryPush();const id=face.getAttribute("data-object-id");selectedModelObjectId=id;const extra=modelExplodeOffsets[id]||{x:0,y:0,z:0};partDrag={id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:extra.x,originY:extra.y,originZ:extra.z,scale:modelDrawingFitScale(),angle:modelCameraAngle,viewOnly:true};orbitStart=null;orbitMoved=false;renderModelObjectEditor();event.preventDefault();return;}
       if(face&&!modelExplodedView){
@@ -1754,22 +1759,6 @@
     drawing.addEventListener("pointerup",endOrbit);
     drawing.addEventListener("pointercancel",endOrbit);
     drawing.addEventListener("contextmenu",event=>event.preventDefault());
-    let touchPinchStart=0,touchZoomStart=1;
-    drawing.addEventListener("touchstart",event=>{
-      if(event.touches.length===2){
-        touchPinchStart=Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
-        touchZoomStart=modelZoom;orbitStart=null;orbitMoved=true;event.preventDefault();
-      }
-    },{passive:false});
-    drawing.addEventListener("touchmove",event=>{
-      if(event.touches.length!==2||!touchPinchStart)return;
-      const distance=Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
-      modelZoom=Math.max(.35,Math.min(5,touchZoomStart*distance/touchPinchStart));
-      renderModelDrawing();event.preventDefault();
-    },{passive:false});
-    const endTouchPinch=()=>{touchPinchStart=0;};
-    drawing.addEventListener("touchend",endTouchPinch,{passive:true});
-    drawing.addEventListener("touchcancel",endTouchPinch,{passive:true});
     drawing.addEventListener("wheel",event=>{
       event.preventDefault();
       modelZoom=Math.max(.45,Math.min(3.5,modelZoom*(event.deltaY<0?1.12:.89)));
