@@ -1716,16 +1716,17 @@
         }
         event.preventDefault();return;
       }
-      if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,u=dxScreen/(.62*partDrag.scale),v=dyScreen/(.34*partDrag.scale),angle=partDrag.angle*Math.PI/180;modelExplodeOffsets[partDrag.id]={x:partDrag.originX+Math.cos(angle)*u+Math.sin(angle)*v,y:partDrag.originY,z:partDrag.originZ-Math.sin(angle)*u+Math.cos(angle)*v};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;renderModelDrawing();event.preventDefault();return;}
+      if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,angle=partDrag.angle*Math.PI/180,pitch=modelCameraPitch*Math.PI/180,A=Math.cos(angle),B=-Math.sin(angle),C=(Math.cos(angle)+Math.sin(angle))*.707*Math.sin(pitch),D=(-Math.sin(angle)+Math.cos(angle))*.707*Math.sin(pitch),det=A*D-B*C||.001,dxWorld=(D*dxScreen-B*dyScreen)/(det*partDrag.scale),dzWorld=(-C*dxScreen+A*dyScreen)/(det*partDrag.scale);modelExplodeOffsets[partDrag.id]={x:partDrag.originX+dxWorld,y:partDrag.originY,z:partDrag.originZ+dzWorld};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;renderModelDrawing();event.preventDefault();return;}
       if(partDrag&&partDrag.pointerId===event.pointerId){
         const object=modelObjects.find(o=>o.id===partDrag.id);if(!object)return;
         const rect=drawing.getBoundingClientRect();
         const dxScreen=(event.clientX-partDrag.startX)*900/rect.width;
         const dyScreen=(event.clientY-partDrag.startY)*620/rect.height;
-        const u=dxScreen/(.62*partDrag.scale),v=dyScreen/(.34*partDrag.scale);
-        const angle=partDrag.angle*Math.PI/180;
-        object.x=partDrag.originX+Math.cos(angle)*u+Math.sin(angle)*v;
-        object.z=partDrag.originZ-Math.sin(angle)*u+Math.cos(angle)*v;
+        const angle=partDrag.angle*Math.PI/180,pitch=modelCameraPitch*Math.PI/180;
+        const A=Math.cos(angle),B=-Math.sin(angle),C=(Math.cos(angle)+Math.sin(angle))*.707*Math.sin(pitch),D=(-Math.sin(angle)+Math.cos(angle))*.707*Math.sin(pitch);
+        const det=A*D-B*C||.001,dxWorld=(D*dxScreen-B*dyScreen)/(det*partDrag.scale),dzWorld=(-C*dxScreen+A*dyScreen)/(det*partDrag.scale);
+        object.x=partDrag.originX+dxWorld;
+        object.z=partDrag.originZ+dzWorld;
         if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;
         $("modelPosX").value=Math.round(object.x);$("modelPosZ").value=Math.round(object.z);
         renderModelDrawing();event.preventDefault();return;
