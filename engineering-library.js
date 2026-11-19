@@ -31,6 +31,17 @@
       const formats=document.createElement("div");formats.className="engineering-source-formats";
       s.formats.forEach(f=>{const chip=document.createElement("span");chip.textContent=f;formats.append(chip);});
       const evidence=document.createElement("p");evidence.className="engineering-source-evidence";evidence.textContent=s.evidence;
+      if(Array.isArray(s.models)&&s.models.length){
+        const modelWrap=document.createElement("div");modelWrap.className="engineering-model-list";
+        const modelTitle=document.createElement("strong");modelTitle.textContent="موديلات منشورة من المصنع — الأبعاد بالملليمتر";modelWrap.append(modelTitle);
+        s.models.forEach(m=>{
+          const item=document.createElement("div");item.className="engineering-model-item";
+          const name=document.createElement("span");name.textContent=m.code+" — "+m.name;
+          const dims=document.createElement("span");dims.textContent=m.dimensions_mm.join(" × ")+" مم";
+          item.append(name,dims);modelWrap.append(item);
+        });
+        card.append(modelWrap);
+      }
       const link=document.createElement("a");link.className="button button-primary engineering-source-link";link.href=s.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent=s.access==="request"?"فتح المصنع وطلب الملفات":"فتح المصدر الأصلي";
       const foot=document.createElement("small");foot.textContent="تم التحقق من صفحة المصدر: "+s.verified;
       card.append(top,title,category,products,formats,evidence,link,foot);grid.append(card);
