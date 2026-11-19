@@ -2,7 +2,7 @@
 (function(){
   const $=id=>document.getElementById(id);
   const DB_NAME="naseej-cad-projects",DB_VERSION=1,STORE="projects";
-  let parserPromise=null,importedRoot=null,sourceFile=null,selectedNode=null,treeNodes=[],activeProject=null,explodeAmount=0,assemblyCenter=null,assemblySize=null;
+  let parserPromise=null,importedRoot=null,sourceFile=null,selectedNode=null,treeNodes=[],activeProject=null,explodeAmount=0,assemblyCenter=null,assemblySize=null,selectedMeshes=[],measureMode=false,measurePoints=[],measureObjects=[];
   const status=(message,state="")=>{const el=$("cadImportStatus");if(el){el.textContent=message;el.dataset.state=state;}};
   const dbOpen=()=>new Promise((resolve,reject)=>{
     if(!("indexedDB" in window)){reject(new Error("هذا المتصفح لا يدعم قاعدة بيانات الملفات المحلية."));return;}
@@ -38,12 +38,17 @@
   function mm(n){return Number.isFinite(n)?(Math.round(n*100)/100).toLocaleString("en-US")+" مم":"—";}
   function boxFor(object){object.updateWorldMatrix(true,true);return new THREE.Box3().setFromObject(object);}
   function dimensions(object){const box=boxFor(object),size=box.getSize(new THREE.Vector3());return {x:size.x,y:size.y,z:size.z,center:box.getCenter(new THREE.Vector3())};}
+  function setHighlight(meshes){
+    selectedMeshes.forEach(mesh=>{if(!mesh.material)return;const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];mats.forEach(mat=>{if(mat.emissive){mat.emissive.set(0x000000);mat.emissiveIntensity=0;}});});
+    selectedMeshes=meshes||[];
+    selectedMeshes.forEach(mesh=>{if(!mesh.material)return;const mats=Array.isArray(mesh.material)?mesh.material:[mesh.material];mats.forEach(mat=>{if(mat.emissive){mat.emissive.set(0x174d70);mat.emissiveIntensity=.8;}});});
+  }
   function setMeasure(record){
     const d=dimensions(record.group),el=$("cadSelectedMeasure");
     el.textContent=record.name+" — العرض X: "+mm(d.x)+" | الارتفاع Y: "+mm(d.y)+" | العمق Z: "+mm(d.z)+" | مركز الجزء: "+mm(d.center.x)+", "+mm(d.center.y)+", "+mm(d.center.z);
   }
   function selectRecord(record,button,host){
-    selectedNode=record.id;host.querySelectorAll(".cad-tree-node").forEach(el=>el.classList.remove("active"));button.classList.add("active");setMeasure(record);
+    selectedNode=record.id;const chosen=[];record.group.traverse(node=>{if(node.isMesh)chosen.push(node);});setHighlight(chosen);host.querySelectorAll(".cad-tree-node").forEach(el=>el.classList.remove("active"));button.classList.add("active");setMeasure(record);
     const d=dimensions(record.group),api=window.Naseej3D;api.objectCenter.copy(d.center);api.maxDim=Math.max(d.x,d.y,d.z,80);api.renderView(api.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});
   }
   function renderTree(records,host,depth=0){
@@ -57,7 +62,7 @@
       if(record.children.length){const children=document.createElement("div");children.className="cad-tree-children";host.appendChild(children);renderTree(record.children,children,depth+1);}
     });
   }
-  function setActionState(on){["cadFitBtn","cadSaveProjectBtn","cadDownloadSourceBtn","cadExportBomBtn","cadExportProjectBtn","cadClearBtn","cadExplodeRange","cadResetExplodeBtn"].forEach(id=>{const el=$(id);if(el)el.disabled=!on;});}
+  function setActionState(on){["cadFitBtn","cadSaveProjectBtn","cadDownloadSourceBtn","cadExportBomBtn","cadExportProjectBtn","cadExportObjBtn","cadMeasureModeBtn","cadClearMeasureBtn","cadClearBtn","cadExplodeRange","cadResetExplodeBtn"].forEach(id=>{const el=$(id);if(el)el.disabled=!on;});}
   function applyExplode(amount){
     if(!importedRoot)return;explodeAmount=Math.max(0,Math.min(100,Number(amount)||0));
     const rootBox=boxFor(importedRoot),center=assemblyCenter||rootBox.getCenter(new THREE.Vector3());
@@ -73,6 +78,67 @@
     const value=$("cadExplodeValue");if(value)value.textContent=explodeAmount+"%";
     if(window.Naseej3D&&window.Naseej3D.renderView)window.Naseej3D.renderView(window.Naseej3D.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});
     if(selectedNode){const record=treeNodes.find(r=>r.id===selectedNode);if(record)setMeasure(record);}
+  }
+  function exportOBJ(){
+    if(!importedRoot)return;
+    importedRoot.updateMatrixWorld(true);
+    let output="# Naseej CAD export - millimeters\\n",vertexOffset=1;
+    importedRoot.traverse(mesh=>{
+      if(!mesh.isMesh||!mesh.visible)return;
+      const geometry=mesh.geometry,index=geometry.index,position=geometry.attributes.position;
+      if(!position)return;
+      output+="o "+String(mesh.name||"CAD_Part").replace(/[^\\w.-]+/g,"_")+"\\n";
+      const matrix=mesh.matrixWorld;
+      for(let i=0;i<position.count;i++){const v=new THREE.Vector3().fromBufferAttribute(position,i).applyMatrix4(matrix);output+="v "+v.x.toFixed(5)+" "+v.y.toFixed(5)+" "+v.z.toFixed(5)+"\\n";}
+      if(index){for(let i=0;i<index.count;i+=3)output+="f "+(vertexOffset+index.getX(i))+" "+(vertexOffset+index.getX(i+1))+" "+(vertexOffset+index.getX(i+2))+"\\n";}
+      else{for(let i=0;i<position.count;i+=3)output+="f "+(vertexOffset+i)+" "+(vertexOffset+i+1)+" "+(vertexOffset+i+2)+"\\n";}
+      vertexOffset+=position.count;
+    });
+    downloadBlob(new Blob([output],{type:"text/plain;charset=utf-8"}),safeName(activeProject&&activeProject.name)+".obj");
+  }
+  function clearMeasure(){
+    measureObjects.forEach(object=>{if(object.parent)object.parent.remove(object);object.geometry&&object.geometry.dispose();if(object.material)object.material.dispose();});
+    measureObjects=[];measurePoints=[];
+    $("cadSelectedMeasure").textContent="اختر جزءًا من الشجرة لعرض أبعاده.";
+    $("cadClearMeasureBtn").disabled=!importedRoot;
+  }
+  function showDistance(a,b){
+    clearMeasure();
+    const geometry=new THREE.BufferGeometry().setFromPoints([a,b]),line=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0xffc56e,depthTest:false}));
+    line.renderOrder=999;window.Naseej3D.scene.add(line);measureObjects.push(line);
+    [a,b].forEach(point=>{const marker=new THREE.Mesh(new THREE.SphereGeometry(Math.max((assemblySize||new THREE.Vector3(100,100,100)).length()*.008,2),12,8),new THREE.MeshBasicMaterial({color:0xffc56e,depthTest:false}));marker.position.copy(point);marker.renderOrder=1000;window.Naseej3D.scene.add(marker);measureObjects.push(marker);});
+    const distance=a.distanceTo(b);
+    $("cadSelectedMeasure").textContent="قياس المسافة بين النقطتين: "+mm(distance)+" | ΔX: "+mm(Math.abs(a.x-b.x))+" | ΔY: "+mm(Math.abs(a.y-b.y))+" | ΔZ: "+mm(Math.abs(a.z-b.z));
+    if(window.Naseej3D.lastState)window.Naseej3D.renderView(window.Naseej3D.lastState);
+  }
+  function pickExternal(event,canvas){
+    const api=window.Naseej3D;if(!api||!api.camera||!api.raycaster||!api.externalMeshes.length)return null;
+    const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return null;
+    api.pointer.set(((event.clientX-rect.left)/rect.width)*2-1,-((event.clientY-rect.top)/rect.height)*2+1);
+    api.raycaster.setFromCamera(api.pointer,api.camera);
+    return api.raycaster.intersectObjects(api.externalMeshes,false)[0]||null;
+  }
+  function activateCanvasPicking(){
+    const drawing=$("modelDrawing");if(!drawing||drawing.dataset.cadPicking==="true")return;
+    drawing.dataset.cadPicking="true";
+    let start=null,moved=false;
+    drawing.addEventListener("pointerdown",event=>{start={x:event.clientX,y:event.clientY,id:event.pointerId};moved=false;},true);
+    drawing.addEventListener("pointermove",event=>{if(start&&start.id===event.pointerId&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>7)moved=true;},true);
+    drawing.addEventListener("pointerup",event=>{
+      if(!start||start.id!==event.pointerId)return;
+      const wasMoved=moved;start=null;if(wasMoved||!importedRoot)return;
+      const hit=pickExternal(event,drawing);if(!hit)return;
+      if(measureMode){
+        measurePoints.push(hit.point.clone());
+        if(measurePoints.length===1){$("cadSelectedMeasure").textContent="تم تحديد النقطة الأولى. المس النقطة الثانية على المجسم.";}
+        if(measurePoints.length===2){showDistance(measurePoints[0],measurePoints[1]);measureMode=false;$("cadMeasureModeBtn").textContent="قياس بين نقطتين";}
+        return;
+      }
+      const id=hit.object.userData.cadNodeId,record=treeNodes.find(item=>item.id===id);if(!record)return;
+      selectedNode=id;setHighlight([hit.object]);setMeasure(record);
+      $("cadAssemblyTree").querySelectorAll(".cad-tree-node").forEach(button=>button.classList.toggle("active",button.title===record.name));
+    },true);
+    drawing.addEventListener("pointercancel",()=>{start=null;moved=false;},true);
   }
   function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
   function safeName(name){return String(name||"naseej-cad-project").replace(/[\\/:*?"<>|]+/g,"-").slice(0,90);}
@@ -118,13 +184,13 @@
       const result=parser[method](bytes,{linearUnit:"millimeter",linearDeflectionType:"bounding_box_ratio",linearDeflection:.08,angularDeflection:.35});
       if(!result||!result.success||!result.root||!Array.isArray(result.meshes))throw new Error("تعذر قراءة بنية الملف الهندسية. تحقق من سلامة الملف وصيغته.");
       if(importedRoot)window.Naseej3D.clearExternalModel();
-      treeNodes=[];selectedNode=null;const built=buildNode(result.root,result.meshes);importedRoot=built.group;sourceFile=file;const originalBounds=boxFor(importedRoot);assemblyCenter=originalBounds.getCenter(new THREE.Vector3());assemblySize=originalBounds.getSize(new THREE.Vector3());treeNodes.forEach(record=>{record.baseCenter=boxFor(record.group).getCenter(new THREE.Vector3());});
+      treeNodes=[];selectedNode=null;const built=buildNode(result.root,result.meshes);importedRoot=built.group;sourceFile=file;clearMeasure();setHighlight([]);const originalBounds=boxFor(importedRoot);assemblyCenter=originalBounds.getCenter(new THREE.Vector3());assemblySize=originalBounds.getSize(new THREE.Vector3());treeNodes.forEach(record=>{record.baseCenter=boxFor(record.group).getCenter(new THREE.Vector3());});
       if(!window.Naseej3D.addExternalModel(importedRoot))throw new Error("تعذر إدخال المجسم إلى لوحة 3D.");
       activeProject=options.projectRecord?{id:options.projectRecord.id,name:options.projectRecord.name}:null;
       const d=dimensions(importedRoot),info=$("cadModelInfo");
       info.textContent="الملف: "+file.name+" | الأبعاد الكلية: "+mm(d.x)+" × "+mm(d.y)+" × "+mm(d.z)+" | عدد الأجزاء: "+treeNodes.length+" | الوحدات المعروضة: مم";
       const tree=$("cadAssemblyTree");tree.replaceChildren();renderTree([built.record],tree);
-      setActionState(true);$("cadExplodeRange").value="0";applyExplode(0);
+      setActionState(true);$("cadExplodeRange").value="0";applyExplode(0);activateCanvasPicking();
       if(options.restoring&&options.projectRecord&&options.projectRecord.project&&Number(options.projectRecord.project.explodePercent)>0){$("cadExplodeRange").value=options.projectRecord.project.explodePercent;applyExplode(options.projectRecord.project.explodePercent);}
       status(options.restoring?"تمت استعادة المشروع من ذاكرة هذا الجهاز.":"تم استيراد الملف. احفظه كمشروع للاحتفاظ بنسخة محلية دائمة.","success");
     }catch(error){console.error("CAD project operation failed",error);status("تعذر إكمال العملية: "+(error&&error.message?error.message:String(error)),"error");}
@@ -161,11 +227,11 @@
     const input=$("cadImportInput");if(!input)return;
     input.addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];importFile(file);event.target.value="";});
     $("cadClearBtn").addEventListener("click",clear);$("cadSaveProjectBtn").addEventListener("click",saveProject);$("cadRestoreProjectBtn").addEventListener("click",restoreSelectedProject);
-    $("cadDownloadSourceBtn").addEventListener("click",downloadSource);$("cadExportBomBtn").addEventListener("click",exportBOM);$("cadExportProjectBtn").addEventListener("click",exportProject);
+    $("cadDownloadSourceBtn").addEventListener("click",downloadSource);$("cadExportObjBtn").addEventListener("click",exportOBJ);$("cadMeasureModeBtn").addEventListener("click",()=>{measureMode=!measureMode;measurePoints=[];$("cadMeasureModeBtn").textContent=measureMode?"إلغاء وضع القياس":"قياس بين نقطتين";$("cadSelectedMeasure").textContent=measureMode?"المس النقطة الأولى على المجسم ثم النقطة الثانية.":"تم إيقاف وضع القياس."});$("cadClearMeasureBtn").addEventListener("click",clearMeasure);$("cadExportBomBtn").addEventListener("click",exportBOM);$("cadExportProjectBtn").addEventListener("click",exportProject);
     $("cadFitBtn").addEventListener("click",()=>{if(!importedRoot)return;const d=dimensions(importedRoot),api=window.Naseej3D;api.objectCenter.copy(d.center);api.maxDim=Math.max(d.x,d.y,d.z,300);api.renderView(api.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});});
     $("cadExplodeRange").addEventListener("input",event=>applyExplode(event.target.value));
     $("cadResetExplodeBtn").addEventListener("click",()=>{$("cadExplodeRange").value="0";applyExplode(0);});
-    const wait=()=>{if(window.Naseej3D&&window.Naseej3D.available){offerRestore();return;}setTimeout(wait,350);};setTimeout(wait,350);
+    const wait=()=>{if(window.Naseej3D&&window.Naseej3D.available){activateCanvasPicking();offerRestore();return;}setTimeout(wait,350);};setTimeout(wait,350);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
