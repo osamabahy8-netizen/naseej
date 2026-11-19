@@ -1,5 +1,5 @@
 "use strict";
-const CACHE_NAME = "naseej-shell-v20";
+const CACHE_NAME = "naseej-shell-v21";
 const APP_FILES = [
   "./",
   "./index.html",
