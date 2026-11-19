@@ -135,12 +135,26 @@
     $("cadAssemblyTree").innerHTML='<span class="catalog-footnote">شجرة الأجزاء ستظهر هنا بعد الاستيراد.</span>';$("cadModelInfo").textContent="";$("cadSelectedMeasure").textContent="اختر جزءًا من الشجرة لعرض أبعاده.";
     $("cadExplodeRange").value="0";$("cadExplodeValue").textContent="0%";setActionState(false);status("تمت إزالة الملف من المشهد. النسخة المحفوظة في المشروعات المحلية لم تُحذف.");
   }
+  async function refreshProjectList(){
+    const select=$("cadSavedProjects");if(!select)return [];
+    const records=await dbGetAll();records.sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));
+    select.replaceChildren();
+    if(!records.length){const option=document.createElement("option");option.value="";option.textContent="لا توجد مشروعات محفوظة";select.appendChild(option);}
+    records.forEach(record=>{const option=document.createElement("option");option.value=record.id;option.textContent=record.name+" — "+record.fileName;select.appendChild(option);});
+    $("cadRestoreProjectBtn").disabled=!records.length;
+    return records;
+  }
+  async function restoreSelectedProject(){
+    const id=$("cadSavedProjects").value;if(!id)return;
+    try{const record=await dbGet(id);if(!record){status("لم نعثر على المشروع المحدد.","error");return;}await restoreProject(record);}
+    catch(error){status("تعذرت استعادة المشروع: "+(error.message||error),"error");}
+  }
   async function offerRestore(){
-    try{const records=await dbGetAll();if(!records.length)return;
-      records.sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));
-      const latest=records[0],choice=confirm("يوجد مشروع CAD محفوظ باسم «"+latest.name+"». هل تريد استعادته الآن؟");
+    try{
+      const records=await refreshProjectList();if(!records.length)return;
+      const latest=records[0],choice=confirm("يوجد "+records.length+" مشروع CAD محفوظ. هل تريد استعادة أحدث مشروع: «"+latest.name+"»؟ يمكنك اختيار أي مشروع آخر من القائمة.");
       if(choice)await restoreProject(latest);
-      else status("يوجد "+records.length+" مشروع CAD محفوظ محليًا. استورد ملفًا أو استعد المشروع لاحقًا من هذه الصفحة.");
+      else status("تم العثور على "+records.length+" مشروع CAD محفوظ. اختر المشروع المطلوب من القائمة.");
     }catch(error){status("تعذر فحص المشروعات المحفوظة: "+(error.message||error),"error");}
   }
   function init(){
