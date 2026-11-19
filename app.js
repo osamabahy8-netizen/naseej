@@ -1814,8 +1814,8 @@
       const dx=event.clientX-orbitStart.x,dy=event.clientY-orbitStart.y;
       if(Math.abs(dx)+Math.abs(dy)>3)orbitMoved=true;
       if(orbitMoved){
-        modelCameraAngle=(orbitStart.angle+dx*1.15+360)%360;
-        modelCameraPitch=Math.max(5,Math.min(85,orbitStart.pitch+dy*.85));
+        modelCameraAngle=(orbitStart.angle+dx*1.7+360)%360;
+        modelCameraPitch=Math.max(5,Math.min(85,orbitStart.pitch+dy*1.25));
         $("modelCameraAngle").value=Math.round(modelCameraAngle);
         scheduleModelDrawingRender();
       }
