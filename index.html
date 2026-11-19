@@ -13,7 +13,7 @@
   <title>نسيج | شبكة الأفكار والمشروعات</title>
   <link rel="stylesheet" href="styles.css?v=cockpit-20261119">
   <link rel="stylesheet" href="engineering-library.css?v=library-20261119b">
-  <link rel="stylesheet" href="cad-importer.css?v=cad-import-20261119a">
+  <link rel="stylesheet" href="cad-importer.css?v=cad-project-20261119a">
 </head>
 <body>
   <header class="topbar">
@@ -214,8 +214,22 @@
           <label class="button button-primary cad-file-label" for="cadImportInput">＋ اختيار ملف CAD من الجهاز</label>
           <input id="cadImportInput" type="file" accept=".step,.stp,.iges,.igs,.brep,model/step,application/step" hidden>
           <div id="cadImportStatus" class="cad-import-status" role="status" aria-live="polite">لم يتم استيراد ملف بعد.</div>
-          <div class="cad-import-actions"><button type="button" id="cadFitBtn" class="button button-quiet" disabled>ملاءمة المجسم</button><button type="button" id="cadClearBtn" class="button button-quiet" disabled>إزالة الملف المستورد</button></div>
+          <div class="cad-import-actions">
+            <button type="button" id="cadFitBtn" class="button button-quiet" disabled>ملاءمة المجسم</button>
+            <button type="button" id="cadSaveProjectBtn" class="button button-primary" disabled>حفظ المشروع</button>
+            <button type="button" id="cadDownloadSourceBtn" class="button button-quiet" disabled>تنزيل ملف CAD الأصلي</button>
+            <button type="button" id="cadExportBomBtn" class="button button-quiet" disabled>تصدير جدول الأجزاء</button>
+            <button type="button" id="cadExportProjectBtn" class="button button-quiet" disabled>تصدير بيانات المشروع</button>
+            <button type="button" id="cadClearBtn" class="button button-quiet" disabled>إزالة الملف المستورد</button>
+          </div>
+          <div class="cad-explode-controls">
+            <label for="cadExplodeRange">تفكيك التجميعة</label>
+            <input id="cadExplodeRange" type="range" min="0" max="100" value="0" step="5" disabled>
+            <span id="cadExplodeValue">0%</span>
+            <button type="button" id="cadResetExplodeBtn" class="button button-quiet" disabled>إعادة التجميع</button>
+          </div>
           <div id="cadModelInfo" class="cad-model-info"></div>
+          <div id="cadSelectedMeasure" class="cad-selected-measure">اختر جزءًا من الشجرة لعرض أبعاده.</div>
           <div id="cadAssemblyTree" class="cad-assembly-tree"><span class="catalog-footnote">شجرة الأجزاء ستظهر هنا بعد الاستيراد.</span></div>
         </section>
         <label for="modelPrimitive">نوع الجسم</label>
@@ -307,6 +321,6 @@
   <script src="app.js?v=vehicle-isolation-20261119d"></script>
   <script src="engineering-library.js?v=library-20261119b"></script>
   <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.js"></script>
-  <script src="cad-importer.js?v=cad-import-20261119a"></script>
+  <script src="cad-importer.js?v=cad-project-20261119a"></script>
 </body>
 </html>
