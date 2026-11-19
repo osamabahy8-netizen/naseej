@@ -126,7 +126,7 @@
       else geometry=new THREE.BoxGeometry(w,h,d,1,1,1);
       add(geometry,partMaterial(o.color||"#c49a55",.58,.27),x,y+h/2,z,(Number(o.rx)||0)*Math.PI/180,(Number(o.ry)||0)*Math.PI/180,(Number(o.rz)||0)*Math.PI/180);
     }
-    group.userData.objectId=o.id;return group;
+    group.userData.objectId=o.id;api.root.add(group);return group;
   }
   function render(state){
     if(!api.available||!api.renderer)return false;
