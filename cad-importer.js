@@ -70,7 +70,7 @@
       record.group.position.copy(v);
       record.children.forEach(child=>spread(child,depth+1));
     };
-    treeNodes.filter(r=>!r.parentPath).forEach(r=>spread(r,0));
+    treeNodes.filter(r=>!r.parentPath).forEach(root=>{root.group.position.set(0,0,0);root.children.forEach(child=>spread(child,1));});
     const value=$("cadExplodeValue");if(value)value.textContent=explodeAmount+"%";
     if(window.Naseej3D&&window.Naseej3D.renderView)window.Naseej3D.renderView(window.Naseej3D.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});
     if(selectedNode){const record=treeNodes.find(r=>r.id===selectedNode);if(record)setMeasure(record);}
@@ -98,7 +98,7 @@
     const name=prompt("اسم مشروع نسيج:",activeProject&&activeProject.name||sourceFile.name.replace(/\.[^.]+$/,""));
     if(name===null)return;
     const clean=name.trim();if(!clean){status("اكتب اسمًا للمشروع قبل الحفظ.","error");return;}
-    const id=activeProject&&activeProject.id||uid(),record={id,name:clean,fileName:sourceFile.name,fileType:sourceFile.name.split(".").pop().toLowerCase(),blob:sourceFile,lastModified:sourceFile.lastModified,size:sourceFile.size,savedAt:new Date().toISOString(),project:projectData()};
+    const id=activeProject&&activeProject.id||uid(),details=projectData();details.project.id=id;details.project.name=clean;const record={id,name:clean,fileName:sourceFile.name,fileType:sourceFile.name.split(".").pop().toLowerCase(),blob:sourceFile,lastModified:sourceFile.lastModified,size:sourceFile.size,savedAt:new Date().toISOString(),project:details};
     try{await dbPut(record);activeProject={id,name:clean};status("تم حفظ المشروع وملف CAD الأصلي محليًا على هذا الجهاز. يمكنك إغلاق الصفحة والعودة إليه لاحقًا.","success");}
     catch(error){status("تعذر حفظ المشروع: "+(error.message||error)+" — قد تكون مساحة الجهاز غير كافية.","error");}
   }
