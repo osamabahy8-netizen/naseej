@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "مكتبة المنتجات الهندسية الأصلية",
   "policy": "المصدر يثبت وجود المنتج أو بياناته المنشورة فقط. لا يُعد رابط الكتالوج تصريحًا بإعادة توزيع ملفات الشركة أو استخدامها تجاريًا. راجع شروط كل ملف قبل إدخاله في مشروع تصنيع.",
   "regions": [
@@ -25,6 +25,92 @@
     }
   ],
   "sources": [
+    {
+      "id": "fengyuan-fixtures",
+      "region": "china",
+      "company": "Fengyuan Display — كتالوج موديلات وتجهيزات المحلات",
+      "category": "موديلات فعلية لتجهيز المحلات",
+      "products": [
+        "وحدات حائط شبكية",
+        "جزر عرض أحذية وملابس",
+        "ستاندات ملابس",
+        "ترابيزات عرض",
+        "كاونترات",
+        "منصات عرض"
+      ],
+      "formats": [
+        "كتالوج منتجات",
+        "أكواد موديلات",
+        "أبعاد منشورة",
+        "ملفات CAD/رسومات إنتاج عند الطلب"
+      ],
+      "access": "request",
+      "url": "https://www.fengyuandisplay.com/fixtures/",
+      "evidence": "صفحة المصنع تعرض 84 تصميمًا و107 تكوينات، وتذكر أن الأبعاد اسمية وأن المواصفات النهائية تعتمد في عرض السعر. لا تنشر الصفحة تنزيل STEP/IGES مباشرًا؛ نطلب ملفات CAD ورسومات التجميع من المصنع.",
+      "verified": "2026-11-19",
+      "models": [
+        {
+          "code": "FY-W010",
+          "name": "وحدة حائط شبكية",
+          "dimensions_mm": [
+            1200,
+            390,
+            2400
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        },
+        {
+          "code": "FY-I003",
+          "name": "جزيرة ملابس مزدوجة",
+          "dimensions_mm": [
+            1300,
+            620,
+            1300
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        },
+        {
+          "code": "FY-I008",
+          "name": "ستاند ملابس أربع جهات",
+          "dimensions_mm": [
+            864,
+            864,
+            1530
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        },
+        {
+          "code": "FY-T001",
+          "name": "ترابيزة عرض بسطح خشبي",
+          "dimensions_mm": [
+            2600,
+            600,
+            800
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        },
+        {
+          "code": "FY-W001",
+          "name": "وحدة حائط بقوائم",
+          "dimensions_mm": [
+            1240,
+            495,
+            2600
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        },
+        {
+          "code": "FY-I011",
+          "name": "ماسورة تعليق ملابس منحنية",
+          "dimensions_mm": [
+            956,
+            1008,
+            1150
+          ],
+          "source": "https://www.fengyuandisplay.com/fixtures/"
+        }
+      ]
+    },
     {
       "id": "imei-display",
       "region": "china",
