@@ -2,7 +2,7 @@
 (function(){
   const $=id=>document.getElementById(id);
   const DB_NAME="naseej-cad-projects",DB_VERSION=1,STORE="projects";
-  let parserPromise=null,importedRoot=null,sourceFile=null,selectedNode=null,treeNodes=[],activeProject=null,explodeAmount=0;
+  let parserPromise=null,importedRoot=null,sourceFile=null,selectedNode=null,treeNodes=[],activeProject=null,explodeAmount=0,assemblyCenter=null;
   const status=(message,state="")=>{const el=$("cadImportStatus");if(el){el.textContent=message;el.dataset.state=state;}};
   const dbOpen=()=>new Promise((resolve,reject)=>{
     if(!("indexedDB" in window)){reject(new Error("هذا المتصفح لا يدعم قاعدة بيانات الملفات المحلية."));return;}
@@ -60,17 +60,16 @@
   function setActionState(on){["cadFitBtn","cadSaveProjectBtn","cadDownloadSourceBtn","cadExportBomBtn","cadExportProjectBtn","cadClearBtn","cadExplodeRange","cadResetExplodeBtn"].forEach(id=>{const el=$(id);if(el)el.disabled=!on;});}
   function applyExplode(amount){
     if(!importedRoot)return;explodeAmount=Math.max(0,Math.min(100,Number(amount)||0));
-    const rootBox=boxFor(importedRoot),center=rootBox.getCenter(new THREE.Vector3());
+    const rootBox=boxFor(importedRoot),center=assemblyCenter||rootBox.getCenter(new THREE.Vector3());
     const maxGap=Math.max(rootBox.getSize(new THREE.Vector3()).length()*.34,80)*explodeAmount/100;
-    const spread=(record,depth)=>{
-      record.group.position.set(0,0,0);
-      const b=boxFor(record.group),c=b.getCenter(new THREE.Vector3()),v=c.sub(center);
-      if(v.length()<.001)v.set((depth%3)-1,depth%2?.5:0,1);
-      v.normalize().multiplyScalar(maxGap*(depth===0?1:Math.min(.28,depth*.08)));
+    treeNodes.forEach(record=>record.group.position.set(0,0,0));
+    treeNodes.filter(r=>r.parentPath).forEach(record=>{
+      const v=(record.baseCenter||center.clone()).clone().sub(center);
+      if(v.length()<.001)v.set((treeNodes.indexOf(record)%3)-1,treeNodes.indexOf(record)%2?.5:0,1);
+      const depth=record.parentPath?record.parentPath.split("/").length:1;
+      v.normalize().multiplyScalar(maxGap*Math.max(.12,1-Math.min(depth*.12,.72)));
       record.group.position.copy(v);
-      record.children.forEach(child=>spread(child,depth+1));
-    };
-    treeNodes.filter(r=>!r.parentPath).forEach(root=>{root.group.position.set(0,0,0);root.children.forEach(child=>spread(child,1));});
+    });
     const value=$("cadExplodeValue");if(value)value.textContent=explodeAmount+"%";
     if(window.Naseej3D&&window.Naseej3D.renderView)window.Naseej3D.renderView(window.Naseej3D.lastState||{angle:35,pitch:24,zoom:1,panX:0,panY:0});
     if(selectedNode){const record=treeNodes.find(r=>r.id===selectedNode);if(record)setMeasure(record);}
@@ -78,7 +77,7 @@
   function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
   function safeName(name){return String(name||"naseej-cad-project").replace(/[\\/:*?"<>|]+/g,"-").slice(0,90);}
   function collectBOM(){
-    return treeNodes.map((r,index)=>{const d=dimensions(r.group);return {number:index+1,name:r.name,parent:r.parentPath||"الجذر",meshCount:r.meshCount,children:r.children.length,width:d.x,height:d.y,depth:d.z};});
+    return treeNodes.map((r,index)=>{const d=dimensions(r.group);return {number:index+1,name:r.name,parent:(treeNodes.find(p=>p.id===r.parentPath)?.name)||"الجذر",meshCount:r.meshCount,children:r.children.length,width:d.x,height:d.y,depth:d.z};});
   }
   function exportBOM(){
     const rows=collectBOM(),head=["رقم","اسم الجزء","التجميعة الأم","عدد المجسمات","عدد التجميعات الفرعية","العرض مم","الارتفاع مم","العمق مم"];
@@ -119,7 +118,7 @@
       const result=parser[method](bytes,{linearUnit:"millimeter",linearDeflectionType:"bounding_box_ratio",linearDeflection:.08,angularDeflection:.35});
       if(!result||!result.success||!result.root||!Array.isArray(result.meshes))throw new Error("تعذر قراءة بنية الملف الهندسية. تحقق من سلامة الملف وصيغته.");
       if(importedRoot)window.Naseej3D.clearExternalModel();
-      treeNodes=[];selectedNode=null;const built=buildNode(result.root,result.meshes);importedRoot=built.group;sourceFile=file;
+      treeNodes=[];selectedNode=null;const built=buildNode(result.root,result.meshes);importedRoot=built.group;sourceFile=file;assemblyCenter=boxFor(importedRoot).getCenter(new THREE.Vector3());treeNodes.forEach(record=>{record.baseCenter=boxFor(record.group).getCenter(new THREE.Vector3());});
       if(!window.Naseej3D.addExternalModel(importedRoot))throw new Error("تعذر إدخال المجسم إلى لوحة 3D.");
       activeProject=options.projectRecord?{id:options.projectRecord.id,name:options.projectRecord.name}:null;
       const d=dimensions(importedRoot),info=$("cadModelInfo");
@@ -132,7 +131,7 @@
   }
   function clear(){
     if(window.Naseej3D&&window.Naseej3D.clearExternalModel)window.Naseej3D.clearExternalModel();
-    importedRoot=null;sourceFile=null;selectedNode=null;treeNodes=[];activeProject=null;explodeAmount=0;
+    importedRoot=null;sourceFile=null;selectedNode=null;treeNodes=[];activeProject=null;explodeAmount=0;assemblyCenter=null;
     $("cadAssemblyTree").innerHTML='<span class="catalog-footnote">شجرة الأجزاء ستظهر هنا بعد الاستيراد.</span>';$("cadModelInfo").textContent="";$("cadSelectedMeasure").textContent="اختر جزءًا من الشجرة لعرض أبعاده.";
     $("cadExplodeRange").value="0";$("cadExplodeValue").textContent="0%";setActionState(false);status("تمت إزالة الملف من المشهد. النسخة المحفوظة في المشروعات المحلية لم تُحذف.");
   }
