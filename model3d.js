@@ -1,9 +1,9 @@
 "use strict";
 (function(){
-  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:new THREE.Vector3(),lastState:null};
+  const api={available:false,canvas:null,renderer:null,scene:null,camera:null,root:null,raycaster:null,pointer:null,meshes:[],target:null,lastState:null};
   if(typeof THREE==="undefined"||!THREE.WebGLRenderer){window.Naseej3D=api;return;}
   function makeMaterial(color,selected){
-    return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.34,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected?.55:0});
+    return new THREE.MeshStandardMaterial({color:color||"#c49a55",metalness:.58,roughness:.34,emissive:selected?new THREE.Color("#123c58"):new THREE.Color("#000000"),emissiveIntensity:selected ? .55 : 0});
   }
   function clearGroup(group){
     while(group.children.length){
@@ -69,7 +69,7 @@
       mesh.userData.objectId=o.id;
       mesh.castShadow=true;mesh.receiveShadow=true;
       api.root.add(mesh);api.meshes.push(mesh);
-      const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:selected?"#8bdcff":"#a9c9e7",transparent:true,opacity:selected?.95:.55}));
+      const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:selected?"#8bdcff":"#a9c9e7",transparent:true,opacity:selected ? .95 : .55}));
       edge.position.copy(mesh.position);edge.rotation.copy(mesh.rotation);edge.userData.objectId=o.id;api.root.add(edge);
     });
     const bounds=new THREE.Box3().setFromObject(api.root);
