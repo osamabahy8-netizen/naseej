@@ -225,3 +225,26 @@
  .model-stage{min-height:52vh}
 }
 @media(min-width:1101px){.model-stage{min-height:min(68vh,850px)}}
+
+
+/* Mobile landscape: immersive viewport with natural document scrolling */
+@media screen and (max-width: 950px) and (orientation: landscape){
+  html,body{min-height:100%;height:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:auto}
+  #modelView{min-height:100svh;padding-inline:0}
+  #modelView .design-heading{padding-inline:14px}
+  #modelView .model-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:0 10px 24px;align-items:start}
+  #modelView .model-stage-panel{grid-column:1/-1;grid-row:1;display:flex;flex-direction:column;min-width:0;width:100%;padding:10px;order:-2}
+  #modelView .model-stage-panel>.preview-title{order:-3}
+  #modelView .model-stage-panel>.model-stage{order:-2;width:100%;height:clamp(360px,68svh,760px);min-height:360px;max-height:760px;flex:none;border-radius:12px}
+  #modelView #model3DCanvas,#modelView #modelDrawing{width:100%;height:100%;min-height:0}
+  #modelView .model-stage-panel>.preview-hint{order:-1}
+  #modelView .model-tools,#modelView .model-inspector{position:static;grid-column:1/-1;max-height:none;height:auto;overflow:visible;overscroll-behavior:initial}
+  #modelView .model-tools{order:2}
+  #modelView .model-inspector{order:3}
+  #modelView .model-stage-panel>.model-zoom-controls,
+  #modelView .model-stage-panel>.model-camera-help,
+  #modelView .model-stage-panel>.model-dimension-summary,
+  #modelView .model-stage-panel>.model-cut-list-panel,
+  #modelView .model-stage-panel>.model-assembly-panel,
+  #modelView .model-stage-panel>.preview-actions{flex-shrink:0}
+}
