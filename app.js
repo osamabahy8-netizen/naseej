@@ -1694,6 +1694,7 @@
   function setupModelStudio() {
     let orbitStart=null,orbitMoved=false;
     const svgDrawing=$("modelDrawing");
+    svgDrawing.style.pointerEvents="all";
     const stage=svgDrawing.closest(".model-stage");
     const canvas=document.createElement("canvas");canvas.id="model3DCanvas";canvas.setAttribute("aria-label","مرسم نسيج ثلاثي الأبعاد حقيقي");
     canvas.style.cssText="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:none;";
