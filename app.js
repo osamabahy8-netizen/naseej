@@ -888,6 +888,8 @@
   let modelObjects = [];
   let selectedModelObjectId = null;
   let modelCameraAngle = 35;
+  let modelCameraPitch = 24;
+  let modelCameraPanX = 0, modelCameraPanY = 0;
   let modelZoom = 1;
   let modelExplodedView = false;
   let modelExplodeMoveMode = false;
@@ -1377,8 +1379,10 @@
     return [x+o.x,y+o.y+(o.h/2),z+o.z];
   }
   function projectModelPoint(x,y,z,angle,scale,cx,cy) {
-    const a=angle*Math.PI/180, rx=x*Math.cos(a)-z*Math.sin(a), rz=x*Math.sin(a)+z*Math.cos(a);
-    return [cx+(rx-rz)*.62*scale,cy+(rx+rz)*.34*scale-y*.78*scale];
+    const a=angle*Math.PI/180, p=modelCameraPitch*Math.PI/180;
+    const rx=x*Math.cos(a)-z*Math.sin(a), rz=x*Math.sin(a)+z*Math.cos(a);
+    const depth=(rx+rz)*.707;
+    return [cx+rx*scale,cy+(depth*Math.sin(p)-y*Math.cos(p))*scale];
   }
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
@@ -1399,7 +1403,7 @@
     const minY=Math.min(...raw.map(p=>p[1])),maxY=Math.max(...raw.map(p=>p[1]));
     const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
     const scale=Math.min(.8,500/spanX,420/spanY)*modelZoom;
-    const cx=450-(minX+maxX)*scale/2,cy=315-(minY+maxY)*scale/2;
+    const cx=450-(minX+maxX)*scale/2+modelCameraPanX,cy=315-(minY+maxY)*scale/2+modelCameraPanY;
     const project=(x,y,z)=>projectModelPoint(x,y,z,modelCameraAngle,scale,cx,cy);
     const grid=document.createElementNS(NS,"g");
     for(let n=-8;n<=8;n++){
@@ -1658,7 +1662,8 @@
     let orbitStart=null,orbitMoved=false;
     const drawing=$("modelDrawing");
     const activePointers=new Map();
-    let pinchStartDistance=0,pinchStartZoom=1;
+    let pinchStartDistance=0,pinchStartZoom=1,pinchStartCenter=null,pinchStartPan=null;
+    let cameraPanStart=null;
     drawing.style.touchAction="none";
     const pointerDistance=()=>{
       const points=[...activePointers.values()];
@@ -1669,7 +1674,11 @@
       activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(drawing.setPointerCapture)drawing.setPointerCapture(event.pointerId);
       if(activePointers.size===2){
-        partDrag=null;orbitStart=null;pinchStartDistance=Math.max(1,pointerDistance());pinchStartZoom=modelZoom;orbitMoved=true;
+        partDrag=null;orbitStart=null;cameraPanStart=null;
+        const pts=[...activePointers.values()];
+        pinchStartDistance=Math.max(1,pointerDistance());pinchStartZoom=modelZoom;
+        pinchStartCenter={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+        pinchStartPan={x:modelCameraPanX,y:modelCameraPanY};orbitMoved=true;
         event.preventDefault();return;
       }
       const face=event.target.closest&&event.target.closest("[data-object-id]");
@@ -1682,14 +1691,24 @@
           orbitStart=null;orbitMoved=false;event.preventDefault();return;
         }
       }
-      if(activePointers.size===1){partDrag=null;orbitStart={x:event.clientX,angle:modelCameraAngle};orbitMoved=false;}
+      if(activePointers.size===1){
+        partDrag=null;orbitMoved=false;
+        if(event.button===2||event.shiftKey||event.button===1){
+          cameraPanStart={x:event.clientX,y:event.clientY,panX:modelCameraPanX,panY:modelCameraPanY};orbitStart=null;
+        }else{cameraPanStart=null;orbitStart={x:event.clientX,y:event.clientY,angle:modelCameraAngle,pitch:modelCameraPitch};}
+      }
     });
     drawing.addEventListener("pointermove",event=>{
       if(!activePointers.has(event.pointerId))return;
       activePointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if(activePointers.size>=2){
-        const distance=pointerDistance();
-        if(pinchStartDistance>0){modelZoom=Math.max(.45,Math.min(3.5,pinchStartZoom*distance/pinchStartDistance));renderModelDrawing();}
+        const distance=pointerDistance(),pts=[...activePointers.values()];
+        const center={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+        if(pinchStartDistance>0){
+          modelZoom=Math.max(.35,Math.min(5,pinchStartZoom*distance/pinchStartDistance));
+          if(pinchStartCenter&&pinchStartPan){const rect=drawing.getBoundingClientRect();modelCameraPanX=pinchStartPan.x+(center.x-pinchStartCenter.x)*900/rect.width;modelCameraPanY=pinchStartPan.y+(center.y-pinchStartCenter.y)*620/rect.height;}
+          renderModelDrawing();
+        }
         event.preventDefault();return;
       }
       if(partDrag&&partDrag.pointerId===event.pointerId&&partDrag.viewOnly){const rect=drawing.getBoundingClientRect(),dxScreen=(event.clientX-partDrag.startX)*900/rect.width,dyScreen=(event.clientY-partDrag.startY)*620/rect.height,u=dxScreen/(.62*partDrag.scale),v=dyScreen/(.34*partDrag.scale),angle=partDrag.angle*Math.PI/180;modelExplodeOffsets[partDrag.id]={x:partDrag.originX+Math.cos(angle)*u+Math.sin(angle)*v,y:partDrag.originY,z:partDrag.originZ-Math.sin(angle)*u+Math.cos(angle)*v};if(Math.abs(dxScreen)+Math.abs(dyScreen)>2)orbitMoved=true;renderModelDrawing();event.preventDefault();return;}
@@ -1706,10 +1725,21 @@
         $("modelPosX").value=Math.round(object.x);$("modelPosZ").value=Math.round(object.z);
         renderModelDrawing();event.preventDefault();return;
       }
+      if(cameraPanStart){
+        const rect=drawing.getBoundingClientRect();
+        modelCameraPanX=cameraPanStart.panX+(event.clientX-cameraPanStart.x)*900/rect.width;
+        modelCameraPanY=cameraPanStart.panY+(event.clientY-cameraPanStart.y)*620/rect.height;
+        orbitMoved=true;renderModelDrawing();event.preventDefault();return;
+      }
       if(!orbitStart)return;
-      const delta=event.clientX-orbitStart.x;
-      if(Math.abs(delta)>3)orbitMoved=true;
-      if(orbitMoved){modelCameraAngle=(orbitStart.angle+delta*.55+360)%360;$("modelCameraAngle").value=Math.round(modelCameraAngle);renderModelDrawing();}
+      const dx=event.clientX-orbitStart.x,dy=event.clientY-orbitStart.y;
+      if(Math.abs(dx)+Math.abs(dy)>3)orbitMoved=true;
+      if(orbitMoved){
+        modelCameraAngle=(orbitStart.angle+dx*.55+360)%360;
+        modelCameraPitch=Math.max(5,Math.min(85,orbitStart.pitch+dy*.45));
+        $("modelCameraAngle").value=Math.round(modelCameraAngle);
+        renderModelDrawing();
+      }
     });
     const endOrbit=event=>{
       if(event&&partDrag&&partDrag.pointerId===event.pointerId){
@@ -1717,12 +1747,13 @@
         partDrag=null;
       }
       if(event)activePointers.delete(event.pointerId);
-      if(activePointers.size<2)pinchStartDistance=0;
-      if(activePointers.size===0)orbitStart=null;
-      else if(activePointers.size===1){const p=[...activePointers.values()][0];orbitStart={x:p.x,angle:modelCameraAngle};}
+      if(activePointers.size<2){pinchStartDistance=0;pinchStartCenter=null;pinchStartPan=null;}
+      if(activePointers.size===0){orbitStart=null;cameraPanStart=null;}
+      else if(activePointers.size===1){const p=[...activePointers.values()][0];orbitStart={x:p.x,y:p.y,angle:modelCameraAngle,pitch:modelCameraPitch};cameraPanStart=null;}
     };
     drawing.addEventListener("pointerup",endOrbit);
     drawing.addEventListener("pointercancel",endOrbit);
+    drawing.addEventListener("contextmenu",event=>event.preventDefault());
     let touchPinchStart=0,touchZoomStart=1;
     drawing.addEventListener("touchstart",event=>{
       if(event.touches.length===2){
@@ -1733,7 +1764,7 @@
     drawing.addEventListener("touchmove",event=>{
       if(event.touches.length!==2||!touchPinchStart)return;
       const distance=Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
-      modelZoom=Math.max(.35,Math.min(4.5,touchZoomStart*distance/touchPinchStart));
+      modelZoom=Math.max(.35,Math.min(5,touchZoomStart*distance/touchPinchStart));
       renderModelDrawing();event.preventDefault();
     },{passive:false});
     const endTouchPinch=()=>{touchPinchStart=0;};
@@ -1769,7 +1800,7 @@
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
     $("duplicateModelObjectBtn").addEventListener("click",duplicateModelObject);
     $("modelCameraAngle").addEventListener("input",e=>{modelCameraAngle=Number(e.target.value);renderModelDrawing();});
-    $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;modelZoom=1;renderModelDrawing();});
+    $("resetModelCameraBtn").addEventListener("click",()=>{$("modelCameraAngle").value=35;modelCameraAngle=35;modelCameraPitch=24;modelCameraPanX=0;modelCameraPanY=0;modelZoom=1;renderModelDrawing();});
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
