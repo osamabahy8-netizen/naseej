@@ -1387,6 +1387,16 @@
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
+    const defs=svgEl("defs");
+    const floorGlow=svgEl("radialGradient",{id:"modelFloorGlow",cx:"50%",cy:"50%",r:"65%"});
+    [["0%","#163d63","0.58"],["58%","#0c2036","0.25"],["100%","#07111e","0"]].forEach(([offset,color,opacity])=>floorGlow.appendChild(svgEl("stop",{offset,"stop-color":color,"stop-opacity":opacity})));
+    defs.appendChild(floorGlow);
+    const edgeGlow=svgEl("filter",{id:"modelEdgeGlow",x:"-40%",y:"-40%",width:"180%",height:"180%"});
+    edgeGlow.appendChild(svgEl("feGaussianBlur",{stdDeviation:"2.2",result:"blur"}));
+    const merge=svgEl("feMerge");merge.appendChild(svgEl("feMergeNode",{in:"blur"}));merge.appendChild(svgEl("feMergeNode",{in:"SourceGraphic"}));edgeGlow.appendChild(merge);defs.appendChild(edgeGlow);
+    root.appendChild(defs);
+    root.appendChild(svgEl("rect",{x:"0",y:"0",width:"900",height:"620",fill:"#07111e"}));
+    root.appendChild(svgEl("ellipse",{cx:"450",cy:"365",rx:"420",ry:"235",fill:"url(#modelFloorGlow)"}));
     const center=modelObjects.length?modelObjects.reduce((a,o)=>[a[0]+o.x/modelObjects.length,a[1]+(o.y+o.h/2)/modelObjects.length,a[2]+o.z/modelObjects.length],[0,0,0]):[0,0,0];
     const assemblyObjects=modelAssemblyGuideOn?modelObjects.slice(0,Math.max(1,Math.min(modelObjects.length,modelAssemblyStep+1))):modelObjects;
     const renderObjects=assemblyObjects.map((o,i)=>{if(!modelExplodedView)return o;let dx=o.x-center[0],dy=o.y+o.h/2-center[1],dz=o.z-center[2],len=Math.hypot(dx,dy,dz);if(len<1){dx=(i%3)-1;dy=Math.floor(i/3)%2?.6:0;dz=1;len=Math.hypot(dx,dy,dz);}const gap=Math.max(90,Math.min(260,Math.max(o.w,o.h,o.d)*.22)),extra=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};return {...o,x:o.x+dx/len*gap+extra.x,y:o.y+dy/len*gap+extra.y,z:o.z+dz/len*gap+extra.z};});
@@ -1408,8 +1418,9 @@
     const grid=document.createElementNS(NS,"g");
     for(let n=-8;n<=8;n++){
       const p1=project(n*500,0,-4000),p2=project(n*500,0,4000),p3=project(-4000,0,n*500),p4=project(4000,0,n*500);
-      [[p1,p2],[p3,p4]].forEach(pair=>grid.appendChild(svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:"#49627d","stroke-width":"1.2"})));
+      [[p1,p2],[p3,p4]].forEach(pair=>grid.appendChild(svgEl("line",{x1:pair[0][0],y1:pair[0][1],x2:pair[1][0],y2:pair[1][1],stroke:n===0?"#4c9bd4":"#31516f","stroke-width":n===0?"1.5":"0.8",opacity:n===0?".38":".2"})));
     }
+    grid.setAttribute("opacity",".9");
     root.appendChild(grid);
     const axes=[{a:[0,0,0],b:[1500,0,0],c:"#e16d61",t:"X"},{a:[0,0,0],b:[0,1500,0],c:"#75bd86",t:"Y"},{a:[0,0,0],b:[0,0,1500],c:"#70aee5",t:"Z"}];
     axes.forEach(axis=>{const p=project(...axis.a),q=project(...axis.b);root.appendChild(svgEl("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:axis.c,"stroke-width":"3"}));const t=svgEl("text",{x:q[0]+5,y:q[1]-5,fill:axis.c,"font-size":"14"});t.textContent=axis.t;root.appendChild(t);});
@@ -1433,13 +1444,13 @@
         for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]];faces.push({o,projected:quad.map(p=>project(...transformModelVertex(p,o))),depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.68+(k%4)*.07});}
       }else{
         const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
-        [{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88}].forEach(f=>{
+        [{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88},{ids:[0,3,2,1],shade:.48}].forEach(f=>{
           faces.push({o,projected:f.ids.map(k=>project(...transformModelVertex(pts[k],o))),depth:f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4,shade:f.shade});
         });
       }
     });
     faces.sort((a,b)=>a.depth-b.depth);
-    faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"#ffd166":f.o.id===selectedModelObjectId?"#ffffff":"#09111d","stroke-width":(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"4":f.o.id===selectedModelObjectId?"2.5":"1","data-object-id":f.o.id,class:"model-object-face"})));
+    faces.forEach(f=>root.appendChild(svgEl("polygon",{points:f.projected.map(p=>p.join(",")).join(" "),fill:f.o.color,opacity:f.shade,stroke:(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"#ffd166":f.o.id===selectedModelObjectId?"#a8e7ff":"#274a69","stroke-width":(modelAssemblyGuideOn&&f.o.id===modelObjects[modelAssemblyStep]?.id)?"4":f.o.id===selectedModelObjectId?"2.8":"1.15","stroke-linejoin":"round","filter":f.o.id===selectedModelObjectId?"url(#modelEdgeGlow)":"none","data-object-id":f.o.id,class:"model-object-face"})));
     // Mechanical detail overlays: motor shafts, gear meshes, axle centerlines and wheel hubs.
     const mechanical=svgEl("g",{"pointer-events":"none"});
     const ring=(x,y,z,rx,rz,color,width=2)=>{
