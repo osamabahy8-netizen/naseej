@@ -1388,6 +1388,8 @@
   function renderModelDrawing() {
     const root=$("modelDrawing");if(!root)return;
     root.innerHTML="";
+    root.setAttribute("shape-rendering","geometricPrecision");
+    root.setAttribute("text-rendering","geometricPrecision");
     const defs=svgEl("defs");
     const floorGlow=svgEl("radialGradient",{id:"modelFloorGlow",cx:"50%",cy:"50%",r:"65%"});
     [["0%","#163d63","0.58"],["58%","#0c2036","0.25"],["100%","#07111e","0"]].forEach(([offset,color,opacity])=>floorGlow.appendChild(svgEl("stop",{offset,"stop-color":color,"stop-opacity":opacity})));
@@ -1437,17 +1439,26 @@
     }
     if(modelExplodedView){const links=svgEl("g");renderObjects.forEach(o=>{const e=modelExplodeOffsets[o.id]||{x:0,y:0,z:0};const p0=project(o.x-e.x,o.y-e.y+o.h/2,o.z-e.z),p1=project(o.x,o.y+o.h/2,o.z);if(Math.hypot(p1[0]-p0[0],p1[1]-p0[1])>2)links.appendChild(svgEl("line",{x1:p0[0],y1:p0[1],x2:p1[0],y2:p1[1],stroke:"#ffd166","stroke-width":"2","stroke-dasharray":"6 5","pointer-events":"none"}));});root.appendChild(links);}
     const faces=[];
+    const cameraDepth=(points,o)=>{
+      const angle=modelCameraAngle*Math.PI/180;
+      return points.reduce((sum,p)=>{
+        const world=transformModelVertex(p,o);
+        const rx=world[0]*Math.cos(angle)-world[2]*Math.sin(angle);
+        const rz=world[0]*Math.sin(angle)+world[2]*Math.cos(angle);
+        return sum+(rx+rz)*.707;
+      },0)/points.length;
+    };
     renderObjects.forEach(o=>{
       const x=o.x,y=o.y,z=o.z,w=o.w,h=o.h,d=o.d;
       if(o.type==="cylinder"){
-        const sides=24,bottom=[],top=[];
+        const sides=64,bottom=[],top=[];
         for(let k=0;k<sides;k++){const a=2*Math.PI*k/sides;bottom.push([x+Math.cos(a)*w/2,y,z+Math.sin(a)*d/2]);top.push([x+Math.cos(a)*w/2,y+h,z+Math.sin(a)*d/2]);}
-        faces.push({o,projected:top.map(p=>project(...transformModelVertex(p,o))),depth:y+h+x+z,shade:1});
-        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]];faces.push({o,projected:quad.map(p=>project(...transformModelVertex(p,o))),depth:quad.reduce((sum,p)=>sum+p[0]+p[2],0)/4,shade:.68+(k%4)*.07});}
+        faces.push({o,projected:top.map(p=>project(...transformModelVertex(p,o))),depth:cameraDepth([[x,y+h,z]],o),shade:1});
+        for(let k=0;k<sides;k++){const n=(k+1)%sides,quad=[bottom[k],bottom[n],top[n],top[k]];faces.push({o,projected:quad.map(p=>project(...transformModelVertex(p,o))),depth:cameraDepth(quad,o),shade:.68+(k%4)*.07});}
       }else{
         const pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
         [{ids:[4,5,6,7],shade:1},{ids:[0,1,5,4],shade:.82},{ids:[1,2,6,5],shade:.94},{ids:[2,3,7,6],shade:.7},{ids:[3,0,4,7],shade:.88},{ids:[0,3,2,1],shade:.48}].forEach(f=>{
-          faces.push({o,projected:f.ids.map(k=>project(...transformModelVertex(pts[k],o))),depth:f.ids.reduce((sum,k)=>sum+pts[k][0]+pts[k][2],0)/4,shade:f.shade});
+          faces.push({o,projected:f.ids.map(k=>project(...transformModelVertex(pts[k],o))),depth:cameraDepth(f.ids.map(k=>pts[k]),o),shade:f.shade});
         });
       }
     });
@@ -1457,7 +1468,7 @@
     const mechanical=svgEl("g",{"pointer-events":"none"});
     const ring=(x,y,z,rx,rz,color,width=2)=>{
       const pts=[];
-      for(let k=0;k<=32;k++){const a=2*Math.PI*k/32;pts.push(project(x+Math.cos(a)*rx,y,z+Math.sin(a)*rz));}
+      for(let k=0;k<=64;k++){const a=2*Math.PI*k/64;pts.push(project(x+Math.cos(a)*rx,y,z+Math.sin(a)*rz));}
       mechanical.appendChild(svgEl("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:color,"stroke-width":String(width)}));
     };
     const line3=(a,b,color,width=2,dash)=>{
