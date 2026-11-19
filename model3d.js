@@ -173,6 +173,9 @@
       const rimMat=partMaterial("#b8c5d1",.82,.22);
       add(new THREE.CylinderGeometry(radius*.64,radius*.64,width*1.04,40),rimMat,x,y+h/2,z,0,0,Math.PI/2);
       add(new THREE.CylinderGeometry(radius*.23,radius*.23,width*1.1,32),partMaterial("#46596a",.8,.2),x,y+h/2,z,0,0,Math.PI/2);
+      const spokeMat=partMaterial("#d5e2ed",.88,.18),hubMat=partMaterial("#8296a8",.9,.16);
+      for(let n=0;n<10;n++){const a=n*Math.PI/5;add(new THREE.BoxGeometry(width*1.12,Math.max(2,radius*.055),Math.max(2,radius*.085)),spokeMat,x,y+h/2+Math.cos(a)*radius*.38,z+Math.sin(a)*radius*.38,-a,0,0);}
+      add(new THREE.CylinderGeometry(radius*.12,radius*.12,width*1.18,24),hubMat,x,y+h/2,z,0,0,Math.PI/2);
       const ring=new THREE.TorusGeometry(radius*.79,Math.max(1,radius*.045),8,40);add(ring,partMaterial("#303b47",.12,.78),x,y+h/2,z,0,Math.PI/2,0);
     }else{
       let geometry;
