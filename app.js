@@ -1228,7 +1228,8 @@
     const finish=$("standModelFinish").value;
     const materialOverride=$("standModelMaterial").value;
     const finishColors={black:"#252a31",white:"#e8e8e4",chrome:"#aeb8c2",gold:"#c49a55",wood:"#9b7047",clear:"#a9d5df"};
-    const baseX=modelObjects.length?Math.max(...modelObjects.map(o=>o.x+o.w/2))+1000:0;
+    const vehicleTemplate=/سيارات ريموت|طائرات لاسلكية|هليكوبتر|مروحية|درون/.test(template.category+" "+template.name);
+    const baseX=0;
     const added=template.parts.map(part=>{
       const [label,w,h,d,x,y,z,profile,material,quantity,componentSpec]=part;
       const chosenMaterial=materialOverride==="original"?material:materialOverride;
@@ -1243,7 +1244,7 @@
       for(let n=0;n<4;n++)addAccessory("خطاف إضافي "+(n+1),150,12,12,-220+n*145,850,45,"سيخ دائري مثني","حديد");
     }
     if($("standAddHolder").checked)addAccessory("حامل أكريليك أمامي",260,160,8,0,300,150,"جيب/حامل شفاف","أكريليك","#a9d5df");
-    modelHistoryPush();modelObjects.push(...added);
+    modelHistoryPush();if(vehicleTemplate){modelObjects=[...added];modelExplodedView=false;modelExplodeOffsets={};}else{modelObjects.push(...added);}
     modelProjectName=template.name+" — "+(size==="compact"?"صغير":size==="large"?"كبير":"قياسي");
     $("modelName").value=modelProjectName;selectedModelObjectId=added[0].id;
     modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
