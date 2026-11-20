@@ -1343,7 +1343,7 @@
     modelObjects.forEach(o=>{
       const material=String(o.material||"غير محدد");
       if(!groups.has(material))groups.set(material,{types:0,quantity:0,profiles:new Set(),massKg:0,massComplete:true});
-      const group=groups.get(material),quantity=Math.max(1,Number(o.quantity)||1),mass=Number(o.massKg);group.types+=1;group.quantity+=quantity;group.profiles.add(o.profile||"غير محدد");if(Number.isFinite(mass)&&mass>=0)group.massKg+=mass*quantity;else group.massComplete=false;
+      const group=groups.get(material),quantity=Math.max(1,Number(o.quantity)||1),mass=o.massKg;group.types+=1;group.quantity+=quantity;group.profiles.add(o.profile||"غير محدد");if(mass!=null&&Number.isFinite(Number(mass))&&Number(mass)>=0)group.massKg+=Number(mass)*quantity;else group.massComplete=false;
     });
     if(summary){
       const totalQuantity=[...groups.values()].reduce((sum,g)=>sum+g.quantity,0);
