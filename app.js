@@ -1221,7 +1221,30 @@
       ["وصلة جر",35,12,12,165,35,0,"خطاف ربط","بلاستيك",2,"وصلة مفصلية"]
     ]}
   ];
-  function addStandModelTemplate() {
+  function renderNativeProductCatalog() {
+    const host=$("nativeProductCatalog"),search=$("nativeProductSearch"),count=$("nativeProductCatalogCount");
+    if(!host||!search||!count)return;
+    const query=search.value.trim().toLocaleLowerCase("ar");
+    const rows=standModelLibrary.filter(item=>[item.name,item.category,item.description].join(" ").toLocaleLowerCase("ar").includes(query));
+    count.textContent="الموديلات المتاحة: "+rows.length+" من "+standModelLibrary.length+" — اضغط على أي موديل لفتحه مباشرة في مساحة 3D.";
+    host.replaceChildren();
+    rows.forEach(template=>{
+      const card=document.createElement("article");card.className="native-product-card";
+      const category=document.createElement("span");category.className="native-product-category";category.textContent=template.category;
+      const title=document.createElement("strong");title.className="native-product-title";title.textContent=template.name;
+      const detail=document.createElement("span");detail.className="native-product-detail";detail.textContent=template.parts.length+" جزء — "+template.description;
+      const open=document.createElement("button");open.type="button";open.className="button button-primary native-product-open";open.textContent="فتح في الرسم ثلاثي الأبعاد";
+      open.addEventListener("click",()=>{
+        const select=$("standModelTemplate");select.value=template.id;
+        addStandModelTemplate(true);
+        host.querySelectorAll(".native-product-card").forEach(node=>node.classList.remove("active"));
+        card.classList.add("active");
+      });
+      card.append(category,title,detail,open);host.appendChild(card);
+    });
+    if(!rows.length){const empty=document.createElement("p");empty.className="catalog-footnote";empty.textContent="مفيش منتج مطابق لكلمة البحث.";host.appendChild(empty);}
+  }
+  function addStandModelTemplate(replaceCurrent=false) {
     const select=$("standModelTemplate"),template=standModelLibrary.find(item=>item.id===select.value);
     if(!template){toast("اختار موديل من المكتبة الأول");return;}
     const size=$("standModelSize").value,scale=size==="compact"?.82:size==="large"?1.18:1;
@@ -1244,7 +1267,7 @@
       for(let n=0;n<4;n++)addAccessory("خطاف إضافي "+(n+1),150,12,12,-220+n*145,850,45,"سيخ دائري مثني","حديد");
     }
     if($("standAddHolder").checked)addAccessory("حامل أكريليك أمامي",260,160,8,0,300,150,"جيب/حامل شفاف","أكريليك","#a9d5df");
-    modelHistoryPush();if(vehicleTemplate){modelObjects=[...added];modelExplodedView=false;modelExplodeOffsets={};}else{modelObjects.push(...added);}
+    modelHistoryPush();if(replaceCurrent||vehicleTemplate){modelObjects=[...added];modelExplodedView=false;modelExplodeOffsets={};modelExplodeMoveMode=false;}else{modelObjects.push(...added);}
     modelProjectName=template.name+" — "+(size==="compact"?"صغير":size==="large"?"كبير":"قياسي");
     $("modelName").value=modelProjectName;selectedModelObjectId=added[0].id;
     modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
@@ -1859,7 +1882,8 @@
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("modelPartMoveModeBtn").addEventListener("click",()=>{modelPartMoveMode=!modelPartMoveMode;$("modelPartMoveModeBtn").textContent=modelPartMoveMode?"إيقاف تحريك القطع":"تفعيل تحريك القطع";$("modelPartMoveModeBtn").classList.toggle("button-primary",modelPartMoveMode);$("modelPartMoveModeBtn").classList.toggle("button-quiet",!modelPartMoveMode);toast(modelPartMoveMode?"وضع تحريك القطع نشط؛ السحب على القطعة يحركها":"تم إيقاف تحريك القطع؛ السحب على المجسم يدير الكاميرا");});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
-    $("addStandModelTemplateBtn").addEventListener("click",addStandModelTemplate);
+    $("addStandModelTemplateBtn").addEventListener("click",()=>addStandModelTemplate(false));
+    $("nativeProductSearch").addEventListener("input",renderNativeProductCatalog);
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
@@ -1876,7 +1900,7 @@
       data.modelStudioInitialized=true;
       save();
     }
-    renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderManufacturingDrawings();
+    renderNativeProductCatalog();renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderManufacturingDrawings();
   }
 
   function setupDesignStudio() {
