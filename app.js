@@ -1300,15 +1300,29 @@
     $("modelHoleSpec").value=object.holeSpec||"";$("modelMountSpec").value=object.mountSpec||"";$("modelInstallLocation").value=object.installLocation||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
   }
   function renderModelCutList() {
-    const host=$("modelCutList");if(!host)return;
-    if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";return;}
+    const host=$("modelCutList"),summary=$("modelBomSummary");if(!host)return;
+    if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";if(summary)summary.textContent="لا توجد بيانات خامات بعد.";return;}
     const safeText=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    const groups=new Map();
+    modelObjects.forEach(o=>{
+      const material=String(o.material||"غير محدد");
+      if(!groups.has(material))groups.set(material,{types:0,quantity:0,profiles:new Set()});
+      const group=groups.get(material);group.types+=1;group.quantity+=Math.max(1,Number(o.quantity)||1);group.profiles.add(o.profile||"غير محدد");
+    });
+    if(summary){
+      const totalQuantity=[...groups.values()].reduce((sum,g)=>sum+g.quantity,0);
+      const materialRows=[...groups.entries()].sort((x,y)=>x[0].localeCompare(y[0],"ar")).map(([material,g])=>
+        "<div class='model-bom-material'><strong>"+safeText(material)+"</strong><span>"+g.types+" نوع قطعة</span><span>إجمالي العدد: "+g.quantity+"</span><small>القطاعات: "+safeText([...g.profiles].join("، "))+"</small></div>"
+      ).join("");
+      summary.innerHTML="<div class='model-bom-totals'><span>أنواع القطع: <b>"+modelObjects.length+"</b></span><span>إجمالي الوحدات: <b>"+totalQuantity+"</b></span><span>الخامات: <b>"+groups.size+"</b></span></div><div class='model-bom-materials'>"+materialRows+"</div><p class='catalog-footnote'>هذا حصر كميات موحّد من بيانات القطع الحالية. لا يعرض تكلفة نقدية أو وزنًا إلا بعد إدخال مواصفات وأسعار كل خامة.</p>";
+    }
     const rows=modelObjects.map(o=>{
       const length=Math.round(o.cutLength??Math.max(o.w,o.h,o.d));
       const quantity=Math.max(1,Number(o.quantity)||1);
-      return "<tr><td>"+safeText(o.label)+"</td><td>"+safeText(o.material||"حديد")+"</td><td>"+safeText(o.profile||"غير محدد")+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
+      const dimensions=Math.round(o.w)+" × "+Math.round(o.h)+" × "+Math.round(o.d);
+      return "<tr><td>"+safeText(o.label)+"</td><td>"+safeText(o.material||"غير محدد")+"</td><td>"+safeText(o.profile||"غير محدد")+"</td><td>"+dimensions+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
     }).join("");
-    host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
+    host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>الأبعاد مم (عرض × ارتفاع × عمق)</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
   }
   function renderManufacturingDrawings() {
     const root=$("manufacturingDrawing");if(!root)return;
