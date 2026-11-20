@@ -341,3 +341,53 @@
 .phase2-audit-table th{background:var(--panel,#fff);font-weight:700}
 .phase2-geometry-audit summary{cursor:pointer;padding:8px 0;font-weight:700}
 @media(max-width:600px){.phase2-geometry-audit{padding:9px}.phase2-audit-table{font-size:11px;min-width:740px}.phase2-audit-table th,.phase2-audit-table td{padding:7px}}
+
+
+/* Mobile viewport correction — keep the 3D workspace inside the phone width.
+   This block intentionally comes last to override the desktop cockpit grid. */
+@media screen and (max-width: 850px) and (orientation: portrait) {
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  #modelView { width: 100%; max-width: 100%; min-width: 0; padding-inline: 0; }
+  #modelView .model-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 12px;
+    padding: 0 10px 20px;
+  }
+  #modelView .model-tools,
+  #modelView .model-inspector,
+  #modelView .model-stage-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  #modelView .model-stage {
+    width: 100%;
+    height: min(62svh, 620px);
+    min-height: 320px;
+    max-height: 620px;
+  }
+  #modelView #model3DCanvas,
+  #modelView #modelDrawing {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: 100%;
+  }
+  #modelView .model-stage-panel > .preview-title,
+  #modelView .model-stage-panel > .model-zoom-controls {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+}
+@media screen and (max-width: 950px) and (orientation: landscape) {
+  #modelView .model-layout { width: 100%; max-width: 100%; min-width: 0; }
+  #modelView .model-stage-panel,
+  #modelView .model-stage { width: 100%; min-width: 0; }
+}
