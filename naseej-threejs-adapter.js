@@ -15,13 +15,15 @@
     return [0,0,thickness?Number(thickness[1]):0];
   }
 
-  function materialColor(material) {
-    const key=String(material||"").toLowerCase();
+  function materialColor(material,finish) {
+    const key=String(material||"").toLowerCase(),coat=String(finish||"").toLowerCase();
+    if(coat.includes("ral9005")||coat.includes("black"))return "#252a31";
+    if(coat.includes("white")||coat.includes("ral9010"))return "#e7e8e5";
     if(key.includes("glass"))return "#8ed7ed";
     if(key.includes("mdf")||key.includes("wood")||key.includes("laminate"))return "#a8794b";
-    if(key.includes("aluminium")||key.includes("aluminum"))return "#b7c2ce";
+    if(key.includes("aluminium")||key.includes("aluminum")||key.includes("stainless"))return "#b7c2ce";
     if(key.includes("acrylic"))return "#b8e4f2";
-    if(key.includes("stainless"))return "#c3ccd5";
+    if(key.includes("steel"))return "#9aa8b5";
     return "#c49a55";
   }
 
@@ -55,7 +57,7 @@
     const mass=Number(part.mass_kg);
     return {
       id:id,label:name,type:"box",profile:profile,
-      material:part.material||"unspecified",color:materialColor(part.material),
+      material:part.material||"unspecified",color:materialColor(part.material,part.finish),
       quantity:Number(part.quantity)||1,
       massKg:Number.isFinite(mass)?mass:null,
       x:cx,y:cz-h/2,z:cy,w:w,h:h,d:d,
