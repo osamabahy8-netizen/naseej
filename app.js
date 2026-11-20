@@ -1259,7 +1259,9 @@
       if(!window.NaseejThreeJSAdapter)throw new Error("محول مكتبة المرحلة الثانية غير محمّل.");
       const parsed=JSON.parse(await file.text());
       const product=parsed&&parsed.product&&typeof parsed.product==="object"?parsed.product:parsed;
+      const audit=window.NaseejThreeJSAdapter.auditProduct(product);
       const objects=window.NaseejThreeJSAdapter.toViewerObjects(product);
+      renderPhase2ImportAudit(audit);
       modelHistoryPush();
       modelObjects=objects;
       modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};
@@ -1278,7 +1280,7 @@
       const bom=product.bom||product.bom_summary||parsed.bom_summary||null;
       const massText=bom&&Number.isFinite(Number(bom.total_mass_kg))?" الوزن الإجمالي حسب ملف المصدر: "+Number(bom.total_mass_kg).toFixed(3)+" كجم.":"";
       const costText=bom&&bom.estimated_total_cost!=null?"":" التكلفة النقدية غير معتمدة حتى تسجيل أسعار الخامات والعملة.";
-      status.textContent="تم تحميل "+objects.length+" قطعة من "+file.name+"."+massText+costText;
+      status.textContent="تم تحميل "+objects.length+" قطعة من "+file.name+"."+massText+costText+" فحص البيانات: "+audit.partCount+" جزء، بإجمالي "+audit.quantityTotal+" وحدة. الفحص لا يعتمد اتجاهات التصنيع أو التحمل.";
       save();
       toast("تم فتح نموذج المرحلة الثانية داخل الرسم ثلاثي الأبعاد");
     }catch(error){
@@ -1286,6 +1288,36 @@
       toast("لم يتم تغيير التصميم الحالي؛ ملف المرحلة الثانية غير صالح.");
     }
   }
+  function renderPhase2ImportAudit(audit) {
+    const host=$("phase2ProductAudit");
+    if(!host)return;
+    host.replaceChildren();
+    if(!audit){host.textContent="لا توجد نتيجة فحص.";return;}
+    const heading=document.createElement("strong");
+    heading.textContent="مراجعة بيانات الاستيراد — "+audit.partCount+" جزء";
+    const note=document.createElement("p");
+    const size=audit.declaredSize;
+    note.textContent="وحدة القياس: مم. المقاس المعلن: عرض "+(size.width||"—")+" × ارتفاع "+(size.height||"—")+" × عمق "+(size.depth||"—")+" مم. هذه مراجعة اتساق بيانات ومعاينة، وليست اعتماد تصنيع.";
+    const details=document.createElement("details");
+    const summary=document.createElement("summary");
+    summary.textContent="عرض اتجاهات وأبعاد كل القطع";
+    const wrap=document.createElement("div");wrap.className="phase2-audit-table-wrap";
+    const table=document.createElement("table");table.className="phase2-audit-table";
+    const thead=document.createElement("thead"),headRow=document.createElement("tr");
+    ["القطعة","نوع الاتجاه","مقاس المعاينة (مم)","الموضع المصدر (مم)","الدوران المصدر (°)","العدد"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.appendChild(th);});
+    thead.appendChild(headRow);table.appendChild(thead);
+    const tbody=document.createElement("tbody");
+    audit.rows.forEach(row=>{
+      const tr=document.createElement("tr");
+      const dims=row.viewer.width+" × "+row.viewer.height+" × "+row.viewer.depth;
+      const values=[row.name+" ("+row.id+")",row.orientation==="vertical-profile"?"قطاع رأسي":row.orientation==="sheet-or-panel"?"لوح / صاج":"قطاع طولي",dims,row.position.join("، "),row.rotation.join("، "),row.quantity];
+      values.forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.appendChild(td);});
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);wrap.appendChild(table);details.append(summary,wrap);
+    host.append(heading,note,details);
+  }
+
   function addStandModelTemplate(replaceCurrent=false) {
     const select=$("standModelTemplate"),template=standModelLibrary.find(item=>item.id===select.value);
     if(!template){toast("اختار موديل من المكتبة الأول");return;}
