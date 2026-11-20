@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "unit": "mm",
+    "coordinate_system": "origin=base centre, X=width, Y=depth, Z=up"
+  },
+  "parameters": {
+    "width": 1200,
+    "height": 1600,
+    "depth": 420
+  },
+  "parts": [
+    {
+      "part_id": "UPR-FL",
+      "name": "Upright FL",
+      "profile_or_sheet": "40x40x2.0",
+      "length": 1575,
+      "width": 0,
+      "height": 0,
+      "quantity": 1,
+      "material": "S235_steel",
+      "position": [
+        -580,
+        -190,
+        812.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "part_id": "BASE-X-L",
+      "name": "Base cross L",
+      "profile_or_sheet": "40x20x2.0",
+      "length": 380,
+      "width": 0,
+      "height": 0,
+      "quantity": 1,
+      "material": "S235_steel",
+      "position": [
+        -580,
+        0,
+        12.5
+      ],
+      "rotation": [
+        0,
+        0,
+        90
+      ]
+    },
+    {
+      "part_id": "SHELF-01",
+      "name": "Shelf 1",
+      "profile_or_sheet": "sheet_1.5mm",
+      "length": 0,
+      "width": 1170,
+      "height": 390,
+      "quantity": 1,
+      "material": "S235_steel",
+      "position": [
+        0,
+        0,
+        180
+      ],
+      "rotation": [
+        8,
+        0,
+        0
+      ]
+    }
+  ]
+}
