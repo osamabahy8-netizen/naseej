@@ -1244,6 +1244,42 @@
     });
     if(!rows.length){const empty=document.createElement("p");empty.className="catalog-footnote";empty.textContent="مفيش منتج مطابق لكلمة البحث.";host.appendChild(empty);}
   }
+  async function importPhase2ProductFile(file) {
+    const status=$("phase2ProductStatus");
+    if(!file||!status)return;
+    status.textContent="جاري فحص ملف المنتج...";
+    try{
+      if(file.size>12*1024*1024)throw new Error("حجم الملف أكبر من 12 ميجابايت.");
+      if(!window.NaseejThreeJSAdapter)throw new Error("محول مكتبة المرحلة الثانية غير محمّل.");
+      const parsed=JSON.parse(await file.text());
+      const product=parsed&&parsed.product&&typeof parsed.product==="object"?parsed.product:parsed;
+      const objects=window.NaseejThreeJSAdapter.toViewerObjects(product);
+      modelHistoryPush();
+      modelObjects=objects;
+      modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};
+      modelAssemblyGuideOn=false;modelAssemblyStep=0;
+      selectedModelObjectId=objects[0]?.id||null;
+      const baseName=file.name.replace(/\.json$/i,"").replace(/[_-]+/g," ");
+      modelProjectName=product.meta?.product_name||product.meta?.name||baseName||"منتج المرحلة الثانية";
+      window.activeModelProjectId=null;
+      $("modelName").value=modelProjectName;
+      $("modelAssemblyGuide").hidden=true;
+      $("modelAssemblyStartBtn").textContent="بدء دليل التجميع";
+      $("modelExplodeToggleBtn").textContent="عرض التفكيك";
+      $("modelExplodeMoveBtn").disabled=true;
+      $("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";
+      renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();updateModelHistoryButtons();
+      const bom=product.bom||product.bom_summary||parsed.bom_summary||null;
+      const massText=bom&&Number.isFinite(Number(bom.total_mass_kg))?" الوزن الإجمالي حسب ملف المصدر: "+Number(bom.total_mass_kg).toFixed(3)+" كجم.":"";
+      const costText=bom&&bom.estimated_total_cost!=null?"":" التكلفة النقدية غير معتمدة حتى تسجيل أسعار الخامات والعملة.";
+      status.textContent="تم تحميل "+objects.length+" قطعة من "+file.name+"."+massText+costText;
+      save();
+      toast("تم فتح نموذج المرحلة الثانية داخل الرسم ثلاثي الأبعاد");
+    }catch(error){
+      status.textContent="تعذر تحميل الملف: "+(error&&error.message?error.message:"صيغة JSON غير صالحة.");
+      toast("لم يتم تغيير التصميم الحالي؛ ملف المرحلة الثانية غير صالح.");
+    }
+  }
   function addStandModelTemplate(replaceCurrent=false) {
     const select=$("standModelTemplate"),template=standModelLibrary.find(item=>item.id===select.value);
     if(!template){toast("اختار موديل من المكتبة الأول");return;}
@@ -1306,15 +1342,17 @@
     const groups=new Map();
     modelObjects.forEach(o=>{
       const material=String(o.material||"غير محدد");
-      if(!groups.has(material))groups.set(material,{types:0,quantity:0,profiles:new Set()});
-      const group=groups.get(material);group.types+=1;group.quantity+=Math.max(1,Number(o.quantity)||1);group.profiles.add(o.profile||"غير محدد");
+      if(!groups.has(material))groups.set(material,{types:0,quantity:0,profiles:new Set(),massKg:0,massComplete:true});
+      const group=groups.get(material),quantity=Math.max(1,Number(o.quantity)||1),mass=Number(o.massKg);group.types+=1;group.quantity+=quantity;group.profiles.add(o.profile||"غير محدد");if(Number.isFinite(mass)&&mass>=0)group.massKg+=mass*quantity;else group.massComplete=false;
     });
     if(summary){
       const totalQuantity=[...groups.values()].reduce((sum,g)=>sum+g.quantity,0);
+      const allMassKnown=[...groups.values()].every(g=>g.massComplete);
+      const totalMass=[...groups.values()].reduce((sum,g)=>sum+g.massKg,0);
       const materialRows=[...groups.entries()].sort((x,y)=>x[0].localeCompare(y[0],"ar")).map(([material,g])=>
-        "<div class='model-bom-material'><strong>"+safeText(material)+"</strong><span>"+g.types+" نوع قطعة</span><span>إجمالي العدد: "+g.quantity+"</span><small>القطاعات: "+safeText([...g.profiles].join("، "))+"</small></div>"
+        "<div class='model-bom-material'><strong>"+safeText(material)+"</strong><span>"+g.types+" نوع قطعة</span><span>إجمالي العدد: "+g.quantity+"</span><span>"+(g.massComplete?"الوزن: "+g.massKg.toFixed(3)+" كجم":"الوزن غير متاح أو يحتاج إعادة حساب")+"</span><small>القطاعات: "+safeText([...g.profiles].join("، "))+"</small></div>"
       ).join("");
-      summary.innerHTML="<div class='model-bom-totals'><span>أنواع القطع: <b>"+modelObjects.length+"</b></span><span>إجمالي الوحدات: <b>"+totalQuantity+"</b></span><span>الخامات: <b>"+groups.size+"</b></span></div><div class='model-bom-materials'>"+materialRows+"</div><p class='catalog-footnote'>هذا حصر كميات موحّد من بيانات القطع الحالية. لا يعرض تكلفة نقدية أو وزنًا إلا بعد إدخال مواصفات وأسعار كل خامة.</p>";
+      summary.innerHTML="<div class='model-bom-totals'><span>أنواع القطع: <b>"+modelObjects.length+"</b></span><span>إجمالي الوحدات: <b>"+totalQuantity+"</b></span><span>الخامات: <b>"+groups.size+"</b></span>"+(allMassKnown?"<span>الوزن الكلي: <b>"+totalMass.toFixed(3)+" كجم</b></span>":"")+"</div><div class='model-bom-materials'>"+materialRows+"</div><p class='catalog-footnote'>هذا حصر كميات موحّد. الوزن يظهر فقط عندما يتوفر في ملف المصدر؛ بعد تعديل أبعاد قطعة أو خامتها يصبح وزنها غير معتمد حتى إعادة توليده. التكلفة النقدية لا تُعرض قبل تسجيل أسعار الخامات والعملة.</p>";
     }
     const rows=modelObjects.map(o=>{
       const length=Math.round(o.cutLength??Math.max(o.w,o.h,o.d));
@@ -1646,9 +1684,12 @@
     const rotations=["modelRotX","modelRotY","modelRotZ"].map(id=>Number($(id).value));
     if(rotations.some(v=>!Number.isFinite(v)||Math.abs(v)>360)){toast("زاوية الدوران لازم تكون بين -360 و360");return;}
     const thickness=Number($("modelPartThickness").value||0),quantity=Number($("modelPartQuantity").value||1),cutLength=Number($("modelPartCutLength").value||Math.max(...dims));
+    const nextMaterial=$("modelPartMaterial").value,nextProfile=$("modelPartProfile").value.trim();
+    const geometryChanged=dims.some((v,i)=>v!==[o.w,o.h,o.d][i])||nextMaterial!==(o.material||"")||nextProfile!==(o.profile||"")||thickness!==Number(o.thickness||0);
     if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
     modelHistoryPush();o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
-    o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
+    o.material=nextMaterial;o.profile=nextProfile;o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
+    if(geometryChanged&&o.massKg!=null){o.massKg=null;o.massStatus="needs_recalculation";}
     o.holeSpec=$("modelHoleSpec").value.trim();o.mountSpec=$("modelMountSpec").value.trim();o.installLocation=$("modelInstallLocation").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
     renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
   }
@@ -1898,6 +1939,7 @@
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addStandModelTemplateBtn").addEventListener("click",()=>addStandModelTemplate(false));
     $("nativeProductSearch").addEventListener("input",renderNativeProductCatalog);
+    $("phase2ProductInput").addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];if(file)importPhase2ProductFile(file);event.target.value="";});
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
