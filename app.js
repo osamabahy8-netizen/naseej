@@ -1250,6 +1250,48 @@
     });
     if(!rows.length){const empty=document.createElement("p");empty.className="catalog-footnote";empty.textContent="مفيش منتج مطابق لكلمة البحث.";host.appendChild(empty);}
   }
+
+  const phase2CatalogProducts = [
+    {id:"bags-A",name:"استاند شنط وإكسسوارات — A",family:"شنط وإكسسوارات",size:"800 × 1400 × 400 مم",file:"bags_A_800x1400x400.json"},
+    {id:"bags-B",name:"استاند شنط وإكسسوارات — B",family:"شنط وإكسسوارات",size:"1100 × 1700 × 480 مم",file:"bags_B_1100x1700x480.json"},
+    {id:"shoes-A",name:"استاند أحذية — A",family:"أحذية",size:"1000 × 1400 × 380 مم",file:"shoes_A_1000x1400x380.json"},
+    {id:"shoes-B",name:"استاند أحذية — B",family:"أحذية",size:"1200 × 1600 × 420 مم",file:"shoes_B_1200x1600x420.json"},
+    {id:"jewelry-A",name:"استاند مجوهرات — A",family:"مجوهرات وساعات ونظارات",size:"550 × 1000 × 320 مم",file:"jewelry_A_550x1000x320.json"},
+    {id:"jewelry-B",name:"استاند مجوهرات — B",family:"مجوهرات وساعات ونظارات",size:"700 × 1200 × 380 مم",file:"jewelry_B_700x1200x380.json"},
+    {id:"gondola-A",name:"جندولا سوبر ماركت — A",family:"جندولا",size:"1000 × 1800 × 400 مم",file:"gondola_A_1000x1800x400.json"},
+    {id:"gondola-B",name:"جندولا مزدوج — B",family:"جندولا",size:"1200 × 2000 مم",file:"gondola_B_1200x2000_double.json"},
+    {id:"cash-A",name:"كاشير — A",family:"كاونتر كاشير",size:"1400 × 550 × 900 مم",file:"cash_A_1400x550x900.json"},
+    {id:"cash-B",name:"كاشير بجناح جانبي — B",family:"كاونتر كاشير",size:"1600 × 600 مم",file:"cash_B_1600x600_wing.json"}
+  ];
+  function renderPhase2LibraryCatalog(){
+    const host=$("phase2LibraryCatalog"),status=$("phase2LibraryStatus");
+    if(!host||!status)return;
+    host.replaceChildren();
+    phase2CatalogProducts.forEach(item=>{
+      const card=document.createElement("article");card.className="phase2-library-card";
+      const family=document.createElement("span");family.className="phase2-library-family";family.textContent=item.family;
+      const title=document.createElement("strong");title.textContent=item.name;
+      const size=document.createElement("small");size.textContent="المقاس المرجعي: "+item.size;
+      const open=document.createElement("button");open.type="button";open.className="button button-primary";open.textContent="فتح المنتج في 3D";
+      open.addEventListener("click",async()=>{
+        open.disabled=true;open.textContent="جاري التحميل...";
+        status.textContent="جاري تحميل "+item.name+" من مكتبة نسيج...";
+        try{
+          const response=await fetch("phase2/examples/"+item.file,{cache:"no-cache"});
+          if(!response.ok)throw new Error("ملف النموذج غير موجود في نسخة المستودع الحالية ("+response.status+").");
+          const product=await response.json();
+          const payload=JSON.stringify(product);
+          await importPhase2ProductFile({name:item.file,size:new Blob([payload]).size,text:async()=>payload});
+          status.textContent="تم فتح "+item.name+" في المرسم.";
+        }catch(error){
+          status.textContent="تعذر فتح "+item.name+": "+error.message+" يمكنك استخدام اختيار ملف JSON مؤقتًا.";
+        }finally{open.disabled=false;open.textContent="فتح المنتج في 3D";}
+      });
+      card.append(family,title,size,open);host.appendChild(card);
+    });
+    status.textContent="الكتالوج جاهز: "+phase2CatalogProducts.length+" نموذجًا من 5 عائلات.";
+  }
+
   async function importPhase2ProductFile(file) {
     const status=$("phase2ProductStatus");
     if(!file||!status)return;
@@ -1980,6 +2022,7 @@
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
     $("addStandModelTemplateBtn").addEventListener("click",()=>addStandModelTemplate(false));
     $("nativeProductSearch").addEventListener("input",renderNativeProductCatalog);
+    renderPhase2LibraryCatalog();
     $("phase2ProductInput").addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];if(file)importPhase2ProductFile(file);event.target.value="";});
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
