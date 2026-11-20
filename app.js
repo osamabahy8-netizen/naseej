@@ -1292,25 +1292,28 @@
     const host=$("phase2ProductAudit");
     if(!host)return;
     host.replaceChildren();
-    if(!audit){host.textContent="لا توجد نتيجة فحص.";return;}
+    if(!audit){host.hidden=true;return;}
+    host.hidden=false;
     const heading=document.createElement("strong");
-    heading.textContent="مراجعة بيانات الاستيراد — "+audit.partCount+" جزء";
+    heading.textContent="مراجعة بيانات الاستيراد — "+audit.partCount+" قطعة";
+    const size=audit.declaredSize||{};
     const note=document.createElement("p");
-    const size=audit.declaredSize;
-    note.textContent="وحدة القياس: مم. المقاس المعلن: عرض "+(size.width||"—")+" × ارتفاع "+(size.height||"—")+" × عمق "+(size.depth||"—")+" مم. هذه مراجعة اتساق بيانات ومعاينة، وليست اعتماد تصنيع.";
+    note.textContent="الوحدة: مم. المقاس المعلن: عرض "+(size.width||"—")+" × ارتفاع "+(size.height||"—")+" × عمق "+(size.depth||"—")+" مم. الاتجاه مستنتج مبدئيًا من تعريف القطعة؛ يلزم التحقق بصريًا وهندسيًا قبل التصنيع.";
     const details=document.createElement("details");
     const summary=document.createElement("summary");
-    summary.textContent="عرض اتجاهات وأبعاد كل القطع";
+    summary.textContent="عرض أبعاد المصدر والتحويل لكل قطعة";
     const wrap=document.createElement("div");wrap.className="phase2-audit-table-wrap";
     const table=document.createElement("table");table.className="phase2-audit-table";
     const thead=document.createElement("thead"),headRow=document.createElement("tr");
-    ["القطعة","نوع الاتجاه","مقاس المعاينة (مم)","الموضع المصدر (مم)","الدوران المصدر (°)","العدد"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.appendChild(th);});
+    ["القطعة","اتجاه مبدئي","أبعاد المصدر (مم)","أبعاد العرض (مم)","الموضع المصدر (مم)","الدوران المصدر (°)","العدد"].forEach(label=>{const th=document.createElement("th");th.textContent=label;headRow.appendChild(th);});
     thead.appendChild(headRow);table.appendChild(thead);
     const tbody=document.createElement("tbody");
     audit.rows.forEach(row=>{
-      const tr=document.createElement("tr");
-      const dims=row.viewer.width+" × "+row.viewer.height+" × "+row.viewer.depth;
-      const values=[row.name+" ("+row.id+")",row.orientation==="vertical-profile"?"قطاع رأسي":row.orientation==="sheet-or-panel"?"لوح / صاج":"قطاع طولي",dims,row.position.join("، "),row.rotation.join("، "),row.quantity];
+      const tr=document.createElement("tr"),s=row.source||{},v=row.viewer||{};
+      const sourceDims=s.length>0?"طول "+s.length+(s.profileWidth>0?" | قطاع "+s.profileWidth+"×"+s.profileHeight+(s.wallThickness>0?"×"+s.wallThickness:""):""):("عرض "+(s.width||"—")+" × ارتفاع "+(s.height||"—")+(s.wallThickness>0?" | سمك "+s.wallThickness:""));
+      const viewerDims="عرض "+v.width+" × ارتفاع "+v.height+" × عمق "+v.depth;
+      const direction=row.orientation==="vertical-profile"?"قطاع رأسي مستنتج":row.orientation==="sheet-or-panel"?"لوح / رف مستنتج":"قطاع طولي مستنتج";
+      const values=[row.name+" ("+row.id+")",direction,sourceDims,viewerDims,(row.position||[]).join("، "),(row.rotation||[]).join("، "),row.quantity];
       values.forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.appendChild(td);});
       tbody.appendChild(tr);
     });
