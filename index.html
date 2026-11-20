@@ -12,7 +12,6 @@
   <link rel="apple-touch-icon" href="icons/naseej.svg">
   <title>نسيج | شبكة الأفكار والمشروعات</title>
   <link rel="stylesheet" href="styles.css?v=cockpit-20261119">
-  <link rel="stylesheet" href="engineering-library.css?v=library-20261119b">
   <link rel="stylesheet" href="cad-importer.css?v=cad-interaction-20261119b">
 </head>
 <body>
@@ -197,6 +196,10 @@
         <section class="model-library-panel">
           <h4>مكتبة المنتجات والمجسمات المادية</h4>
           <p class="catalog-footnote">اختار طائرة أو سيارة ريموت أو لعبة أو وحدة عرض. كل نموذج يدخل كأجزاء مادية مستقلة قابلة للتعديل والتفكيك؛ بيانات الإلكترونيات للمراجعة وليست دائرة توصيل جاهزة.</p>
+          <label for="nativeProductSearch">ابحث في مكتبة المنتجات</label>
+          <input id="nativeProductSearch" type="search" placeholder="اكتب اسم المنتج أو نوعه...">
+          <p id="nativeProductCatalogCount" class="catalog-footnote" aria-live="polite">تحميل المنتجات...</p>
+          <div id="nativeProductCatalog" class="native-product-catalog" aria-label="منتجات نسيج المتاحة للرسم ثلاثي الأبعاد"></div>
           <label for="standModelTemplate">نوع المنتج أو المجسم</label>
           <select id="standModelTemplate">
             <option value="">اختار موديل من المكتبة</option>
@@ -326,7 +329,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
   <script src="model3d.js?v=vehicle-alignment-20261119d"></script>
   <script src="app.js?v=vehicle-isolation-20261119d"></script>
-  <script src="engineering-library.js?v=library-20261119b"></script>
+  <!-- تم إيقاف لوحة طلب ملفات المصانع؛ مكتبة نسيج الأصلية هي مسار العمل. -->
   <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.js"></script>
   <script src="cad-importer.js?v=cad-interaction-20261119b"></script>
 </body>
