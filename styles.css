@@ -331,3 +331,13 @@
   .model-stage{min-height:44svh}
   .model-stage-panel .preview-actions .button{flex:1 1 100%}
 }
+
+/* Phase 2 import audit: compact, horizontally scrollable on mobile. */
+.phase2-geometry-audit{margin-top:12px;padding:12px;border:1px solid var(--line,#d8dee8);border-radius:12px;background:var(--panel,#fff);color:var(--text,#172033)}
+.phase2-geometry-audit p{margin:8px 0}
+.phase2-audit-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.phase2-audit-table{border-collapse:collapse;width:100%;min-width:760px;font-size:12px}
+.phase2-audit-table th,.phase2-audit-table td{padding:8px;border-bottom:1px solid var(--line,#d8dee8);text-align:right;vertical-align:top;white-space:normal}
+.phase2-audit-table th{background:var(--panel,#fff);font-weight:700}
+.phase2-geometry-audit summary{cursor:pointer;padding:8px 0;font-weight:700}
+@media(max-width:600px){.phase2-geometry-audit{padding:9px}.phase2-audit-table{font-size:11px;min-width:740px}.phase2-audit-table th,.phase2-audit-table td{padding:7px}}
