@@ -23,6 +23,9 @@
     const match=text.match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)(?:\s*x\s*(\d+(?:\.\d+)?))?/i);
     if(match)return [Number(match[1]),Number(match[2]),Number(match[3]||0)];
     const thickness=text.match(/(?:sheet|board|glass)_(\d+(?:\.\d+)?)\s*mm/i);
+    // Levelling feet are simplified as square preview solids using their nominal thread size.
+    const foot=text.match(/^M(8|10)_foot$/i);
+    if(foot){const nominal=Number(foot[1]);return [nominal,nominal,0];}
     return [0,0,thickness?Number(thickness[1]):0];
   }
   function materialColor(material,finish) {
