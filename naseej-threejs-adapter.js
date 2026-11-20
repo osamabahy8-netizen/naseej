@@ -108,9 +108,15 @@
     const ids=rows.map(row=>row.id);
     if(new Set(ids).size!==ids.length)throw new Error("Part IDs must be unique; duplicate ID found");
     const parameters=product&&product.parameters||{};
+    // Product families use different parameter names; normalize them for the viewer audit.
+    const declaredSize={
+      width:number(parameters.width,number(parameters.main_width,number(parameters.bay_width))),
+      height:number(parameters.height,number(parameters.counter_height)),
+      depth:number(parameters.depth,number(parameters.main_depth,number(parameters.shelf_depth)))
+    };
     return {
       unit:"mm",partCount:rows.length,quantityTotal:rows.reduce((sum,row)=>sum+row.quantity,0),
-      declaredSize:{width:number(parameters.width),height:number(parameters.height),depth:number(parameters.depth)},
+      declaredSize,
       rows:rows
     };
   }
