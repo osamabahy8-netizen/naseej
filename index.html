@@ -11,7 +11,7 @@
   <link rel="icon" href="icons/naseej.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/naseej.svg">
   <title>نسيج | شبكة الأفكار والمشروعات</title>
-  <link rel="stylesheet" href="styles.css?v=naseej-bom-catalog-20261120">
+  <link rel="stylesheet" href="styles.css?v=mobile-import-audit-20261120">
   <link rel="stylesheet" href="cad-importer.css?v=cad-interaction-20261119b">
 </head>
 <body>
@@ -206,6 +206,7 @@
             <label class="button button-primary phase2-file-label" for="phase2ProductInput">＋ اختيار نموذج JSON</label>
             <input id="phase2ProductInput" type="file" accept=".json,application/json" hidden>
             <div id="phase2ProductStatus" class="catalog-footnote" role="status" aria-live="polite">لم يتم تحميل نموذج من المرحلة الثانية بعد.</div>
+            <div id="phase2ProductAudit" class="phase2-import-audit" aria-live="polite"></div>
           </section>
           <label for="standModelTemplate">نوع المنتج أو المجسم</label>
           <select id="standModelTemplate">
@@ -335,8 +336,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
   <script src="model3d.js?v=vehicle-alignment-20261119d"></script>
-  <script src="naseej-threejs-adapter.js?v=phase2-viewer-20261120a"></script>
-  <script src="app.js?v=naseej-bom-catalog-20261120"></script>
+  <script src="naseej-threejs-adapter.js?v=phase2-audit-20261120"></script>
+  <script src="app.js?v=mobile-import-audit-20261120"></script>
   <!-- تم إيقاف لوحة طلب ملفات المصانع؛ مكتبة نسيج الأصلية هي مسار العمل. -->
   <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.23/dist/occt-import-js.js"></script>
   <script src="cad-importer.js?v=cad-interaction-20261119b"></script>
