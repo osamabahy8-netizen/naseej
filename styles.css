@@ -391,3 +391,44 @@
   #modelView .model-stage-panel,
   #modelView .model-stage { width: 100%; min-width: 0; }
 }
+
+/* Final mobile polish: respect notches, keep navigation reachable, and avoid clipped controls. */
+@media screen and (max-width:850px) {
+  .topbar {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .main-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin-top: 8px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    background: #0b1220ee;
+    backdrop-filter: blur(12px);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .main-tabs::-webkit-scrollbar { display:none; }
+  .main-tab { min-height: 42px; flex: 0 0 auto; }
+  #modelView .model-layout,
+  #modelView .model-stage-panel,
+  #modelView .model-stage,
+  #modelView .model-tools,
+  #modelView .model-inspector { box-sizing:border-box; }
+  #modelView .model-stage { touch-action: pan-y; }
+  #modelView .model-stage-panel,
+  #modelView .model-tools,
+  #modelView .model-inspector { overflow-wrap:anywhere; }
+}
+@media screen and (max-width:560px) {
+  .topbar { gap:10px; }
+  .brand { min-width:0; }
+  .brand p { line-height:1.5; }
+  .top-actions > * { min-height:40px; }
+  .main-tabs { margin-inline:0; }
+  #modelView .model-stage { min-height: min(44svh, 390px); }
+  #modelView .model-zoom-controls .button { min-height:44px; }
+}
