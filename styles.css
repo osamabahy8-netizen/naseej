@@ -298,3 +298,36 @@
 .phase2-import-panel h4{margin:0;color:#9bd6ff;font-size:12px}
 .phase2-file-label{display:block;text-align:center;width:100%;cursor:pointer}
 #phase2ProductStatus{padding:7px;border-radius:8px;background:#081522;color:#b8c8d9;line-height:1.7}
+
+
+/* Phase 2 source-to-preview audit */
+.phase2-import-audit{margin-top:10px;padding:11px;border:1px solid #315778;border-radius:10px;background:#081827;color:#cfe4f6;font-size:11px;line-height:1.8}
+.phase2-import-audit:empty{display:none}
+.phase2-import-audit strong{display:block;color:#8fd1ff;font-size:12px}
+.phase2-import-audit p{margin:5px 0 8px;color:#b7c9da}
+.phase2-import-audit details>summary{cursor:pointer;color:#f0d49b;padding:5px 0}
+.phase2-audit-table-wrap{max-width:100%;overflow:auto;overscroll-behavior-x:contain}
+.phase2-audit-table{width:100%;min-width:720px;border-collapse:collapse;font-size:10px}
+.phase2-audit-table th,.phase2-audit-table td{padding:7px 9px;border-bottom:1px solid #29445d;text-align:right;white-space:nowrap}
+.phase2-audit-table th{position:sticky;top:0;background:#102a43;color:#9bd6ff}
+@media(max-width:850px) and (orientation:portrait){
+  .model-layout{grid-template-columns:minmax(0,1fr)!important;gap:10px}
+  .model-stage-panel{grid-column:1;min-width:0}
+  .model-stage{min-height:48svh;max-height:68svh}
+  #model3DCanvas,#modelDrawing{width:100%;height:100%;min-height:0}
+  .model-tools,.model-inspector{position:static;max-height:none;overflow:visible}
+  .model-inspector{order:3}
+  .model-stage-panel{order:1}
+  .model-tools{order:2}
+  .model-stage-panel>.preview-title{position:static}
+  .model-zoom-controls{display:flex;flex-wrap:wrap;gap:6px}
+  .model-zoom-controls .button{flex:1 1 auto;min-height:42px}
+  .phase2-import-panel{min-width:0}
+  .phase2-file-label{display:flex;justify-content:center;min-height:44px;align-items:center}
+}
+@media(max-width:560px){
+  .phase2-import-audit{font-size:10px;padding:9px}
+  .phase2-audit-table{font-size:9px}
+  .model-stage{min-height:44svh}
+  .model-stage-panel .preview-actions .button{flex:1 1 100%}
+}
