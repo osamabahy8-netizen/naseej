@@ -1281,7 +1281,8 @@
           if(!response.ok)throw new Error("ملف النموذج غير موجود في نسخة المستودع الحالية ("+response.status+").");
           const product=await response.json();
           const payload=JSON.stringify(product);
-          await importPhase2ProductFile({name:item.file,size:new Blob([payload]).size,text:async()=>payload});
+          const imported=await importPhase2ProductFile({name:item.file,size:new Blob([payload]).size,text:async()=>payload});
+          if(!imported)throw new Error($("phase2ProductStatus").textContent||"فشل فحص النموذج أو تحويله.");
           status.textContent="تم فتح "+item.name+" في المرسم.";
         }catch(error){
           status.textContent="تعذر فتح "+item.name+": "+error.message+" يمكنك استخدام اختيار ملف JSON مؤقتًا.";
@@ -1325,9 +1326,11 @@
       status.textContent="تم تحميل "+objects.length+" قطعة من "+file.name+"."+massText+costText+" فحص البيانات: "+audit.partCount+" جزء، بإجمالي "+audit.quantityTotal+" وحدة. الفحص لا يعتمد اتجاهات التصنيع أو التحمل.";
       save();
       toast("تم فتح نموذج المرحلة الثانية داخل الرسم ثلاثي الأبعاد");
+      return true;
     }catch(error){
       status.textContent="تعذر تحميل الملف: "+(error&&error.message?error.message:"صيغة JSON غير صالحة.");
       toast("لم يتم تغيير التصميم الحالي؛ ملف المرحلة الثانية غير صالح.");
+      return false;
     }
   }
   function renderPhase2ImportAudit(audit) {
