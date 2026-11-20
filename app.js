@@ -927,7 +927,7 @@
     $("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";
     $("modelExplodeMoveBtn").disabled=!modelExplodedView;
     $("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";
-    renderModelDrawing();renderModelObjectEditor();save();
+    renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
     updateModelHistoryButtons();
   }
   function undoModelAction() {
@@ -963,13 +963,13 @@
     const p=data.modelProjects.find(item=>item.id===$("savedModelProjects").value);
     if(!p){toast("اختار مشروع محفوظ الأول");return;}
     modelHistoryPush();modelObjects=Array.isArray(p.objects)?p.objects.map(o=>({...o})):[];modelProjectName=p.name||"تصميم جديد";modelCameraAngle=Number.isFinite(Number(p.cameraAngle))?Number(p.cameraAngle):35;modelCameraPitch=Number.isFinite(Number(p.cameraPitch))?Math.max(5,Math.min(85,Number(p.cameraPitch))):24;modelCameraPanX=Number.isFinite(Number(p.cameraPanX))?Number(p.cameraPanX):0;modelCameraPanY=Number.isFinite(Number(p.cameraPanY))?Number(p.cameraPanY):0;modelZoom=Number.isFinite(Number(p.zoom))?Math.max(.35,Math.min(5,Number(p.zoom))):1;window.activeModelProjectId=p.id;
-    $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();toast("تم فتح المشروع بنفس زاوية الكاميرا والتكبير ومركز العرض المحفوظ");
+    $("modelName").value=modelProjectName;$("modelCameraAngle").value=modelCameraAngle;selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();toast("تم فتح المشروع بنفس زاوية الكاميرا والتكبير ومركز العرض المحفوظ");
   }
   function modelProjectAddObject() {
     const type=$("modelPrimitive").value;
     const labels={box:"كتلة",plate:"لوح",beam:"عارضة",cylinder:"أسطوانة"};
     const object={id:uid(),type,label:labels[type]||"جسم جديد",x:0,y:0,z:0,w:type==="plate"?600:300,h:type==="plate"?20:300,d:type==="plate"?400:300,color:"#c49a55",rx:0,ry:0,rz:0};
-    modelHistoryPush();modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();toast("أضفنا جسم جديد للرسم");
+    modelHistoryPush();modelObjects.push(object);selectedModelObjectId=object.id;renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();toast("أضفنا جسم جديد للرسم");
   }
   const standModelLibrary = [
     {id:"single-rail",name:"استاند ملابس مفرد",category:"ملابس",description:"قاعدة وأربع قوائم علوية مع ماسورة تعليق",parts:[
@@ -1221,7 +1221,66 @@
       ["وصلة جر",35,12,12,165,35,0,"خطاف ربط","بلاستيك",2,"وصلة مفصلية"]
     ]}
   ];
-  function addStandModelTemplate() {
+  function renderNativeProductCatalog() {
+    const host=$("nativeProductCatalog"),search=$("nativeProductSearch"),count=$("nativeProductCatalogCount");
+    if(!host||!search||!count)return;
+    const query=search.value.trim().toLocaleLowerCase("ar");
+    const rows=standModelLibrary.filter(item=>[item.name,item.category,item.description].join(" ").toLocaleLowerCase("ar").includes(query));
+    count.textContent="الموديلات المتاحة: "+rows.length+" من "+standModelLibrary.length+" — اضغط على أي موديل لفتحه مباشرة في مساحة 3D.";
+    host.replaceChildren();
+    rows.forEach(template=>{
+      const card=document.createElement("article");card.className="native-product-card";
+      const category=document.createElement("span");category.className="native-product-category";category.textContent=template.category;
+      const title=document.createElement("strong");title.className="native-product-title";title.textContent=template.name;
+      const detail=document.createElement("span");detail.className="native-product-detail";detail.textContent=template.parts.length+" جزء — "+template.description;
+      const open=document.createElement("button");open.type="button";open.className="button button-primary native-product-open";open.textContent="فتح في الرسم ثلاثي الأبعاد";
+      open.addEventListener("click",()=>{
+        const select=$("standModelTemplate");select.value=template.id;
+        addStandModelTemplate(true);
+        host.querySelectorAll(".native-product-card").forEach(node=>node.classList.remove("active"));
+        card.classList.add("active");
+      });
+      card.append(category,title,detail,open);host.appendChild(card);
+    });
+    if(!rows.length){const empty=document.createElement("p");empty.className="catalog-footnote";empty.textContent="مفيش منتج مطابق لكلمة البحث.";host.appendChild(empty);}
+  }
+  async function importPhase2ProductFile(file) {
+    const status=$("phase2ProductStatus");
+    if(!file||!status)return;
+    status.textContent="جاري فحص ملف المنتج...";
+    try{
+      if(file.size>12*1024*1024)throw new Error("حجم الملف أكبر من 12 ميجابايت.");
+      if(!window.NaseejThreeJSAdapter)throw new Error("محول مكتبة المرحلة الثانية غير محمّل.");
+      const parsed=JSON.parse(await file.text());
+      const product=parsed&&parsed.product&&typeof parsed.product==="object"?parsed.product:parsed;
+      const objects=window.NaseejThreeJSAdapter.toViewerObjects(product);
+      modelHistoryPush();
+      modelObjects=objects;
+      modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};
+      modelAssemblyGuideOn=false;modelAssemblyStep=0;
+      selectedModelObjectId=objects[0]?.id||null;
+      const baseName=file.name.replace(/\.json$/i,"").replace(/[_-]+/g," ");
+      modelProjectName=product.meta?.product_name||product.meta?.name||baseName||"منتج المرحلة الثانية";
+      window.activeModelProjectId=null;
+      $("modelName").value=modelProjectName;
+      $("modelAssemblyGuide").hidden=true;
+      $("modelAssemblyStartBtn").textContent="بدء دليل التجميع";
+      $("modelExplodeToggleBtn").textContent="عرض التفكيك";
+      $("modelExplodeMoveBtn").disabled=true;
+      $("modelExplodeMoveBtn").textContent="تحريك القطع المفككة";
+      renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();updateModelHistoryButtons();
+      const bom=product.bom||product.bom_summary||parsed.bom_summary||null;
+      const massText=bom&&Number.isFinite(Number(bom.total_mass_kg))?" الوزن الإجمالي حسب ملف المصدر: "+Number(bom.total_mass_kg).toFixed(3)+" كجم.":"";
+      const costText=bom&&bom.estimated_total_cost!=null?"":" التكلفة النقدية غير معتمدة حتى تسجيل أسعار الخامات والعملة.";
+      status.textContent="تم تحميل "+objects.length+" قطعة من "+file.name+"."+massText+costText;
+      save();
+      toast("تم فتح نموذج المرحلة الثانية داخل الرسم ثلاثي الأبعاد");
+    }catch(error){
+      status.textContent="تعذر تحميل الملف: "+(error&&error.message?error.message:"صيغة JSON غير صالحة.");
+      toast("لم يتم تغيير التصميم الحالي؛ ملف المرحلة الثانية غير صالح.");
+    }
+  }
+  function addStandModelTemplate(replaceCurrent=false) {
     const select=$("standModelTemplate"),template=standModelLibrary.find(item=>item.id===select.value);
     if(!template){toast("اختار موديل من المكتبة الأول");return;}
     const size=$("standModelSize").value,scale=size==="compact"?.82:size==="large"?1.18:1;
@@ -1244,7 +1303,7 @@
       for(let n=0;n<4;n++)addAccessory("خطاف إضافي "+(n+1),150,12,12,-220+n*145,850,45,"سيخ دائري مثني","حديد");
     }
     if($("standAddHolder").checked)addAccessory("حامل أكريليك أمامي",260,160,8,0,300,150,"جيب/حامل شفاف","أكريليك","#a9d5df");
-    modelHistoryPush();if(vehicleTemplate){modelObjects=[...added];modelExplodedView=false;modelExplodeOffsets={};}else{modelObjects.push(...added);}
+    modelHistoryPush();if(replaceCurrent||vehicleTemplate){modelObjects=[...added];modelExplodedView=false;modelExplodeOffsets={};modelExplodeMoveMode=false;}else{modelObjects.push(...added);}
     modelProjectName=template.name+" — "+(size==="compact"?"صغير":size==="large"?"كبير":"قياسي");
     $("modelName").value=modelProjectName;selectedModelObjectId=added[0].id;
     modelAssemblyGuideOn=false;$("modelAssemblyGuide").hidden=true;
@@ -1254,10 +1313,10 @@
   function duplicateModelObject() {
     const source=modelObjects.find(o=>o.id===selectedModelObjectId);if(!source)return;
     const copy={...source,id:uid(),label:source.label+" - نسخة",x:source.x+Math.max(100,source.w/2),z:source.z+Math.max(100,source.d/2)};
-    modelHistoryPush();modelObjects.push(copy);selectedModelObjectId=copy.id;renderModelDrawing();renderModelObjectEditor();save();toast("تم نسخ القطعة");
+    modelHistoryPush();modelObjects.push(copy);selectedModelObjectId=copy.id;renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();toast("تم نسخ القطعة");
   }
   function modelProjectDeleteObject() {
-    modelHistoryPush();modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();toast("تم حذف الجسم");
+    modelHistoryPush();modelObjects=modelObjects.filter(o=>o.id!==selectedModelObjectId);selectedModelObjectId=null;renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();toast("تم حذف الجسم");
   }
   function renderModelObjectEditor() {
     const object=modelObjects.find(o=>o.id===selectedModelObjectId), editor=$("modelObjectEditor");
@@ -1277,15 +1336,31 @@
     $("modelHoleSpec").value=object.holeSpec||"";$("modelMountSpec").value=object.mountSpec||"";$("modelInstallLocation").value=object.installLocation||"";$("modelWeldSpec").value=object.weldSpec||"";$("modelJointSpec").value=object.jointSpec||"";if($("modelComponentSpec"))$("modelComponentSpec").value=object.componentSpec||"";
   }
   function renderModelCutList() {
-    const host=$("modelCutList");if(!host)return;
-    if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";return;}
+    const host=$("modelCutList"),summary=$("modelBomSummary");if(!host)return;
+    if(!modelObjects.length){host.textContent="لا توجد قطع في التصميم.";if(summary)summary.textContent="لا توجد بيانات خامات بعد.";return;}
     const safeText=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    const groups=new Map();
+    modelObjects.forEach(o=>{
+      const material=String(o.material||"غير محدد");
+      if(!groups.has(material))groups.set(material,{types:0,quantity:0,profiles:new Set(),massKg:0,massComplete:true});
+      const group=groups.get(material),quantity=Math.max(1,Number(o.quantity)||1),mass=o.massKg;group.types+=1;group.quantity+=quantity;group.profiles.add(o.profile||"غير محدد");if(mass!=null&&Number.isFinite(Number(mass))&&Number(mass)>=0)group.massKg+=Number(mass)*quantity;else group.massComplete=false;
+    });
+    if(summary){
+      const totalQuantity=[...groups.values()].reduce((sum,g)=>sum+g.quantity,0);
+      const allMassKnown=[...groups.values()].every(g=>g.massComplete);
+      const totalMass=[...groups.values()].reduce((sum,g)=>sum+g.massKg,0);
+      const materialRows=[...groups.entries()].sort((x,y)=>x[0].localeCompare(y[0],"ar")).map(([material,g])=>
+        "<div class='model-bom-material'><strong>"+safeText(material)+"</strong><span>"+g.types+" نوع قطعة</span><span>إجمالي العدد: "+g.quantity+"</span><span>"+(g.massComplete?"الوزن: "+g.massKg.toFixed(3)+" كجم":"الوزن غير متاح أو يحتاج إعادة حساب")+"</span><small>القطاعات: "+safeText([...g.profiles].join("، "))+"</small></div>"
+      ).join("");
+      summary.innerHTML="<div class='model-bom-totals'><span>أنواع القطع: <b>"+modelObjects.length+"</b></span><span>إجمالي الوحدات: <b>"+totalQuantity+"</b></span><span>الخامات: <b>"+groups.size+"</b></span>"+(allMassKnown?"<span>الوزن الكلي: <b>"+totalMass.toFixed(3)+" كجم</b></span>":"")+"</div><div class='model-bom-materials'>"+materialRows+"</div><p class='catalog-footnote'>هذا حصر كميات موحّد. الوزن يظهر فقط عندما يتوفر في ملف المصدر؛ بعد تعديل أبعاد قطعة أو خامتها يصبح وزنها غير معتمد حتى إعادة توليده. التكلفة النقدية لا تُعرض قبل تسجيل أسعار الخامات والعملة.</p>";
+    }
     const rows=modelObjects.map(o=>{
       const length=Math.round(o.cutLength??Math.max(o.w,o.h,o.d));
       const quantity=Math.max(1,Number(o.quantity)||1);
-      return "<tr><td>"+safeText(o.label)+"</td><td>"+safeText(o.material||"حديد")+"</td><td>"+safeText(o.profile||"غير محدد")+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
+      const dimensions=Math.round(o.w)+" × "+Math.round(o.h)+" × "+Math.round(o.d);
+      return "<tr><td>"+safeText(o.label)+"</td><td>"+safeText(o.material||"غير محدد")+"</td><td>"+safeText(o.profile||"غير محدد")+"</td><td>"+dimensions+"</td><td>"+(Number(o.thickness)||0)+"</td><td>"+length+"</td><td>"+quantity+"</td><td>"+(length*quantity)+"</td></tr>";
     }).join("");
-    host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
+    host.innerHTML="<div class='table-wrap'><table><thead><tr><th>القطعة</th><th>الخامة</th><th>القطاع</th><th>الأبعاد مم (عرض × ارتفاع × عمق)</th><th>السمك مم</th><th>طول القص مم</th><th>العدد</th><th>إجمالي الطول مم</th></tr></thead><tbody>"+rows+"</tbody></table></div>";
   }
   function renderManufacturingDrawings() {
     const root=$("manufacturingDrawing");if(!root)return;
@@ -1609,9 +1684,12 @@
     const rotations=["modelRotX","modelRotY","modelRotZ"].map(id=>Number($(id).value));
     if(rotations.some(v=>!Number.isFinite(v)||Math.abs(v)>360)){toast("زاوية الدوران لازم تكون بين -360 و360");return;}
     const thickness=Number($("modelPartThickness").value||0),quantity=Number($("modelPartQuantity").value||1),cutLength=Number($("modelPartCutLength").value||Math.max(...dims));
+    const nextMaterial=$("modelPartMaterial").value,nextProfile=$("modelPartProfile").value.trim();
+    const geometryChanged=dims.some((v,i)=>v!==[o.w,o.h,o.d][i])||nextMaterial!==(o.material||"")||nextProfile!==(o.profile||"")||thickness!==Number(o.thickness||0);
     if(!Number.isFinite(thickness)||thickness<0||!Number.isFinite(quantity)||quantity<1||!Number.isInteger(quantity)||!Number.isFinite(cutLength)||cutLength<0){toast("راجع السمك والعدد وطول القص");return;}
     modelHistoryPush();o.label=$("modelObjectLabel").value.trim()||"جسم";[o.w,o.h,o.d]=dims;[o.x,o.y,o.z]=pos;[o.rx,o.ry,o.rz]=rotations;o.color=$("modelObjectColor").value;
-    o.material=$("modelPartMaterial").value;o.profile=$("modelPartProfile").value.trim();o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
+    o.material=nextMaterial;o.profile=nextProfile;o.thickness=thickness;o.quantity=quantity;o.cutLength=cutLength;
+    if(geometryChanged&&o.massKg!=null){o.massKg=null;o.massStatus="needs_recalculation";}
     o.holeSpec=$("modelHoleSpec").value.trim();o.mountSpec=$("modelMountSpec").value.trim();o.installLocation=$("modelInstallLocation").value.trim();o.weldSpec=$("modelWeldSpec").value.trim();o.jointSpec=$("modelJointSpec").value.trim();o.componentSpec=$("modelComponentSpec")?$("modelComponentSpec").value.trim():"";
     renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();
   }
@@ -1859,7 +1937,9 @@
     $("modelExplodeMoveBtn").addEventListener("click",()=>{if(!modelExplodedView)return;modelExplodeMoveMode=!modelExplodeMoveMode;$("modelExplodeMoveBtn").textContent=modelExplodeMoveMode?"إيقاف تحريك القطع":"تحريك القطع المفككة";$("modelExplodeHint").textContent=modelExplodeMoveMode?"اسحب أي قطعة بإصبعك أو بالماوس لتعديل مكانها في عرض التفكيك فقط.":"حرّك القطع المفككة يدويًا؛ التصميم الأصلي لا يتغير.";});
     $("modelPartMoveModeBtn").addEventListener("click",()=>{modelPartMoveMode=!modelPartMoveMode;$("modelPartMoveModeBtn").textContent=modelPartMoveMode?"إيقاف تحريك القطع":"تفعيل تحريك القطع";$("modelPartMoveModeBtn").classList.toggle("button-primary",modelPartMoveMode);$("modelPartMoveModeBtn").classList.toggle("button-quiet",!modelPartMoveMode);toast(modelPartMoveMode?"وضع تحريك القطع نشط؛ السحب على القطعة يحركها":"تم إيقاف تحريك القطع؛ السحب على المجسم يدير الكاميرا");});
     $("exportModelManufacturingBtn").addEventListener("click",exportModelManufacturingReport);
-    $("addStandModelTemplateBtn").addEventListener("click",addStandModelTemplate);
+    $("addStandModelTemplateBtn").addEventListener("click",()=>addStandModelTemplate(false));
+    $("nativeProductSearch").addEventListener("input",renderNativeProductCatalog);
+    $("phase2ProductInput").addEventListener("change",event=>{const file=event.target.files&&event.target.files[0];if(file)importPhase2ProductFile(file);event.target.value="";});
     $("addModelObjectBtn").addEventListener("click",modelProjectAddObject);
     $("saveModelObjectBtn").addEventListener("click",saveModelObjectEdits);
     $("deleteModelObjectBtn").addEventListener("click",modelProjectDeleteObject);
@@ -1869,14 +1949,14 @@
     $("saveModelProjectBtn").addEventListener("click",projectModelSave);
     $("loadModelProjectBtn").addEventListener("click",modelProjectLoad);
     $("exportModelObjBtn").addEventListener("click",exportModelObj);
-    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelHistoryPush();modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").disabled=true;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();});
+    $("clearModelBtn").addEventListener("click",()=>{if(!confirm("تمسح كل الأجسام من لوحة الرسم؟"))return;modelHistoryPush();modelObjects=[];selectedModelObjectId=null;modelExplodedView=false;modelExplodeMoveMode=false;modelExplodeOffsets={};$("modelExplodeMoveBtn").disabled=true;$("modelExplodeToggleBtn").textContent="عرض التفكيك";renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();save();});
     if(!data.modelStudioInitialized){
       modelObjects=[{id:uid(),type:"box",label:"مجسم تجريبي",x:0,y:0,z:0,w:600,h:300,d:400,color:"#c49a55",rx:0,ry:0,rz:0}];
       selectedModelObjectId=modelObjects[0].id;
       data.modelStudioInitialized=true;
       save();
     }
-    renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderManufacturingDrawings();
+    renderNativeProductCatalog();renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();
   }
 
   function setupDesignStudio() {
