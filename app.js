@@ -927,7 +927,8 @@
     if(Object.prototype.hasOwnProperty.call(snapshot,"activeProjectId"))window.activeModelProjectId=snapshot.activeProjectId;
     modelAssemblyGuideOn=!!snapshot.assemblyGuideOn;modelAssemblyStep=Number(snapshot.assemblyStep)||0;
     $("modelAssemblyGuide").hidden=!modelAssemblyGuideOn;
-    $("modelAssemblyStartBtn").textContent=modelAssemblyGuideOn?"إخفاء دليل التجميع":"بدء دليل التجميع";
+    $("modelAssemblyStartBtn").textContent=modelAssemblyGuideOn?"دليل التجميع نشط":"بدء دليل التجميع";
+    if(modelAssemblyGuideOn)renderModelAssemblyGuide();
     modelExplodeMoveMode=false;
     $("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";
     $("modelExplodeMoveBtn").disabled=!modelExplodedView;
