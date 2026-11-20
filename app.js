@@ -1914,7 +1914,7 @@
       data.modelStudioInitialized=true;
       save();
     }
-    renderNativeProductCatalog();renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderManufacturingDrawings();
+    renderNativeProductCatalog();renderModelProjectOptions();renderModelDrawing();renderModelObjectEditor();renderModelCutList();renderManufacturingDrawings();
   }
 
   function setupDesignStudio() {
