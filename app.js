@@ -902,7 +902,7 @@
   let modelRedoStack = [];
   const MODEL_HISTORY_LIMIT = 80;
   function modelHistoryState() {
-    return JSON.stringify({objects:modelObjects,selectedId:selectedModelObjectId,explodeOffsets:modelExplodeOffsets,explodedView:modelExplodedView});
+    return JSON.stringify({objects:modelObjects,selectedId:selectedModelObjectId,explodeOffsets:modelExplodeOffsets,explodedView:modelExplodedView,projectName:modelProjectName,activeProjectId:window.activeModelProjectId||null,assemblyGuideOn:modelAssemblyGuideOn,assemblyStep:modelAssemblyStep});
   }
   function modelHistoryPush() {
     const state=modelHistoryState();
@@ -923,6 +923,11 @@
     selectedModelObjectId=snapshot.selectedId||null;
     modelExplodeOffsets=snapshot.explodeOffsets||{};
     modelExplodedView=!!snapshot.explodedView;
+    if(typeof snapshot.projectName==="string"){modelProjectName=snapshot.projectName;$("modelName").value=modelProjectName;}
+    if(Object.prototype.hasOwnProperty.call(snapshot,"activeProjectId"))window.activeModelProjectId=snapshot.activeProjectId;
+    modelAssemblyGuideOn=!!snapshot.assemblyGuideOn;modelAssemblyStep=Number(snapshot.assemblyStep)||0;
+    $("modelAssemblyGuide").hidden=!modelAssemblyGuideOn;
+    $("modelAssemblyStartBtn").textContent=modelAssemblyGuideOn?"إخفاء دليل التجميع":"بدء دليل التجميع";
     modelExplodeMoveMode=false;
     $("modelExplodeToggleBtn").textContent=modelExplodedView?"إرجاع التجميع":"عرض التفكيك";
     $("modelExplodeMoveBtn").disabled=!modelExplodedView;
