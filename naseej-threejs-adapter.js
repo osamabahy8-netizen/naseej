@@ -55,11 +55,12 @@
     const orientation=classifyPart(part);
     let w,h,d;
     if(number(part.length)>0){
-      if(orientation==="vertical-profile"){w=a||20;h=number(part.length);d=b||20;}
-      else{w=number(part.length);h=b||20;d=a||20;}
-      if(/^FOOT/i.test(id)){w=Math.max(w,18);d=Math.max(d,18);}
+      if(!(a>0&&b>0))throw new Error("Part "+id+" is missing a confirmed profile section in profile_or_sheet");
+      if(orientation==="vertical-profile"){w=a;h=number(part.length);d=b;}
+      else{w=number(part.length);h=b;d=a;}
     }else if(number(part.width)>0 && number(part.height)>0){
-      const thickness=wall||2;
+      if(!(wall>0))throw new Error("Part "+id+" is missing a confirmed sheet thickness in profile_or_sheet");
+      const thickness=wall;
       const verticalPanel=/^(BACK|PANEL|KICK)/i.test(id)||/back panel|side panel|kick plate|لوح خلفي/i.test(name);
       w=number(part.width);
       if(verticalPanel){h=number(part.height);d=thickness;}
